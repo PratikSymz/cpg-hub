@@ -1,5 +1,5 @@
 import React from "react";
-import { areasOfSpecialization, levelsOfExperience } from "@/constants/filters";
+import { areasOfSpecialization, levelsOfExperience } from "@/constants/filters.js";
 import {
   Select,
   SelectContent,
@@ -7,8 +7,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "./ui/button";
+} from "@/components/ui/select.jsx";
+import { Button } from "./ui/button.jsx";
 
 const FilterColumns = (
   specializationValue,
@@ -26,11 +26,11 @@ const FilterColumns = (
             <SelectTrigger className="mt-4 w-64">
               <SelectValue placeholder="lol" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="">
               <SelectGroup>
                 {areasOfSpecialization.map(({ label, value }) => {
                   return (
-                    <SelectItem key={value} value={value}>
+                    <SelectItem className="" key={value} value={value}>
                       {label}
                     </SelectItem>
                   );
@@ -46,11 +46,11 @@ const FilterColumns = (
             <SelectTrigger className="mt-4 w-64">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="">
               <SelectGroup>
                 {levelsOfExperience.map(({ label, value }) => {
                   return (
-                    <SelectItem key={value} value={value}>
+                    <SelectItem className="" key={value} value={value}>
                       {label}
                     </SelectItem>
                   );
@@ -61,7 +61,7 @@ const FilterColumns = (
         </div>
 
         <div className="flex">
-          <Button className="w-full" variant="default" onClick={onClearFilters}>
+          <Button size="default" className="w-full" variant="default" onClick={onClearFilters}>
             Clear Filters
           </Button>
         </div>

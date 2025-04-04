@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Button } from "@/components/ui/button.jsx";
 import {
   Drawer,
   DrawerClose,
@@ -9,15 +10,15 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Input } from "./ui/input";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { Label } from "./ui/label";
+} from "@/components/ui/drawer.jsx";
+import { Input } from "./ui/input.jsx";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group.jsx";
+import { Label } from "./ui/label.jsx";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import useFetch from "@/hooks/use-fetch";
-import { applyToJob } from "@/api/apiApplications";
+import useFetch from "@/hooks/use-fetch.jsx";
+import { applyToJob } from "@/api/apiApplications.js";
 import { BarLoader } from "react-spinners";
 
 const schema = z.object({
@@ -54,7 +55,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
   const {
     loading: loadingApply,
     error: errorApply,
-    fn: fnApply,
+    func: fnApply,
   } = useFetch(applyToJob);
 
   const onSubmit = (data) => {
@@ -75,6 +76,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     <Drawer open={applied ? false : undefined}>
       <DrawerTrigger asChild>
         <Button
+        className=""
           size="lg"
           variant={job?.isOpen && !applied ? "blue" : "destructive"}
           disabled={!job?.isOpen || applied}
@@ -82,12 +84,12 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
           {job?.isOpen ? (applied ? "Applied" : "Apply") : "Hiring Closed"}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>
+      <DrawerContent className="">
+        <DrawerHeader className="">
+          <DrawerTitle className="">
             Apply for {job?.title} at {job?.company?.name}
           </DrawerTitle>
-          <DrawerDescription>Please Fill the form below</DrawerDescription>
+          <DrawerDescription className="">Please Fill the form below</DrawerDescription>
         </DrawerHeader>
 
         <form
@@ -118,18 +120,18 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             name="education"
             control={control}
             render={({ field }) => (
-              <RadioGroup onValueChange={field.onChange} {...field}>
+              <RadioGroup className="" onValueChange={field.onChange} {...field}>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Intermediate" id="intermediate" />
-                  <Label htmlFor="intermediate">Intermediate</Label>
+                  <RadioGroupItem className="" value="Intermediate" id="intermediate" />
+                  <Label className="" htmlFor="intermediate">Intermediate</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Graduate" id="graduate" />
-                  <Label htmlFor="graduate">Graduate</Label>
+                  <RadioGroupItem className="" value="Graduate" id="graduate" />
+                  <Label className="" htmlFor="graduate">Graduate</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Post Graduate" id="post-graduate" />
-                  <Label htmlFor="post-graduate">Post Graduate</Label>
+                  <RadioGroupItem className="" value="Post Graduate" id="post-graduate" />
+                  <Label className="" htmlFor="post-graduate">Post Graduate</Label>
                 </div>
               </RadioGroup>
             )}
@@ -143,21 +145,21 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             className="flex-1 file:text-gray-500"
             {...register("resume")}
           />
-          {errors.resume && (
+          {/* {errors.resume && (
             <p className="text-red-500">{errors.resume.message}</p>
-          )}
+          )} */}
           {errorApply?.message && (
             <p className="text-red-500">{errorApply?.message}</p>
           )}
           {loadingApply && <BarLoader width={"100%"} color="#36d7b7" />}
-          <Button type="submit" variant="blue" size="lg">
+          <Button className="" type="submit" variant="blue" size="lg">
             Apply
           </Button>
         </form>
 
-        <DrawerFooter>
+        <DrawerFooter className="">
           <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button className="" size="default" variant="outline">Cancel</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import React from "react";
 import { Boxes, BriefcaseBusiness, Download, School } from "lucide-react";
 import {
   Card,
@@ -6,16 +7,16 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./ui/card";
+} from "./ui/card.jsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
-import { updateApplicationStatus } from "@/api/apiApplications";
-import useFetch from "@/hooks/use-fetch";
+} from "./ui/select.jsx";
+import { updateApplicationStatus } from "@/api/apiApplications.js";
+import useFetch from "@/hooks/use-fetch.jsx";
 import { BarLoader } from "react-spinners";
 
 const ApplicationCard = ({ application, isCandidate = false }) => {
@@ -28,7 +29,7 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
 
   const { 
     loading: loadingHiringStatus, 
-    fn: fnHiringStatus 
+    func: fnHiringStatus 
   } = useFetch(updateApplicationStatus,
     {
       job_id: application.job_id,
@@ -40,9 +41,9 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
   };
 
   return (
-    <Card>
+    <Card className="">
       {loadingHiringStatus && <BarLoader width={"100%"} color="#36d7b7" />}
-      <CardHeader>
+      <CardHeader className="">
         <CardTitle className="flex justify-between font-bold">
           {isCandidate
             ? `${application?.job?.title} at ${application?.job?.company?.name}`
@@ -84,11 +85,11 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
             <SelectTrigger className="w-52">
               <SelectValue placeholder="Application Status" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="applied">Applied</SelectItem>
-              <SelectItem value="interviewing">Interviewing</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectContent className="">
+              <SelectItem className="" value="applied">Applied</SelectItem>
+              <SelectItem className="" value="interviewing">Interviewing</SelectItem>
+              <SelectItem className="" value="hired">Hired</SelectItem>
+              <SelectItem className="" value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
         )}

@@ -7,16 +7,16 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+} from "@/components/ui/drawer.jsx";
+import { Button } from "./ui/button.jsx";
+import { Input } from "./ui/input.jsx";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import useFetch from "@/hooks/use-fetch";
-import { addNewCompany } from "@/api/apiCompanies";
+import useFetch from "@/hooks/use-fetch.jsx";
+import { addNewCompany } from "@/api/apiCompanies.js";
 import { BarLoader } from "react-spinners";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 const schema = z.object({
   name: z.string().min(1, { message: "Company name is required" }),
@@ -64,17 +64,17 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
   return (
     <Drawer>
       <DrawerTrigger>
-        <Button type="button" size="sm" variant="secondary">
+        <Button className="" type="button" size="sm" variant="secondary">
           Add Company
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Add a New Company</DrawerTitle>
+      <DrawerContent className="">
+        <DrawerHeader className="">
+          <DrawerTitle className="">Add a New Company</DrawerTitle>
         </DrawerHeader>
         <form className="flex gap-2 p-4 pb-0">
           {/* Company Name */}
-          <Input placeholder="Company name" {...register("name")} />
+          <Input className="" type="text" placeholder="Company name" {...register("name")} />
 
           {/* Company Logo */}
           <Input
@@ -89,20 +89,21 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
             type="button"
             onClick={handleSubmit(onSubmit)}
             variant="destructive"
+            size="default"
             className="w-40"
           >
             Add
           </Button>
         </form>
-        <DrawerFooter>
+        <DrawerFooter className="">
           {errors.name && <p className="text-red-500">{errors.name.message}</p>}
-          {errors.logo && <p className="text-red-500">{errors.logo.message}</p>}
+          {/* {errors.logo && <p className="text-red-500">{errors.logo.message}</p>} */}
           {errorAddCompany?.message && (
             <p className="text-red-500">{errorAddCompany?.message}</p>
           )}
           {loadingAddCompany && <BarLoader width={"100%"} color="#36d7b7" />}
           <DrawerClose asChild>
-            <Button type="button" variant="secondary">
+            <Button className="" size="default" type="button" variant="secondary">
               Cancel
             </Button>
           </DrawerClose>

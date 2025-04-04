@@ -150,7 +150,9 @@ const FractionalJobDetail = () => {
       </div>
 
       <h2 className="text-2xl sm:text-3xl font-bold">Preferred Experience</h2>
-      <MDEditor.Markdown
+      <MDEditor.
+// @ts-ignore
+      Markdown
         source={job?.preferred_experience}
         className="bg-transparent sm:text-lg" // add global ul styles - tutorial
       />

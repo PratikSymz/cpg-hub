@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/Roles";
+import { Button } from "@/components/ui/button.jsx";
+import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 import { useUser } from "@clerk/clerk-react";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +43,7 @@ function Onboarding() {
       <div className="mt-12 grid grid-cols-3 gap-4 w-full md:px-40">
         <Button
           variant="default"
+          size="default"
           className="h-32 text-2xl bg-cpg-brown hover:bg-cpg-brown/90"
           onClick={() => handleRoleSelection(ROLE_BRAND)}
         >
@@ -50,6 +51,7 @@ function Onboarding() {
         </Button>
         <Button
           variant="default"
+          size="default"
           className="h-32 text-2xl bg-cpg-brown hover:bg-cpg-brown/90"
           onClick={() => handleRoleSelection(ROLE_TALENT)}
         >
@@ -57,6 +59,7 @@ function Onboarding() {
         </Button>
         <Button
           variant="default"
+          size="default"
           className="h-32 text-2xl bg-cpg-brown hover:bg-cpg-brown/90"
           onClick={() => handleRoleSelection(ROLE_SERVICE)}
         >

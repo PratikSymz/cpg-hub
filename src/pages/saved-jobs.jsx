@@ -1,6 +1,7 @@
-import { getSavedJobs } from "@/api/apiFractionalJobs";
-import JobCard from "@/components/job-card";
-import useFetch from "@/hooks/use-fetch";
+import React from "react";
+import { getSavedJobs } from "@/api/apiFractionalJobs.js";
+import JobCard from "@/components/job-card.jsx";
+import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import { BarLoader } from "react-spinners";
@@ -11,7 +12,7 @@ const SavedJobs = () => {
   const {
     loading: loadingSavedJobs,
     data: savedJobs,
-    fn: fnSavedJobs,
+    func: fnSavedJobs,
   } = useFetch(getSavedJobs);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ const SavedJobs = () => {
                   key={saved.id}
                   job={saved?.job}
                   onJobAction={fnSavedJobs}
-                  savedInit={true}
+                  isMySubmission={true}
                 />
               );
             })
