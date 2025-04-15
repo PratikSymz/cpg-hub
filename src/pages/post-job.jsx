@@ -1,6 +1,5 @@
-import { getCompanies } from "@/api/apiCompanies.js";
+import { getBrand } from "@/api/apiBrands.js";
 import { addNewJob } from "@/api/apiFractionalJobs.js";
-import AddCompanyDrawer from "@/components/add-company-drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
 
 import { Input } from "@/components/ui/input.jsx";
@@ -14,12 +13,10 @@ import {
 } from "@/components/ui/select.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { ROLE_TALENT } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_TALENT } from "@/constants/roles.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import MDEditor from "@uiw/react-md-editor";
-import { State } from "country-state-city";
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -32,28 +29,30 @@ import {
 import clsx from "clsx";
 
 const schema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  scopeOfWork: z.enum(["Project-based", "Ongoing"], {
-    message: "Select a scope of work",
-  }),
-  workLocation: z.enum(["Remote", "In-office"], {
+  preferred_experience: z
+    .string()
+    .min(1, { message: "Preferred experience is required" }),
+  level_of_experience: z.array(z.string()).min(1, "Select at least one level"),
+  work_location: z.enum(["Remote", "In-office"], {
     message: "Select a work location",
   }),
-  areaOfSpec: z.array(z.string()).min(1, "Select at least one specialization"),
-  levelOfExp: z.array(z.string()).min(1, "Select at least one level"),
-  estimatedHrs: z.preprocess(
+  scope_of_work: z.enum(["Project-based", "Ongoing"], {
+    message: "Select a scope of work",
+  }),
+  job_title: z.string().min(1, { message: "Title is required" }),
+  estimated_hrs_per_wk: z.preprocess(
     (a) => parseInt(z.string().parse(a), 10),
     z.number().lte(40, "Must be 40 or below")
   ),
-  preferredExp: z
-    .string()
-    .min(1, { message: "Preferred experience is required" }),
-
-  company_id: z.string().min(1, { message: "Select or Add a new Company" }),
+  area_of_specialization: z
+    .array(z.string())
+    .min(1, "Select at least one specialization"),
 });
 
 const PostJob = () => {
+  // Load the current user -> Brand
   const { user, isLoaded } = useUser();
+
   const navigate = useNavigate();
 
   const {
@@ -63,10 +62,10 @@ const PostJob = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      areaOfSpec: [],
-      levelOfExp: [],
-      company_id: "",
-      preferredExp: "",
+      preferred_experience: "",
+      level_of_experience: [],
+      job_title: "",
+      area_of_specialization: [],
     },
     resolver: zodResolver(schema),
   });
@@ -75,14 +74,14 @@ const PostJob = () => {
     loading: loadingCreateJob,
     error: errorCreateJob,
     data: dataCreateJob,
-    fn: fnCreateJob,
+    func: funcCreateJob,
   } = useFetch(addNewJob);
 
   const onSubmit = (data) => {
-    fnCreateJob({
+    funcCreateJob({
       ...data,
-      recruiter_id: user.id,
-      isOpen: true,
+      brand_id: user.id,
+      is_open: true,
     });
   };
 
@@ -90,24 +89,27 @@ const PostJob = () => {
     if (dataCreateJob?.length > 0) navigate("/jobs");
   }, [loadingCreateJob]);
 
-  const {
-    loading: loadingCompanies,
-    data: companies,
-    func: fnCompanies,
-  } = useFetch(getCompanies);
+  // // Load the current brand info
+  // const {
+  //   loading: loadingBrand,
+  //   data: dataBrand,
+  //   func: funcBrand,
+  // } = useFetch(getBrand, {
+  //   id: user.id,
+  // });
 
-  useEffect(() => {
-    if (isLoaded) {
-      fnCompanies();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  // useEffect(() => {
+  //   if (isLoaded) {
+  //     funcBrand();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isLoaded]);
 
-  if (!isLoaded || loadingCompanies) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
-  }
+  // if (!isLoaded || loadingBrand) {
+  //   return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  // }
 
-  if (user?.unsafeMetadata?.role === ROLE_TALENT) {
+  if (user?.unsafeMetadata?.role !== ROLE_BRAND) {
     return <Navigate to="/jobs" />;
   }
 
@@ -125,10 +127,10 @@ const PostJob = () => {
           placeholder="Job Title"
           type="text"
           className="input-class"
-          {...register("title")}
+          {...register("job_title")}
         />
-        {errors.title && (
-          <p className="text-sm text-red-500">{errors.title.message}</p>
+        {errors.job_title && (
+          <p className="text-sm text-red-500">{errors.job_title.message}</p>
         )}
 
         <div className="flex flex-row gap-16 justify-around my-6">
@@ -137,7 +139,7 @@ const PostJob = () => {
             <Label className="mb-4 block">Scope of Work</Label>
             <Controller
               control={control}
-              name="scopeOfWork"
+              name="scope_of_work"
               render={({ field }) => (
                 <Select
                   onValueChange={field.onChange}
@@ -158,9 +160,9 @@ const PostJob = () => {
                 </Select>
               )}
             />
-            {errors.scopeOfWork && (
+            {errors.scope_of_work && (
               <p className="text-sm text-red-500">
-                {errors.scopeOfWork.message}
+                {errors.scope_of_work.message}
               </p>
             )}
           </div>
@@ -170,7 +172,7 @@ const PostJob = () => {
             <Label className="mb-4 block">Work Location</Label>
             <Controller
               control={control}
-              name="workLocation"
+              name="work_location"
               render={({ field }) => (
                 <Select
                   onValueChange={field.onChange}
@@ -191,9 +193,9 @@ const PostJob = () => {
                 </Select>
               )}
             />
-            {errors.workLocation && (
+            {errors.work_location && (
               <p className="text-sm text-red-500">
-                {errors.workLocation.message}
+                {errors.work_location.message}
               </p>
             )}
           </div>
@@ -205,11 +207,11 @@ const PostJob = () => {
               placeholder="40"
               type="text"
               className="input-class"
-              {...register("estimatedHrs")}
+              {...register("estimated_hrs_per_wk")}
             />
-            {errors.estimatedHrs && (
+            {errors.estimated_hrs_per_wk && (
               <p className="text-sm text-red-500">
-                {errors.estimatedHrs.message}
+                {errors.estimated_hrs_per_wk.message}
               </p>
             )}
           </div>
@@ -219,7 +221,7 @@ const PostJob = () => {
         <div className="flex flex-row gap-24 justify-around my-6">
           <div className="flex-1">
             <Controller
-              name="areaOfSpec"
+              name="area_of_specialization"
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
@@ -254,16 +256,16 @@ const PostJob = () => {
                 );
               }}
             />
-            {errors.areaOfSpec && (
+            {errors.area_of_specialization && (
               <p className="text-sm text-red-500">
-                {errors.areaOfSpec.message}
+                {errors.area_of_specialization.message}
               </p>
             )}
           </div>
 
           <div className="flex-1">
             <Controller
-              name="levelOfExp"
+              name="level_of_experience"
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
@@ -298,9 +300,9 @@ const PostJob = () => {
                 );
               }}
             />
-            {errors.areaOfSpec && (
+            {errors.level_of_experience && (
               <p className="text-sm text-red-500">
-                {errors.areaOfSpec.message}
+                {errors.level_of_experience.message}
               </p>
             )}
           </div>
@@ -312,11 +314,11 @@ const PostJob = () => {
           <Textarea
             placeholder="Preferred Experience"
             className="textarea-class resize block w-full h-24"
-            {...register("preferredExp")}
+            {...register("preferred_experience")}
           />
-          {errors.preferredExp && (
+          {errors.preferred_experience && (
             <p className="text-sm text-red-500">
-              {errors.preferredExp.message}
+              {errors.preferred_experience.message}
             </p>
           )}
         </div>

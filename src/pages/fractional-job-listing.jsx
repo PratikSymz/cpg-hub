@@ -19,7 +19,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import { getJobs } from "@/api/apiFractionalJobs.js";
-import { getCompanies } from "@/api/apiCompanies.js";
+import { getAllBrands } from "@/api/apiBrands.js";
 
 function FractionalJobListing() {
   // Once user is loaded, fetch job data -> session()
@@ -51,7 +51,7 @@ function FractionalJobListing() {
     loading: loadingCompanies,
     data: companies,
     func: funcCompanies,
-  } = useFetch(getCompanies);
+  } = useFetch(getAllBrands);
 
   useEffect(() => {
     if (isLoaded) funcJobs();

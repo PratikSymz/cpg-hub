@@ -14,7 +14,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { addNewCompany } from "@/api/apiCompanies.js";
+import { addNewBrand } from "@/api/apiBrands.js";
 import { BarLoader } from "react-spinners";
 import React, { useEffect } from "react";
 
@@ -29,7 +29,7 @@ const schema = z.object({
       {
         message: "Only Images are allowed",
       }
-    ), 
+    ),
 });
 
 const AddCompanyDrawer = ({ fetchCompanies }) => {
@@ -46,7 +46,7 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
     error: errorAddCompany,
     data: dataAddCompany,
     fn: fnAddCompany,
-  } = useFetch(addNewCompany);
+  } = useFetch(addNewBrand);
 
   const onSubmit = async (data) => {
     fnAddCompany({
@@ -74,7 +74,12 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
         </DrawerHeader>
         <form className="flex gap-2 p-4 pb-0">
           {/* Company Name */}
-          <Input className="" type="text" placeholder="Company name" {...register("name")} />
+          <Input
+            className=""
+            type="text"
+            placeholder="Company name"
+            {...register("name")}
+          />
 
           {/* Company Logo */}
           <Input
@@ -103,7 +108,12 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
           )}
           {loadingAddCompany && <BarLoader width={"100%"} color="#36d7b7" />}
           <DrawerClose asChild>
-            <Button className="" size="default" type="button" variant="secondary">
+            <Button
+              className=""
+              size="default"
+              type="button"
+              variant="secondary"
+            >
               Cancel
             </Button>
           </DrawerClose>

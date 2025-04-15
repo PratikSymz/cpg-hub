@@ -12,7 +12,7 @@ import {
 
 import { Button } from "./ui/button.jsx";
 import { BriefcaseBusiness, Heart, PenBox } from "lucide-react";
-import { ROLE_TALENT } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -31,6 +31,8 @@ const NavBar = () => {
       setSearch({});
     }
   };
+
+  const role = user?.unsafeMetadata?.role;
 
   return (
     <header className="px-6 py-4 border-0">
@@ -63,7 +65,7 @@ const NavBar = () => {
 
           {/* When signed in */}
           <SignedIn>
-            {user?.unsafeMetadata?.role !== ROLE_TALENT && (
+            {role !== ROLE_BRAND && (
               <Link to="/post-job">
                 <Button
                   variant="default"
@@ -88,16 +90,21 @@ const NavBar = () => {
               }}
             >
               <UserButton.MenuItems>
-                <UserButton.Link
-                  label="My Jobs"
-                  labelIcon={<BriefcaseBusiness size={15} />}
-                  href="/my-jobs"
-                />
-                <UserButton.Link
-                  label="Saved Jobs"
-                  labelIcon={<Heart size={15} />}
-                  href="/saved-jobs"
-                />
+                {role !== ROLE_SERVICE && (
+                  <UserButton.Link
+                    label="My Jobs"
+                    labelIcon={<BriefcaseBusiness size={15} />}
+                    href="/my-jobs"
+                  />
+                )}
+
+                {role !== ROLE_SERVICE && (
+                  <UserButton.Link
+                    label="Saved Jobs"
+                    labelIcon={<Heart size={15} />}
+                    href="/saved-jobs"
+                  />
+                )}
                 <UserButton.Action label="manageAccount" />
               </UserButton.MenuItems>
             </UserButton>
@@ -111,8 +118,8 @@ const NavBar = () => {
           onClick={handleOverlayClick}
         >
           <SignIn
-            signUpForceRedirectUrl="/onboarding"
-            fallbackRedirectUrl="/onboarding"
+            signUpForceRedirectUrl="/"
+            fallbackRedirectUrl="/"
           />
         </div>
       )}

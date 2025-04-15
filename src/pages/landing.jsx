@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useUser } from "@clerk/clerk-react";
 import {
   Card,
   CardHeader,
@@ -8,10 +9,32 @@ import {
 } from "@/components/ui/card.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { products } from "@/constants/products.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import CoincentricCircles from "@/components/CoincentricCircles.jsx";
+import { Lock } from "lucide-react";
+import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
 
 const LandingPage = () => {
+  const { user } = useUser();
+  const role = user?.unsafeMetadata?.role;
+  const onboarded = role !== undefined;
+
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSecondarySubmit = (product) => {
+    if (!onboarded || role !== product.secondaryButton.role) {
+      setOpen(true);
+    } else {
+      navigate(product.secondaryButton.link);
+    }
+  };
+
+  // to={
+  //   role === product.secondaryButton.role &&
+  //   product.secondaryButton.link
+  // }
+
   return (
     <main>
       <section className="w-full py-12">
@@ -46,7 +69,7 @@ const LandingPage = () => {
               </div>
 
               <CardFooter className="flex flex-row px-0 mt-6 gap-4">
-                <Link to={product.primaryButton.link}  className="flex-1">
+                <Link to={product.primaryButton.link} className="flex-1">
                   <Button
                     size="lg"
                     variant="default"
@@ -55,15 +78,21 @@ const LandingPage = () => {
                     {product.primaryButton.label}
                   </Button>
                 </Link>
-                <Link to={product.secondaryButton.link} className="flex-1">
+                <div className="flex-1">
+                  <OnboardingPromptDialog open={open} setOpen={setOpen} product={product.secondaryButton} />
                   <Button
                     size="lg"
                     variant="default"
                     className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-5 py-2"
+                    onClick={() => handleSecondarySubmit(product)}
                   >
+                    {(!onboarded ||
+                      role !== product.secondaryButton.role) && (
+                      <Lock size={20} />
+                    )}
                     {product.secondaryButton.label}
                   </Button>
-                </Link>
+                </div>
               </CardFooter>
             </Card>
           ))}

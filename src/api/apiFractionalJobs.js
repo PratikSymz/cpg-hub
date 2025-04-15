@@ -6,9 +6,9 @@ export async function getJobs(
 ) {
   const supabase = await supabaseClient(token);
 
-  let query = supabase.from("jobs").select(
+  let query = supabase.from("job_listings").select(
     `*, 
-    company: companies(company_name, company_hq, company_website, company_linkedin, brand_logo_url), 
+    brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url),
     saved: saved_jobs(id)`
   );
 
@@ -38,10 +38,10 @@ export async function getJobs(
 export async function getSingleJob(token, { job_id }) {
   const supabase = await supabaseClient(token);
   let query = supabase
-    .from("jobs")
+    .from("job_listings")
     .select(
       `*, 
-      company: companies(company_name, company_hq, company_website, company_linkedin, brand_logo_url), 
+      brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url),
       applications: applications(*)`
     )
     .eq("id", job_id)
@@ -62,7 +62,7 @@ export async function getSavedJobs(token) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase.from("saved_jobs").select(
     `*, 
-      job: jobs(*, company: companies(company_name, company_website, company_linkedin, brand_logo_url)`
+      job: job_listings(*, brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url))`
   );
 
   if (error) {
@@ -107,13 +107,14 @@ export async function saveJob(token, { alreadySaved }, saveData) {
 }
 
 // - Job isOpen toggle - (recruiter_id = auth.uid())
-export async function updateHiringStatus(token, { job_id }, isOpen) {
+export async function updateHiringStatus(token, { is_open, job_id }) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
-    .from("jobs")
-    .update({ isOpen })
+    .from("job_listings")
+    .update({ is_open })
     .eq("id", job_id)
-    .select();
+    .select()
+    .maybeSingle();
 
   if (error) {
     console.error("Error Updating Hiring Status:", error);
@@ -128,8 +129,8 @@ export async function getMyJobs(token, { recruiter_id }) {
   const supabase = await supabaseClient(token);
 
   const { data, error } = await supabase
-    .from("jobs")
-    .select("*, company: companies(name,logo_url)")
+    .from("job_listings")
+    .select(`*, brand: brand_profiles(brand_name, logo_url)`)
     .eq("recruiter_id", recruiter_id);
 
   if (error) {
@@ -145,7 +146,7 @@ export async function deleteJob(token, { job_id }) {
   const supabase = await supabaseClient(token);
 
   const { data, error: deleteError } = await supabase
-    .from("jobs")
+    .from("job_listings")
     .delete()
     .eq("id", job_id)
     .select();
@@ -163,7 +164,7 @@ export async function addNewJob(token, _, jobData) {
   const supabase = await supabaseClient(token);
 
   const { data, error } = await supabase
-    .from("jobs")
+    .from("job_listings")
     .insert([jobData])
     .select();
 

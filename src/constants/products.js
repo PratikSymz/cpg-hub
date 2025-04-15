@@ -1,3 +1,5 @@
+import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "./roles.js";
+
 // cardsData.js (optional file if you want to split data out)
 export const products = [
     {
@@ -11,7 +13,8 @@ export const products = [
       },
       secondaryButton: {
         label: "Post Job",
-        link: "/jobs",
+        link: "/post-job",
+        role: ROLE_BRAND
       },
     },
     {
@@ -21,11 +24,12 @@ export const products = [
         "Search this directory of profiles to find spot-on talent to help your CPG brand grow.",
       primaryButton: {
         label: "Explore",
-        link: "/talent",
+        link: "/talents",
       },
       secondaryButton: {
         label: "Add Profile",
-        link: "/talent",
+        link: "/post-talent",
+        role: ROLE_TALENT
       },
     },
     {
@@ -39,7 +43,8 @@ export const products = [
       },
       secondaryButton: {
         label: "Add Profile",
-        link: "/services",
+        link: "/post-service",
+        role: ROLE_SERVICE
       },
     },
   ];

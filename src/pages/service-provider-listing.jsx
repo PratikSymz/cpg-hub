@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { getJobs } from "@/api/apiFractionalJobs.js";
-import { getCompanies } from "@/api/apiCompanies.js";
+import { getAllBrands } from "@/api/apiBrands.js";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { areasOfSpecialization, levelsOfExperience } from "@/constants/filters.js";
+import {
+  areasOfSpecialization,
+  categoryOfService,
+  levelsOfExperience,
+  marketsCovered,
+} from "@/constants/filters.js";
 import JobCard from "@/components/job-card.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
@@ -16,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.jsx";
+import { getServices } from "@/api/apiServices.js";
 
 function ServiceProviderListing() {
   // Once user is loaded, fetch job data -> session()
@@ -23,35 +29,29 @@ function ServiceProviderListing() {
 
   // Job Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [areaSpec, setAreaSpec] = useState("");
-  const [levelExp, setLevelExp] = useState("");
+  const [category, setCategory] = useState("");
+  const [markets, setMarkets] = useState("");
 
   // Clear filters
   const clearFilters = () => {
     setSearchQuery("");
-    setAreaSpec("");
-    setLevelExp("");
+    setCategory("");
+    setMarkets("");
   };
 
   const {
-    func: funcJobs,
-    data: jobs,
-    loading: loadingJobs,
-  } = useFetch(getJobs, {
-    areaSpec,
-    levelExp,
+    func: funcServices,
+    data: services,
+    loading: loadingServices,
+  } = useFetch(getServices, {
+    category,
+    markets,
     searchQuery,
   });
 
-  const {
-    loading: loadingCompanies,
-    data: companies,
-    func: funcCompanies,
-  } = useFetch(getCompanies);
-
   useEffect(() => {
-    if (isLoaded) funcJobs();
-  }, [isLoaded, areaSpec, levelExp, searchQuery]);
+    if (isLoaded) funcServices();
+  }, [isLoaded, category, markets, searchQuery]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -72,7 +72,7 @@ function ServiceProviderListing() {
       </h1>
 
       {/* Loading bar */}
-      {loadingJobs && (
+      {loadingServices && (
         <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
       )}
 
@@ -83,18 +83,15 @@ function ServiceProviderListing() {
             <div className="mx-8 grid grid-cols-1 gap-8 w-full">
               <div>
                 <label className="mb-2 font-medium">
-                  Area of Specialization
+                  Category of Service
                 </label>
-                <Select
-                  value={areaSpec}
-                  onValueChange={setAreaSpec}
-                >
+                <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger className="mt-4 w-64">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="">
                     <SelectGroup>
-                      {areasOfSpecialization.map(({ label, value }) => {
+                      {categoryOfService.map(({ label, value }) => {
                         return (
                           <SelectItem className="" key={value} value={value}>
                             {label}
@@ -107,17 +104,14 @@ function ServiceProviderListing() {
               </div>
 
               <div>
-                <label className="mb-2 font-medium">Level of Experience</label>
-                <Select
-                  value={levelExp}
-                  onValueChange={setLevelExp}
-                >
+                <label className="mb-2 font-medium">Markets Covered</label>
+                <Select value={markets} onValueChange={setMarkets}>
                   <SelectTrigger className="mt-4 w-64">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="">
                     <SelectGroup>
-                      {levelsOfExperience.map(({ label, value }) => {
+                      {marketsCovered.map(({ label, value }) => {
                         return (
                           <SelectItem className="" key={value} value={value}>
                             {label}
@@ -165,15 +159,15 @@ function ServiceProviderListing() {
           </form>
 
           {/* Service Listing */}
-          {loadingJobs === false && (
+          {loadingServices === false && (
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {jobs?.length ? (
-                jobs.map((job) => {
+              {services?.length ? (
+                services.map((service) => {
                   return (
                     <JobCard
-                      key={job.id}
-                      job={job}
-                      isSaved={job?.saved?.length > 0}
+                      key={service.id}
+                      job={service}
+                      isSaved={service?.saved?.length > 0}
                     />
                   );
                 })

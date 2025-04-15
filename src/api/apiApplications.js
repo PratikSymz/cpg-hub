@@ -1,4 +1,4 @@
-import supabaseClient, { supabaseUrl } from "@/utils/supabase";
+import supabaseClient, { supabaseUrl } from "@/utils/supabase.js";
 
 // - Apply to job ( candidate )
 export async function applyToJob(token, _, jobData) {

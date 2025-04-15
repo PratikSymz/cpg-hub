@@ -12,12 +12,12 @@ const SavedJobs = () => {
   const {
     loading: loadingSavedJobs,
     data: savedJobs,
-    func: fnSavedJobs,
+    func: funcSavedJobs,
   } = useFetch(getSavedJobs);
 
   useEffect(() => {
     if (isLoaded) {
-      fnSavedJobs();
+      funcSavedJobs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded]);
@@ -36,11 +36,12 @@ const SavedJobs = () => {
         <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {savedJobs?.length ? (
             savedJobs?.map((saved) => {
+              // console.log(saved);
               return (
                 <JobCard
                   key={saved.id}
                   job={saved?.job}
-                  onJobAction={fnSavedJobs}
+                  onJobAction={funcSavedJobs}
                   isMySubmission={true}
                 />
               );

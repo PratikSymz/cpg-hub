@@ -1,55 +1,85 @@
-import express from "express";
-import { Clerk } from "@clerk/clerk-sdk-node";
-import { createClerkClient } from "@clerk/backend";
+import supabaseClient from "@/utils/supabase.js";
 
-const app = express();
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-});
+const table_name = "talent_profiles";
 
-// Initialize Clerk client using the secret key
-const clerk = Clerk({ apiKey: process.env.CLERK_SECRET_KEY });
+// Fetch Brands
+export async function getAllTalent(token) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase.from(table_name).select("*");
 
-export async function getUserList(options = {}) {
-  try {
-    const users = await clerkClient.users.getUserList(options);
-    return users;
-  } catch (error) {
-    console.error("Error fetching user list:", error);
-    throw error;
+  if (error) {
+    console.error("Error fetching Talents:", error);
+    return null;
   }
+
+  return data;
 }
 
-export async function getUserById(userId) {
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    return user;
-  } catch (error) {
-    console.error(`Error fetching user ${userId}:`, error);
-    throw error;
+// Fetch single Talent
+export async function getTalent(token, id) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .select("*")
+    .eq("id", id)
+    .limit(1);
+
+  if (error) {
+    console.error(`Error fetching Talent ${id}:`, error);
+    return null;
   }
+
+  return data;
 }
 
-export async function updateUserMetadata(userId, data) {
-  await clerkClient.users.updateUserMetadata(userId, {
-    publicMetadata: {
-      portfolioLink: data.portfolioLink,
-      linkedIn: data.linkedIn,
-      industryExperience: data.industryExperience,
-      levelOfExperience: data.levelOfExperience,
-      areaOfSpecialization: data.areaOfSpecialization,
-    },
-    privateMetadata: {
-      resumeUrl: data.resumeUrl,
-    },
-  });
+// Add Talent
+export async function addNewTalent(token, _, talentData) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .insert([talentData])
+    .select();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error submitting Talent");
+  }
+
+  return data;
 }
 
-export async function deleteUser(userId) {
-  try {
-    await clerkClient.users.deleteUser(userId);
-  } catch (error) {
-    console.error(`Error deleting user ${userId}:`, error);
-    throw error;
+// Update Talent Info
+export async function updateTalent(token, talent_id, talent_data) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .update(talent_data)
+    .eq("id", talent_id)
+    .select();
+
+  if (error) {
+    console.error("Error Updating Talent information:", error);
+    return null;
   }
+
+  return data;
+}
+
+// Delete Talent
+export async function deleteTalent(token, talent_id) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("id", talent_id)
+    .select();
+
+  if (error) {
+    console.error("Error deleting talent:", error);
+    return data;
+  }
+
+  return data;
 }

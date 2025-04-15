@@ -12,6 +12,8 @@ import SavedJobs from "./pages/saved-jobs.jsx";
 import MyJobs from "./pages/my-jobs.jsx";
 import ServiceProviderListing from "./pages/service-provider-listing.jsx";
 import FractionalTalentListing from "./pages/fractional-talent.jsx";
+import BrandOnboarding from "./pages/brand-onboarding.jsx";
+import ServiceOnboarding from "./pages/service-onboarding.jsx";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ const router = createBrowserRouter([
         element: <Onboarding />,
       },
       {
+        path: "/onboarding/brand",
+        element: <BrandOnboarding />,
+      },
+      {
+        path: "/onboarding/service",
+        element: <ServiceOnboarding />,
+      },
+      {
         path: "/jobs",
         element: <FractionalJobListing />,
       },
@@ -34,7 +44,7 @@ const router = createBrowserRouter([
         element: <ServiceProviderListing />,
       },
       {
-        path: "/talent",
+        path: "/talents",
         element: <FractionalTalentListing />,
       },
       {

@@ -22,7 +22,7 @@ const JobCard = ({
 }) => {
   const [saved, setSaved] = useState(isSaved);
   const { user } = useUser();
-
+  
   // Saving jobs
   const {
     loading: loadingSavedJob,
@@ -77,11 +77,12 @@ const JobCard = ({
 
       <CardContent className="flex flex-col gap-4 flex-1">
         <div className="flex justify-between">
-          {job.company && (
-            <img src={job.company.brand_logo_url} className="h-6" />
-          )}
+          <div className="flex flex-row gap-4">
+            {job.brand && <img src={job.brand.logo_url} className="h-6" />}
+            {job.brand && job.brand.brand_name}
+          </div>
           <div className="flex gap-2 items-center text-black/90">
-            <MapPinIcon size={15} /> {job.company_hq}
+            <MapPinIcon size={15} /> {job.brand && job.brand.brand_hq}
           </div>
         </div>
         <hr />
@@ -97,7 +98,8 @@ const JobCard = ({
             {"Scope of Work: "} {job.scope_of_work}
           </div>
           <div className="flex gap-2 items-center text-black/90">
-            {"Area of Specialization: "} {job.area_of_specialization}
+            {"Area of Specialization: "}{" "}
+            {JSON.parse(job.area_of_specialization).join(", ")}
           </div>
         </div>
       </CardContent>
@@ -112,8 +114,7 @@ const JobCard = ({
             More Details
           </Button>
         </Link>
-
-        // Handle save
+        {/* Handle save */}
         {!isMySubmission && (
           <Button
             variant="outline"
