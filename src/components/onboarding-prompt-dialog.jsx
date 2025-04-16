@@ -23,7 +23,7 @@ export default function OnboardingPromptDialog({
   const navigate = useNavigate();
 
   const title = isFirstTime
-    ? "You're about to onboard as a service provider"
+    ? `You're about to onboard as a ${role.toUpperCase()}`
     : `You're already registered as a ${currentRole}.`;
 
   const message = isFirstTime
