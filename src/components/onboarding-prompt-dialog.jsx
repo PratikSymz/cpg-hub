@@ -11,17 +11,24 @@ import {
 import { Button } from "@/components/ui/button.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROLE_BRAND, ROLE_SERVICE } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
-export default function OnboardingPromptDialog({ open, setOpen, product }) {
+export default function OnboardingPromptDialog({
+  open,
+  setOpen,
+  role,
+  currentRole,
+  isFirstTime,
+}) {
   const navigate = useNavigate();
-  const role = product.role;
-  const message =
-    role === ROLE_BRAND
-      ? "In order to post a job, please set up your brand profile"
-      : role === ROLE_SERVICE
-      ? "This is a confirmation that you'll be setting up as a service"
-      : "This is a confirmation that you'll be setting up as a talent";
+
+  const title = isFirstTime
+    ? "You're about to onboard as a service provider"
+    : `You're already registered as a ${currentRole}.`;
+
+  const message = isFirstTime
+    ? `This will confirm your setup as a ${role}.`
+    : `You can't switch roles once you've onboarded. Please continue using the platform as a ${currentRole}.`;
 
   const handleRedirect = () => {
     setOpen(false);
@@ -39,8 +46,10 @@ export default function OnboardingPromptDialog({ open, setOpen, product }) {
       <DialogTrigger asChild></DialogTrigger>
       <DialogContent className="">
         <DialogHeader className="">
-          <DialogTitle className="">Unlock</DialogTitle>
-          <DialogDescription className="">{message}</DialogDescription>
+          <DialogTitle className="">{title}</DialogTitle>
+          <DialogDescription className="">
+            {message}
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2">
           <Button
@@ -51,14 +60,16 @@ export default function OnboardingPromptDialog({ open, setOpen, product }) {
           >
             Cancel
           </Button>
-          <Button
-            className=""
-            size="default"
-            variant="default"
-            onClick={handleRedirect}
-          >
-            Continue
-          </Button>
+          {isFirstTime && (
+            <Button
+              className=""
+              size="default"
+              variant="default"
+              onClick={handleRedirect}
+            >
+              Continue
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import CoincentricCircles from "@/components/CoincentricCircles.jsx";
-import NavBar from "@/components/NavBar.jsx";
+import NavBar from "@/components/nav-bar.jsx";
 import React from "react";
 import { Outlet } from "react-router-dom";
 

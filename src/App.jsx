@@ -51,6 +51,10 @@ const router = createBrowserRouter([
         element: <FractionalJobDetail />,
       },
       {
+        path: "/edit-job/:id",
+        element: <FractionalJobDetail />,
+      },
+      {
         path: "/services",
         element: <ServiceProviderListing />,
       },
@@ -59,11 +63,19 @@ const router = createBrowserRouter([
         element: <ServiceProviderDetail />,
       },
       {
+        path: "/edit-service/:id",
+        element: <ServiceProviderDetail />,
+      },
+      {
         path: "/talents",
         element: <FractionalTalentListing />,
       },
       {
         path: "/talents/:id",
+        element: <FractionalTalentDetail />,
+      },
+      {
+        path: "/edit-talent/:id",
         element: <FractionalTalentDetail />,
       },
       {

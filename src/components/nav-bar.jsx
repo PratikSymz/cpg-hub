@@ -33,6 +33,17 @@ const NavBar = () => {
   };
 
   const role = user?.unsafeMetadata?.role;
+  const getGreeting = () => {
+    if (!user) return null;
+
+    const name = user.firstName;
+    const roleLabel =
+      typeof role === "string"
+        ? `(${role.charAt(0).toUpperCase() + role.slice(1)})`
+        : "";
+
+    return name ? `Hi, ${name} ${roleLabel}` : null;
+  };
 
   return (
     <header className="px-6 py-4 border-0">
@@ -50,7 +61,14 @@ const NavBar = () => {
           </p>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex items-center gap-8">
+          {/* 🔧 Show greeting if signed in */}
+          {user && (
+            <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
+              {getGreeting()}
+            </span>
+          )}
+
           {/* When signed out */}
           <SignedOut>
             <Button
@@ -117,10 +135,7 @@ const NavBar = () => {
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
           onClick={handleOverlayClick}
         >
-          <SignIn
-            signUpForceRedirectUrl="/"
-            fallbackRedirectUrl="/"
-          />
+          <SignIn signUpForceRedirectUrl="/" fallbackRedirectUrl="/" />
         </div>
       )}
     </header>
