@@ -3,8 +3,7 @@ import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
 import { useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Briefcase, DoorClosed, DoorOpen, MapPinIcon } from "lucide-react";
-
+import { DoorClosed, DoorOpen } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,13 +14,10 @@ import {
 import { ApplyJobDrawer } from "@/components/apply-job.jsx";
 import ApplicationCard from "@/components/application-card.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
-import {
-  getJobs,
-  getSingleJob,
-  updateHiringStatus,
-} from "@/api/apiFractionalJobs.js";
+import { getSingleJob, updateHiringStatus } from "@/api/apiFractionalJobs.js";
 import { Label } from "@radix-ui/react-label";
 
+const className = "";
 const FractionalJobDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
@@ -32,7 +28,6 @@ const FractionalJobDetail = () => {
     data: job,
     func: funcJob,
   } = useFetch(getSingleJob, { job_id: id });
-  console.log(job);
 
   useEffect(() => {
     if (isLoaded) funcJob();
@@ -47,7 +42,9 @@ const FractionalJobDetail = () => {
   // Update hiring status and re-fetch job details
   const handleStatusChange = (value) => {
     const isOpen = value === "open";
-    funcHiringStatus({ is_open: isOpen, job_id: id }).then(() => funcJob({ job_id: id }));
+    funcHiringStatus({ is_open: isOpen, job_id: id }).then(() =>
+      funcJob({ job_id: id })
+    );
   };
 
   if (!isLoaded || loadingJob) {
@@ -311,9 +308,13 @@ const FractionalJobDetail = () => {
                 placeholder={`Currently ${job?.is_open ? "Open" : "Closed"}`}
               />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
+            <SelectContent className={className}>
+              <SelectItem className={className} value="open">
+                Open
+              </SelectItem>
+              <SelectItem className={className} value="closed">
+                Closed
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

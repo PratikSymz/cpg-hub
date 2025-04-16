@@ -13,15 +13,18 @@ export async function getJobs(
   );
 
   if (area_specialization) {
-    query = query.contains("area_of_specialization", area_specialization);
+    query = query.ilike("area_of_specialization", `%${area_specialization}%`);
   }
 
   if (level_exp) {
-    query = query.contains("level_of_experience", level_exp);
+    query = query.ilike("level_of_experience", `%${level_exp}%`);
   }
 
+  const safeQuery = search_query.replace(/[%_]/g, "\\$&");
   if (search_query) {
-    query = query.ilike("job_title", `%${search_query}%`);
+    query = query.or(
+      `job_title.ilike.%${safeQuery}%`
+    );
   }
 
   const { data, error } = await query;

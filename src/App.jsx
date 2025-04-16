@@ -11,9 +11,12 @@ import PostJob from "./pages/post-job.jsx";
 import SavedJobs from "./pages/saved-jobs.jsx";
 import MyJobs from "./pages/my-jobs.jsx";
 import ServiceProviderListing from "./pages/service-provider-listing.jsx";
-import FractionalTalentListing from "./pages/fractional-talent.jsx";
 import BrandOnboarding from "./pages/brand-onboarding.jsx";
 import ServiceOnboarding from "./pages/service-onboarding.jsx";
+import ServiceProviderDetail from "./pages/service-provider-detail.jsx";
+import FractionalTalentListing from "./pages/fractional-talent-listing.jsx";
+import FractionalTalentDetail from "./pages/fractional-talent-detail.jsx";
+import TalentOnboarding from "./pages/talent-onboarding.jsx";
 
 const router = createBrowserRouter([
   {
@@ -36,20 +39,32 @@ const router = createBrowserRouter([
         element: <ServiceOnboarding />,
       },
       {
+        path: "/onboarding/talent",
+        element: <TalentOnboarding />,
+      },
+      {
         path: "/jobs",
         element: <FractionalJobListing />,
+      },
+      {
+        path: "/job/:id",
+        element: <FractionalJobDetail />,
       },
       {
         path: "/services",
         element: <ServiceProviderListing />,
       },
       {
+        path: "/services/:id",
+        element: <ServiceProviderDetail />,
+      },
+      {
         path: "/talents",
         element: <FractionalTalentListing />,
       },
       {
-        path: "/job/:id",
-        element: <FractionalJobDetail />,
+        path: "/talents/:id",
+        element: <FractionalTalentDetail />,
       },
       {
         path: "/post-job",

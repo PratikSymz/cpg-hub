@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useWatch } from "react-hook-form";
 import { BarLoader } from "react-spinners";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { addNewService } from "@/api/apiServices.js"; // <- define this API
+import { addNewService } from "@/api/apiServices.js";
 import {
   categoryOfService,
   marketsCovered,

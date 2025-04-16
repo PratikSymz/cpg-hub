@@ -79,15 +79,18 @@ const LandingPage = () => {
                   </Button>
                 </Link>
                 <div className="flex-1">
-                  <OnboardingPromptDialog open={open} setOpen={setOpen} product={product.secondaryButton} />
+                  <OnboardingPromptDialog
+                    open={open}
+                    setOpen={setOpen}
+                    product={product.secondaryButton}
+                  />
                   <Button
                     size="lg"
                     variant="default"
                     className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-5 py-2"
                     onClick={() => handleSecondarySubmit(product)}
                   >
-                    {(!onboarded ||
-                      role !== product.secondaryButton.role) && (
+                    {(!onboarded || role !== product.secondaryButton.role) && (
                       <Lock size={20} />
                     )}
                     {product.secondaryButton.label}

@@ -35,7 +35,6 @@ export async function getBrand(token, id) {
 // Add Brand
 export async function addNewBrand(token, _, brandData) {
   const supabase = await supabaseClient(token);
-  console.log(brandData);
 
   const random = Math.floor(Math.random() * 90000);
   const file = brandData.logo?.[0];

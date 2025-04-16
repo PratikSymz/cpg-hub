@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { categoryOfService, marketsCovered } from "@/constants/filters.js";
 import { useUser } from "@clerk/clerk-react";
+import TalentCard from "@/components/talent-card.jsx";
+import { getAllTalent } from "@/api/apiTalent.js";
 import { BarLoader } from "react-spinners";
-import { Input } from "@/components/ui/input.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import {
   Select,
@@ -13,38 +13,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.jsx";
-import { getServices } from "@/api/apiServices.js";
-import ServiceProviderCard from "@/components/service-provider-card.jsx";
 
-function ServiceProviderListing() {
+import {
+  areasOfSpecialization,
+  levelsOfExperience,
+} from "@/constants/filters.js";
+import { Input } from "@/components/ui/input.jsx";
+
+const FractionalTalentListing = () => {
   // Once user is loaded, fetch job data -> session()
   const { isLoaded } = useUser();
 
   // Job Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState("");
-  const [markets, setMarkets] = useState("");
+  const [areaSpec, setAreaSpec] = useState("");
+  const [levelExp, setLevelExp] = useState("");
 
   // Clear filters
   const clearFilters = () => {
     setSearchQuery("");
-    setCategory("");
-    setMarkets("");
+    setAreaSpec("");
+    setLevelExp("");
   };
 
   const {
-    func: funcServices,
-    data: services,
-    loading: loadingServices,
-  } = useFetch(getServices, {
-    category_of_service: category,
-    markets_covered: markets,
+    func: funcTalents,
+    data: talentList,
+    loading,
+    error,
+  } = useFetch(getAllTalent, {
+    area_specialization: areaSpec,
+    level_exp: levelExp,
     search_query: searchQuery,
   });
 
   useEffect(() => {
-    if (isLoaded) funcServices();
-  }, [isLoaded, category, markets, searchQuery]);
+    if (isLoaded) funcTalents();
+  }, [isLoaded, areaSpec, levelExp, searchQuery]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -59,15 +64,13 @@ function ServiceProviderListing() {
   }
 
   return (
-    <div className="mt-8">
-      <h1 className="font-extrabold text-6xl sm:text-7xl text-center pb-8">
-        Service Providers/Brokers
+    <div className="px-6 py-10">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        Browse Fractional Talent
       </h1>
 
-      {/* Loading bar */}
-      {loadingServices && (
-        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
-      )}
+      {loading && <BarLoader width="100%" color="#36d7b7" />}
+      {error && <p className="text-red-500">Error loading talent.</p>}
 
       <div className="flex flex-row w-full">
         {/* Filters */}
@@ -75,14 +78,16 @@ function ServiceProviderListing() {
           <div className="flex flex-col items-center justify-center md:flex-row">
             <div className="mx-8 grid grid-cols-1 gap-8 w-full">
               <div>
-                <label className="mb-2 font-medium">Category of Service</label>
-                <Select value={category} onValueChange={setCategory}>
+                <label className="mb-2 font-medium">
+                  Area of Specialization
+                </label>
+                <Select value={areaSpec} onValueChange={setAreaSpec}>
                   <SelectTrigger className="mt-4 w-64">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="">
                     <SelectGroup>
-                      {categoryOfService.map(({ label, value }) => {
+                      {areasOfSpecialization.map(({ label, value }) => {
                         return (
                           <SelectItem className="" key={value} value={label}>
                             {label}
@@ -95,14 +100,14 @@ function ServiceProviderListing() {
               </div>
 
               <div>
-                <label className="mb-2 font-medium">Markets Covered</label>
-                <Select value={markets} onValueChange={setMarkets}>
+                <label className="mb-2 font-medium">Level of Experience</label>
+                <Select value={levelExp} onValueChange={setLevelExp}>
                   <SelectTrigger className="mt-4 w-64">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="">
                     <SelectGroup>
-                      {marketsCovered.map(({ label, value }) => {
+                      {levelsOfExperience.map(({ label, value }) => {
                         return (
                           <SelectItem className="" key={value} value={label}>
                             {label}
@@ -136,7 +141,7 @@ function ServiceProviderListing() {
           >
             <Input
               type="text"
-              placeholder="Search Services"
+              placeholder="Search Talent"
               name="search-query"
               className="h-full flex-1 placeholder:text-black/60 placeholder:font-medium text-black/90 px-4 text-md"
             />
@@ -150,24 +155,20 @@ function ServiceProviderListing() {
             </Button>
           </form>
 
-          {/* Service Listing */}
-          {loadingServices === false && (
-            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {services?.length ? (
-                services.map((service) => {
-                  return (
-                    <ServiceProviderCard key={service.id} service={service} />
-                  );
-                })
-              ) : (
-                <div>No Services Found</div>
-              )}
-            </div>
-          )}
+          {/* Talent Listing */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            {talentList?.length ? (
+              talentList?.map((talent) => (
+                <TalentCard key={talent.id} talent={talent} />
+              ))
+            ) : (
+              <div>No Talent Found</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default ServiceProviderListing;
+export default FractionalTalentListing;

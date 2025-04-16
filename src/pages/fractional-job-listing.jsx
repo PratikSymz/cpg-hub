@@ -13,13 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.jsx";
-
 import {
   areasOfSpecialization,
   levelsOfExperience,
 } from "@/constants/filters.js";
 import { getJobs } from "@/api/apiFractionalJobs.js";
-import { getAllBrands } from "@/api/apiBrands.js";
 
 function FractionalJobListing() {
   // Once user is loaded, fetch job data -> session()
@@ -42,16 +40,10 @@ function FractionalJobListing() {
     data: jobs,
     loading: loadingJobs,
   } = useFetch(getJobs, {
-    areaSpec,
-    levelExp,
-    searchQuery,
+    area_specialization: areaSpec,
+    level_exp: levelExp,
+    search_query: searchQuery,
   });
-
-  const {
-    loading: loadingCompanies,
-    data: companies,
-    func: funcCompanies,
-  } = useFetch(getAllBrands);
 
   useEffect(() => {
     if (isLoaded) funcJobs();
@@ -62,7 +54,7 @@ function FractionalJobListing() {
     let formData = new FormData(e.target);
 
     const query = formData.get("search-query");
-    if (query) setSearchQuery(searchQuery);
+    if (typeof query === "string") setSearchQuery(query);
   };
 
   if (!isLoaded) {
@@ -97,7 +89,7 @@ function FractionalJobListing() {
                     <SelectGroup>
                       {areasOfSpecialization.map(({ label, value }) => {
                         return (
-                          <SelectItem className="" key={value} value={value}>
+                          <SelectItem className="" key={value} value={label}>
                             {label}
                           </SelectItem>
                         );
@@ -117,7 +109,7 @@ function FractionalJobListing() {
                     <SelectGroup>
                       {levelsOfExperience.map(({ label, value }) => {
                         return (
-                          <SelectItem className="" key={value} value={value}>
+                          <SelectItem className="" key={value} value={label}>
                             {label}
                           </SelectItem>
                         );
@@ -156,6 +148,7 @@ function FractionalJobListing() {
             <Button
               variant="default"
               size="default"
+              type="submit"
               className="h-full bg-cpg-brown hover:bg-cpg-brown/90 sm:w-28"
             >
               Search
