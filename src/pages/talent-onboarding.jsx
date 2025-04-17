@@ -85,7 +85,7 @@ const TalentOnboarding = () => {
   }
 
   if (data) {
-    navigate("/talent");
+    navigate("/talents");
   }
 
   const email = user?.emailAddresses?.[0]?.emailAddress;

@@ -43,7 +43,7 @@ export async function getTalent(token, { talent_id }) {
 }
 
 // Add Talent
-export async function addNewTalent(token, _, talentData, { user_id }) {
+export async function addNewTalent(token, _, talentData) {
   const supabase = await supabaseClient(token);
 
   const folder = "talent";
@@ -53,8 +53,7 @@ export async function addNewTalent(token, _, talentData, { user_id }) {
   // Get a safe file extension
   const extension = file.name.split(".").pop().toLowerCase();
   // Generate a clean file name
-  const safeName = user_id.trim().replace(/\s+/g, "-").toLowerCase();
-  const fileName = `logo-${random}-${safeName}.${extension}`;
+  const fileName = `logo-${random}-${"safeName"}.${extension}`;
 
   // Upload the file
   const { error: storageError } = await supabase.storage
