@@ -17,6 +17,7 @@ import ServiceProviderDetail from "./pages/service-provider-detail.jsx";
 import FractionalTalentListing from "./pages/fractional-talent-listing.jsx";
 import FractionalTalentDetail from "./pages/fractional-talent-detail.jsx";
 import TalentOnboarding from "./pages/talent-onboarding.jsx";
+import ProtectedRoute from "./components/protected-route.jsx";
 
 const router = createBrowserRouter([
   {
@@ -27,16 +28,20 @@ const router = createBrowserRouter([
         element: <LandingPage />,
       },
       {
-        path: "/onboarding",
-        element: <Onboarding />,
-      },
-      {
         path: "/onboarding/brand",
-        element: <BrandOnboarding />,
+        element: (
+          <ProtectedRoute>
+            <BrandOnboarding />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/onboarding/service",
-        element: <ServiceOnboarding />,
+        element: (
+          <ProtectedRoute>
+            <ServiceOnboarding />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/onboarding/talent",

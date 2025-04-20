@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "@clerk/clerk-react";
@@ -16,6 +16,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import clsx from "clsx";
+import { X } from "lucide-react";
 
 const schema = z.object({
   level_of_experience: z
@@ -80,6 +81,14 @@ const TalentOnboarding = () => {
     });
   };
 
+  const selectedOther = useWatch({ control, name: "area_of_specialization" });
+  // Define what triggers the next field
+  // const shouldShowOtherInput = selectedOther?.some((val) =>
+  //   ["Other"].includes(val)
+  // );
+  const [otherSpec, setOtherSpec] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
+
   if (!isLoaded || loading) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
@@ -91,6 +100,14 @@ const TalentOnboarding = () => {
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const imageUrl = user?.imageUrl;
   const fullName = user?.fullName;
+
+  const toTitleCase = (str) =>
+    str
+      .toLowerCase()
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
   return (
     <div className="flex flex-col gap-10 mt-10">
@@ -141,10 +158,26 @@ const TalentOnboarding = () => {
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
+                  if (value === "Other") {
+                    setShowOtherInput((prev) => !prev);
+                    return;
+                  }
+
                   const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
+
                   field.onChange(updated);
+                };
+
+                const removeValue = (value) => {
+                  const updated = field.value.filter((v) => v !== value);
+                  field.onChange(updated);
+
+                  // if (value === "Other") {
+                  //   setShowOtherInput(false);
+                  //   setOtherSpec("");
+                  // }
                 };
 
                 return (
@@ -165,6 +198,60 @@ const TalentOnboarding = () => {
                         >
                           {label}
                         </button>
+                      ))}
+                    </div>
+
+                    {/* Other input box */}
+                    {showOtherInput && (
+                      <div className="flex gap-2 items-center my-4">
+                        <Input
+                          type="text"
+                          placeholder="Enter your specialization"
+                          value={otherSpec}
+                          onChange={(e) => setOtherSpec(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          className=""
+                          variant="default"
+                          size="lg"
+                          type="button"
+                          onClick={() => {
+                            const trimmed = toTitleCase(otherSpec.trim());
+                            // Check: valid string, not a duplicate (case-insensitive)
+                            const isDuplicate = field.value.some(
+                              (val) =>
+                                val.toLowerCase() === trimmed.toLowerCase()
+                            );
+                             // Min 3 letters, no special chars
+                            const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
+                            if (trimmed && !isDuplicate && isValid) {
+                              field.onChange([...field.value, trimmed]);
+                              setOtherSpec("");
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Show selected values as tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {field.value.map((val, idx) => (
+                        <span
+                          key={idx}
+                          className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"
+                        >
+                          {val}
+                          <button
+                            type="button"
+                            onClick={() => removeValue(val)}
+                            className="ml-2 text-teal-800 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </span>
                       ))}
                     </div>
                   </div>

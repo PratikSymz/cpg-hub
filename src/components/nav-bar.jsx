@@ -51,7 +51,7 @@ const NavBar = () => {
         <div className="flex items-center space-x-8">
           <Link to={"/"}>
             <img
-              src={"/CPG_HUB_Logo.png"}
+              src={"/cpg_favicon.png"}
               alt="CPG Hub Logo"
               className="h-26 w-auto"
             />
@@ -61,13 +61,13 @@ const NavBar = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
           {/* 🔧 Show greeting if signed in */}
-          {user && (
+          {/* {user && (
             <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
               {getGreeting()}
             </span>
-          )}
+          )} */}
 
           {/* When signed out */}
           <SignedOut>
@@ -96,6 +96,7 @@ const NavBar = () => {
             )}
 
             <UserButton
+              showName={true}
               appearance={{
                 elements: {
                   userButtonTrigger: "w-16 h-16", // outer clickable wrapper
