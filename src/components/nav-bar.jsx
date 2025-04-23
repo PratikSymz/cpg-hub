@@ -83,7 +83,7 @@ const NavBar = () => {
 
           {/* When signed in */}
           <SignedIn>
-            {role !== ROLE_BRAND && (
+            {role && role === ROLE_BRAND && (
               <Link to="/post-job">
                 <Button
                   variant="default"

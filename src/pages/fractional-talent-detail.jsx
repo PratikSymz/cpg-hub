@@ -2,9 +2,29 @@ import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getTalent } from "@/api/apiTalent.js"; // <- fetch talent_profiles by ID
-import { ExternalLink } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { BarLoader } from "react-spinners";
 import { useUser } from "@clerk/clerk-react";
+import { Button } from "@/components/ui/button.jsx";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
+
+const tabs = [
+  {
+    name: "About",
+    value: "about",
+    content: "",
+  },
+  {
+    name: "About",
+    value: "about_1",
+    content: "",
+  },
+  {
+    name: "About",
+    value: "about_2",
+    content: "",
+  },
+];
 
 const FractionalTalentDetail = () => {
   const { id } = useParams();
@@ -55,11 +75,19 @@ const FractionalTalentDetail = () => {
           />
           <div>
             <h1 className="text-3xl font-bold">{full_name}</h1>
-            <p className="text-sm text-muted-foreground">Fractional Talent</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Fractional Talent
+            </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
+          <Button variant="outline" size="lg" className="rounded-3xl px-7 py-5">
+            Contact
+          </Button>
+        </div>
+
+        {/* <div className="flex flex-col gap-2 text-sm">
           {linkedin_url && (
             <a
               href={linkedin_url}
@@ -90,8 +118,16 @@ const FractionalTalentDetail = () => {
               Resume <ExternalLink size={14} />
             </a>
           )}
-        </div>
+        </div> */}
       </div>
+
+      <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
+
+      <div className="flex flex-col gap-2 text-sm w-fit">
+          <Button variant="outline" size="default" className="rounded-3xl px-7 py-5">
+            About
+          </Button>
+        </div>
 
       {/* Experience Section */}
       <div className="flex flex-col gap-4">
@@ -108,7 +144,7 @@ const FractionalTalentDetail = () => {
           {JSON.parse(level_of_experience).map((level, idx) => (
             <span
               key={idx}
-              className="bg-green-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full"
+              className="bg-green-100 text-green-800 text-sm font-medium px-4 py-1 rounded-full"
             >
               {level}
             </span>
@@ -122,7 +158,7 @@ const FractionalTalentDetail = () => {
           {JSON.parse(area_of_specialization).map((area, idx) => (
             <span
               key={idx}
-              className="bg-teal-100 text-teal-800 text-xs font-medium px-3 py-1 rounded-full"
+              className="bg-teal-100 text-teal-800 text-sm font-medium px-4 py-1 rounded-full"
             >
               {area}
             </span>

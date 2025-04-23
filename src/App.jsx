@@ -29,19 +29,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/onboarding/brand",
-        element: (
-          <ProtectedRoute>
-            <BrandOnboarding />
-          </ProtectedRoute>
-        ),
+        element: <BrandOnboarding />,
       },
       {
         path: "/onboarding/service",
-        element: (
-          <ProtectedRoute>
-            <ServiceOnboarding />
-          </ProtectedRoute>
-        ),
+        element: <ServiceOnboarding />,
       },
       {
         path: "/onboarding/talent",
