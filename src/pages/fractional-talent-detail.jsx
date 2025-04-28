@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getTalent } from "@/api/apiTalent.js"; // <- fetch talent_profiles by ID
@@ -6,7 +6,20 @@ import { Copy, ExternalLink } from "lucide-react";
 import { BarLoader } from "react-spinners";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button.jsx";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs.jsx";
+import {
+  updateConnectionStatus,
+  deleteConnection,
+  sendConnectionRequest,
+} from "@/api/apiConnections.js";
+import { toast } from "sonner";
+import ConnectDialog from "@/components/connect-dialog.jsx";
+import { FaLinkedin } from "react-icons/fa";
 
 const tabs = [
   {
@@ -30,6 +43,31 @@ const FractionalTalentDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [status, setStatus] = useState(null); // 'pending', 'accepted', etc
+
+  const handleSendRequest = async (message) => {
+    try {
+      const data = await sendConnectionRequest({
+        requester_id: user.id,
+        target_id: -1,
+        message,
+        role_a: user?.unsafeMetadata?.role,
+        role_b: -1,
+      });
+
+      setStatus("pending"); // Update UI state
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const labelByStatus = {
+    pending: "Pending",
+    accepted: "Connected",
+    rejected: "Rejected",
+  };
+
   // Load talent
   const {
     func: funcTalent,
@@ -50,10 +88,6 @@ const FractionalTalentDetail = () => {
     return <p className="text-red-500 text-center">Error loading profile.</p>;
   }
 
-  const email = user?.emailAddresses?.[0]?.emailAddress;
-  const image_url = user?.imageUrl;
-  const full_name = user?.fullName;
-
   const {
     level_of_experience = [],
     area_of_specialization = [],
@@ -61,7 +95,12 @@ const FractionalTalentDetail = () => {
     linkedin_url,
     portfolio_url,
     resume_url,
+    user_info,
   } = talent;
+
+  const email = user_info.email;
+  const image_url = user_info.profile_picture_url;
+  const full_name = user_info.full_name;
 
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
@@ -78,13 +117,25 @@ const FractionalTalentDetail = () => {
             <p className="text-sm text-muted-foreground mt-1">
               Fractional Talent
             </p>
+            <FaLinkedin />
           </div>
         </div>
 
         <div className="flex flex-col gap-2 text-sm">
-          <Button variant="outline" size="lg" className="rounded-3xl px-7 py-5">
-            Contact
+          <Button
+            variant="outline"
+            size="lg"
+            className="rounded-3xl px-7 py-5"
+            onClick={() => setDialogOpen(true)}
+            disabled={!!status}
+          >
+            {status ? labelByStatus[status] : "Contact"}
           </Button>
+          <ConnectDialog
+            open={dialogOpen}
+            setOpen={setDialogOpen}
+            onSend={handleSendRequest}
+          />
         </div>
 
         {/* <div className="flex flex-col gap-2 text-sm">
@@ -124,10 +175,14 @@ const FractionalTalentDetail = () => {
       <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
 
       <div className="flex flex-col gap-2 text-sm w-fit">
-          <Button variant="outline" size="default" className="rounded-3xl px-7 py-5">
-            About
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="default"
+          className="rounded-3xl px-7 py-5"
+        >
+          About
+        </Button>
+      </div>
 
       {/* Experience Section */}
       <div className="flex flex-col gap-4">

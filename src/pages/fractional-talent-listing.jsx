@@ -45,6 +45,7 @@ const FractionalTalentListing = () => {
     area_specialization: areaSpec,
     level_exp: levelExp,
     search_query: searchQuery,
+    function: ""
   });
 
   useEffect(() => {
@@ -156,7 +157,7 @@ const FractionalTalentListing = () => {
           </form>
 
           {/* Talent Listing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
             {talentList?.length ? (
               talentList?.map((talent) => (
                 <TalentCard key={talent.id} talent={talent} />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import {
   Card,
@@ -13,10 +13,11 @@ import { Link, useNavigate } from "react-router-dom";
 import CoincentricCircles from "@/components/CoincentricCircles.jsx";
 import { Lock } from "lucide-react";
 import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
-import { ROLE_BRAND } from "@/constants/roles.js";
+import useFetch from "@/hooks/use-fetch.jsx";
+import { syncUserProfile } from "@/api/apiUsers.js";
 
 const LandingPage = () => {
-  const { user } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const role = user?.unsafeMetadata?.role;
   const onboarded = role !== undefined;
 
@@ -34,6 +35,19 @@ const LandingPage = () => {
       navigate(product.secondaryButton.link); // allow onboarding
     }
   };
+
+  const { func: updateUserProfile, data } = useFetch(syncUserProfile, {
+    user_id: user?.id,
+    full_name: user?.fullName || "",
+    email: user?.primaryEmailAddress?.emailAddress || "",
+    profile_picture_url: user?.imageUrl || "",
+  });
+
+  useEffect(() => {
+    if (isSignedIn && isLoaded && user) {
+      updateUserProfile();
+    }
+  }, [isLoaded, isSignedIn, user]);
 
   return (
     <main>

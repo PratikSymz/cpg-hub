@@ -17,6 +17,7 @@ import {
 } from "@/constants/filters.js";
 import clsx from "clsx";
 import { X } from "lucide-react";
+import { ROLE_TALENT } from "@/constants/roles.js";
 
 const schema = z.object({
   level_of_experience: z
@@ -51,6 +52,17 @@ const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
+  const handleRoleSelection = async (role) => {
+    await user
+      .update({ unsafeMetadata: { role } })
+      .then(() => {
+        console.log(`Role updated to: ${role}`);
+      })
+      .catch((err) => {
+        console.error("Error updating role:", err);
+      });
+  };
+
   const {
     register,
     handleSubmit,
@@ -75,6 +87,7 @@ const TalentOnboarding = () => {
   } = useFetch(addNewTalent);
 
   const onSubmit = (data) => {
+    handleRoleSelection(ROLE_TALENT);
     submitTalentProfile({
       ...data,
       user_id: user.id,
@@ -237,7 +250,7 @@ const TalentOnboarding = () => {
                     )}
 
                     {/* Show selected values as tags */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 my-4">
                       {field.value.map((val, idx) => (
                         <span
                           key={idx}
@@ -327,12 +340,12 @@ const TalentOnboarding = () => {
         </div>
 
         <div>
-          <Label className={classLabel}>Portfolio URL</Label>
+          <Label className={classLabel}>Website URL</Label>
           <Input
             type="text"
             className={classInput}
             {...register("portfolio_url")}
-            placeholder="https://yourportfolio.com"
+            placeholder="https://yourwebsite.com"
           />
           {errors.portfolio_url && (
             <p className="text-sm text-red-500">

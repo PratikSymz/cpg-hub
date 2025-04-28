@@ -23,11 +23,11 @@ export default function OnboardingPromptDialog({
   const navigate = useNavigate();
 
   const title = isFirstTime
-    ? `You're about to onboard as a ${role}`
+    ? `You're about to set your profile as a ${role}`
     : `You're already registered as a ${currentRole}.`;
 
   const message = isFirstTime
-    ? `This will confirm your setup as a ${role}.`
+    ? ``
     : `You can't switch roles once you've onboarded. Please continue using the platform as a ${currentRole}.`;
 
   const handleRedirect = () => {

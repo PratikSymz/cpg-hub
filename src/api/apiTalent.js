@@ -3,10 +3,17 @@ import supabaseClient from "@/utils/supabase.js";
 const table_name = "talent_profiles";
 
 // Fetch all Talent
-export async function getAllTalent(token, { area_specialization, level_exp, search_query }) {
+export async function getAllTalent(
+  token,
+  { area_specialization, level_exp, search_query }
+) {
   const supabase = await supabaseClient(token);
 
-  let query = supabase.from(table_name).select("*");
+  // Talent Function field
+  let query = supabase.from(table_name).select(
+    `*, 
+      user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
+  );
   if (area_specialization) {
     query = query.ilike("area_of_specialization", `%${area_specialization}%`);
   }
@@ -30,7 +37,10 @@ export async function getTalent(token, { talent_id }) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
-    .select("*")
+    .select(
+      `*, 
+      user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
+    )
     .eq("id", talent_id)
     .single();
 
@@ -75,6 +85,7 @@ export async function addNewTalent(token, _, talentData) {
     .from(table_name)
     .insert([
       {
+        user_id: talentData.user_id,
         level_of_experience: talentData.level_of_experience,
         industry_experience: talentData.industry_experience,
         area_of_specialization: talentData.area_of_specialization,
