@@ -11,7 +11,7 @@ import {
 } from "@clerk/clerk-react";
 
 import { Button } from "./ui/button.jsx";
-import { BriefcaseBusiness, Heart, PenBox } from "lucide-react";
+import { BriefcaseBusiness, Edit, Heart, PenBox } from "lucide-react";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
 const NavBar = () => {
@@ -109,7 +109,7 @@ const NavBar = () => {
               }}
             >
               <UserButton.MenuItems>
-                {role !== ROLE_SERVICE && (
+                {role !== ROLE_SERVICE && role !== ROLE_TALENT && (
                   <UserButton.Link
                     label="My Jobs"
                     labelIcon={<BriefcaseBusiness size={15} />}
@@ -117,11 +117,20 @@ const NavBar = () => {
                   />
                 )}
 
-                {role !== ROLE_SERVICE && (
+                {role !== ROLE_SERVICE && role !== ROLE_TALENT && (
                   <UserButton.Link
                     label="Saved Jobs"
                     labelIcon={<Heart size={15} />}
                     href="/saved-jobs"
+                  />
+                )}
+                {role && (
+                  <UserButton.Link
+                    label="Edit profile"
+                    labelIcon={<Edit size={15} />}
+                    href={
+                      role === ROLE_TALENT ? "/edit-talent" : "/talents"
+                    }
                   />
                 )}
                 <UserButton.Action label="manageAccount" />

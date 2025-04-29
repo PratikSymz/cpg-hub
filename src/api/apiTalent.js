@@ -52,18 +52,35 @@ export async function getTalent(token, { talent_id }) {
   return data;
 }
 
+// Fetch my profile
+export async function getMyTalentProfile(token, { user_id }) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .select(
+      `*, 
+      user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
+    )
+    .eq("user_id", user_id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching my profile ${user_id}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
 // Add Talent
 export async function addNewTalent(token, _, talentData) {
   const supabase = await supabaseClient(token);
 
   const folder = "talent";
   const bucket = "resumes";
-  const random = Math.floor(Math.random() * 90000);
   const file = talentData.resume?.[0];
-  // Get a safe file extension
-  const extension = file.name.split(".").pop().toLowerCase();
   // Generate a clean file name
-  const fileName = `logo-${random}-${"safeName"}.${extension}`;
+  const fileName = formatResumeUrl(talentData.user_id, file);
 
   // Upload the file
   const { error: storageError } = await supabase.storage
@@ -105,12 +122,52 @@ export async function addNewTalent(token, _, talentData) {
 }
 
 // Update Talent Info
-export async function updateTalent(token, { talent_id }, talent_data) {
+export async function updateTalent(token, { user_id }, talentData) {
   const supabase = await supabaseClient(token);
+  console.log(user_id);
+  console.log(JSON.stringify(talentData));
+
+  const folder = "talent";
+  const bucket = "resumes";
+
+  let resume_url = talentData.resume_url;
+
+  const newFile = talentData.resume?.[0];
+
+  if (newFile) {
+    // A new file was uploaded → upload it
+    const fileName = formatResumeUrl(user_id, newFile);
+
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, newFile, {
+        cacheControl: "3600",
+        upsert: false, // prevent overwriting
+      });
+
+    if (storageError) {
+      console.error("Error uploading new resume:", storageError);
+      throw new Error("Error uploading new resume");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    resume_url = publicUrlData?.publicUrl;
+  }
+
   const { data, error } = await supabase
-    .from(table_name)
-    .update([talent_data])
-    .eq("id", talent_id)
+    .from("talent_profiles") // replace with your table_name
+    .update({
+      level_of_experience: talentData.level_of_experience,
+      industry_experience: talentData.industry_experience,
+      area_of_specialization: talentData.area_of_specialization,
+      linkedin_url: talentData.linkedin_url,
+      portfolio_url: talentData.portfolio_url,
+      resume_url: resume_url,
+    })
+    .eq("user_id", user_id)
     .select();
 
   if (error) {
@@ -122,13 +179,13 @@ export async function updateTalent(token, { talent_id }, talent_data) {
 }
 
 // Delete Talent
-export async function deleteTalent(token, { talent_id }) {
+export async function deleteTalent(token, { user_id }) {
   const supabase = await supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)
     .delete()
-    .eq("id", talent_id)
+    .eq("user_id", user_id)
     .select();
 
   if (error) {
@@ -138,3 +195,12 @@ export async function deleteTalent(token, { talent_id }) {
 
   return data;
 }
+
+const formatResumeUrl = (user_id, file) => {
+  const random = Math.floor(Math.random() * 90000);
+  // Get a safe file extension
+  const extension = file.name.split(".").pop().toLowerCase();
+  // Generate a clean file name
+  const fileName = `resume-${random}-${user_id}.${extension}`;
+  return fileName;
+};

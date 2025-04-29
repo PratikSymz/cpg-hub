@@ -16,7 +16,7 @@ const useFetch = (callback, options = {}) => {
       const supabaseAccessToken = session
         ? await session.getToken({ template: "supabase" })
         : null;
-      const response = await callback(supabaseAccessToken, options, ...args);
+      const response = await callback(supabaseAccessToken, ...args);
       setData(response);
       setError(null);
     } catch (error) {

@@ -27,7 +27,7 @@ const schema = z.object({
   area_of_specialization: z
     .array(z.string())
     .min(1, "Area of specialization is required"),
-  linkedin_url: z.string().url("Must be a valid URL"),
+  linkedin_url: z.string().url("Must be a valid URL").optional(),
   portfolio_url: z.string().url("Must be a valid URL").optional(),
   resume: z
     .any()

@@ -16,6 +16,7 @@ import { ROLE_BRAND } from "@/constants/roles.js";
 const schema = z.object({
   brand_name: z.string().min(1, { message: "Brand name is required" }),
   website: z.string().url().optional(),
+  // TODO: brand blurb (ABOUT)
   linkedin_url: z.string().url().optional(),
   brand_hq: z.string().optional(),
   logo: z
@@ -92,7 +93,7 @@ const BrandOnboarding = () => {
           <Label className="mb-1 block">Brand Name</Label>
           <Input
             type="text"
-            placeholder="e.g. Oatly"
+            placeholder="e.g. Whole Foods"
             className="input-class"
             {...register("brand_name")}
           />
