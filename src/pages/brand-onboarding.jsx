@@ -93,7 +93,7 @@ const BrandOnboarding = () => {
           <Label className="mb-1 block">Brand Name</Label>
           <Input
             type="text"
-            placeholder="e.g. Whole Foods"
+            placeholder="e.g. Slingshot Coffee"
             className="input-class"
             {...register("brand_name")}
           />

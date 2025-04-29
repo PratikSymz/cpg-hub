@@ -28,6 +28,7 @@ export async function getAllTalent(
     console.error("Error fetching Talents:", error);
     return null;
   }
+  console.log(data);
 
   return data;
 }

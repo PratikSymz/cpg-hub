@@ -41,15 +41,16 @@ const FractionalTalentListing = () => {
     data: talentList,
     loading,
     error,
-  } = useFetch(getAllTalent, {
-    area_specialization: areaSpec,
-    level_exp: levelExp,
-    search_query: searchQuery,
-    function: ""
-  });
+  } = useFetch(getAllTalent);
 
   useEffect(() => {
-    if (isLoaded) funcTalents();
+    if (isLoaded)
+      funcTalents({
+        area_specialization: areaSpec,
+        level_exp: levelExp,
+        search_query: searchQuery,
+        function: "",
+      });
   }, [isLoaded, areaSpec, levelExp, searchQuery]);
 
   const handleSearch = (e) => {
