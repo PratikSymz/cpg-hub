@@ -123,7 +123,7 @@ export async function addNewTalent(token, _, talentData) {
 }
 
 // Update Talent Info
-export async function updateTalent(token, { user_id }, talentData) {
+export async function updateTalent(token, talentData, { user_id }) {
   const supabase = await supabaseClient(token);
   console.log(user_id);
   console.log(JSON.stringify(talentData));

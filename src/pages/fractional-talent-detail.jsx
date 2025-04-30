@@ -16,6 +16,7 @@ import {
   sendConnectionRequest,
   getConnectionStatus,
   getRequestsForTalent,
+  updateConnectionStatus,
 } from "@/api/apiConnections.js";
 import { toast } from "sonner";
 import ConnectDialog from "@/components/connect-dialog.jsx";
@@ -86,6 +87,13 @@ const FractionalTalentDetail = () => {
     error: errorRequestStatus,
   } = useFetch(getConnectionStatus);
 
+  // Update connection status
+  const {
+    func: funcUpdateStatus,
+    loading: loadingUpdateStatus,
+    error: errorUpdateStatus,
+  } = useFetch(updateConnectionStatus);
+
   // Get all connection requests to this talent
   const {
     func: fetchRequests,
@@ -122,19 +130,6 @@ const FractionalTalentDetail = () => {
       fetchRequests({ target_id: user.id });
     }
   }, [isLoaded, user, user_info]);
-  console.log(requests);
-
-  // if (connection) {
-  //   setStatus(labelByStatus[connection.status]);
-  // }
-
-  if (loadingTalent || !talent) {
-    return <BarLoader width="100%" color="#36d7b7" />;
-  }
-
-  if (error) {
-    return <p className="text-red-500 text-center">Error loading profile.</p>;
-  }
 
   const handleSendRequest = async (message) => {
     if (!isLoaded || !user?.id || !user_info?.user_id) return;
@@ -150,6 +145,31 @@ const FractionalTalentDetail = () => {
       toast.error("Failed to send connection request.");
     }
   };
+
+  const handleUpdateRequest = async (requester_id, updated_status) => {
+    if (!isLoaded || !user?.id) return;
+    await funcUpdateStatus({
+      requester_id: requester_id,
+      target_id: user.id,
+      new_status: updated_status,
+    });
+
+    if (errorUpdateStatus) {
+      toast.error("Failed to update connection request.");
+    }
+  };
+
+  // if (connection) {
+  //   setStatus(labelByStatus[connection.status]);
+  // }
+
+  if (loadingTalent || !talent) {
+    return <BarLoader width="100%" color="#36d7b7" />;
+  }
+
+  if (error) {
+    return <p className="text-red-500 text-center">Error loading profile.</p>;
+  }
 
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
@@ -292,7 +312,7 @@ const FractionalTalentDetail = () => {
           <TabsContent className={"ms-4"} value="connections">
             {user?.id === user_info?.user_id && (
               <div className="">
-                <h2 className="text-2xl font-semibold mb-2">
+                <h2 className="text-2xl font-semibold mb-6">
                   Connection Requests
                 </h2>
                 {loadingRequests && <BarLoader width="100%" color="#00A19A" />}
@@ -308,29 +328,66 @@ const FractionalTalentDetail = () => {
                   {requests?.map((req) => (
                     <li
                       key={req.id}
-                      className="border rounded-lg p-4 bg-white shadow-sm"
+                      className="border rounded-lg p-4 bg-white shadow-sm flex justify-between items-center"
                     >
-                      <div className="flex justify-between items-center">
+                      {/* Left side: Profile picture and message */}
+                      <div className="flex items-start gap-4">
+                        {/* Profile Picture */}
+                        <img
+                          src={req.requester?.profile_picture_url}
+                          alt={req.requester?.full_name}
+                          className="w-16 h-16 rounded-full object-cover border"
+                        />
+
+                        {/* Name, Email, Message */}
                         <div>
-                          <p className="text-md font-medium">
-                            From: <code>{req.requester_id}</code>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {req.requester?.full_name}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {req.message}
+                          <p className="text-sm text-gray-500 mb-1">
+                            {req.requester?.email}
                           </p>
+                          <p className="text-gray-700 mt-1">{req.message}</p>
                         </div>
-                        <span
-                          className={`px-3 py-1 text-sm rounded-full ${
-                            req.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : req.status === "accepted"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {req.status.charAt(0).toUpperCase() +
-                            req.status.slice(1)}
-                        </span>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex flex-row items-end gap-4">
+                        {req.status === "pending" ? (
+                          <>
+                            <Button
+                              variant="default"
+                              size="default"
+                              className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
+                              onClick={() =>
+                                handleUpdateRequest(req.id, "accepted")
+                              }
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="default"
+                              className="px-4 py-1 text-sm rounded"
+                              onClick={() =>
+                                handleUpdateRequest(req.id, "rejected")
+                              }
+                            >
+                              Deny
+                            </Button>
+                          </>
+                        ) : (
+                          <span
+                            className={`px-3 py-1 text-sm rounded-full font-medium ${
+                              req.status === "connected"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {req.status.charAt(0).toUpperCase() +
+                              req.status.slice(1)}
+                          </span>
+                        )}
                       </div>
                     </li>
                   ))}

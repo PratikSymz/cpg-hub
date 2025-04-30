@@ -21,6 +21,7 @@ import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 import { Label } from "@radix-ui/react-label";
+import { toast } from "sonner";
 
 const schema = z.object({
   level_of_experience: z
@@ -80,8 +81,11 @@ const TalentEditProfile = () => {
     data: talentData,
     loading: loadingTalent,
   } = useFetch(getMyTalentProfile);
-  const { func: updateTalentProfile, loading: loadingUpdate } =
-    useFetch(updateTalent);
+  const {
+    func: updateTalentProfile,
+    loading: loadingUpdate,
+    error: errorUpdateTalent,
+  } = useFetch(updateTalent);
   const { func: deleteTalentProfile, loading: loadingDelete } =
     useFetch(deleteTalent);
 
@@ -104,11 +108,15 @@ const TalentEditProfile = () => {
     }
   }, [talentData, reset]);
 
-  const onSubmit = (formData) => {
-    updateTalentProfile({
-      ...formData,
-      user_id: user.id,
-    });
+  const onSubmit = async (formData) => {
+    if (!isLoaded || !user?.id || !talentData) return;
+    await updateTalentProfile(formData, { user_id: user.id });
+
+    if (errorUpdateTalent) {
+      toast.error("Failed to update talent profile.");
+    } else {
+      toast.success("Talent profile updated!");
+    }
   };
 
   const handleDelete = async () => {

@@ -46,8 +46,27 @@ export async function sendConnectionRequest({
 export async function getRequestsForTalent(token, { target_id }) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
-    .from("connections")
-    .select("id, requester_id, status, message, created_at")
+    .from(table_name)
+    .select(
+      `
+      id,
+      message,
+      status,
+      created_at,
+      requester:requester_id (
+        user_id,
+        full_name,
+        email,
+        profile_picture_url
+      ),
+      target:target_id (
+        user_id,
+        full_name,
+        email,
+        profile_picture_url
+      )
+    `
+    )
     .eq("target_id", target_id)
     .order("created_at", { ascending: false });
 
@@ -59,12 +78,17 @@ export async function getRequestsForTalent(token, { target_id }) {
   return data;
 }
 
-export async function updateConnectionStatus(id, new_status) {
-  const supabase = await supabaseClient();
+export async function updateConnectionStatus(
+  token,
+  new_status,
+  { requester_id, target_id }
+) {
+  const supabase = await supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .update({ status: new_status })
-    .eq("id", id)
+    .eq("requester_id", requester_id)
+    .eq("target_id", target_id)
     .select();
 
   if (error) {
