@@ -1,21 +1,36 @@
 import supabaseClient from "@/utils/supabase.js";
 
 const table_name = "connections";
+
+export async function getConnectionStatus(token, { requester_id, target_id }) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .select(`*`)
+    .eq("requester_id", requester_id)
+    .eq("target_id", target_id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching connection status ${requester_id}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
 export async function sendConnectionRequest({
+  token,
   requester_id,
   target_id,
   message,
-  role_a,
-  role_b,
 }) {
-  const supabase = await supabaseClient();
+  const supabase = await supabaseClient(token);
   const { data, error } = await supabase.from(table_name).insert([
     {
       requester_id,
       target_id,
       message,
-      role_a,
-      role_b,
     },
   ]);
 

@@ -16,6 +16,7 @@ import {
   updateConnectionStatus,
   deleteConnection,
   sendConnectionRequest,
+  getConnectionStatus,
 } from "@/api/apiConnections.js";
 import { toast } from "sonner";
 import ConnectDialog from "@/components/connect-dialog.jsx";
@@ -46,22 +47,6 @@ const FractionalTalentDetail = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [status, setStatus] = useState(null); // 'pending', 'accepted', etc
 
-  const handleSendRequest = async (message) => {
-    try {
-      const data = await sendConnectionRequest({
-        requester_id: user.id,
-        target_id: -1,
-        message,
-        role_a: user?.unsafeMetadata?.role,
-        role_b: -1,
-      });
-
-      setStatus("pending"); // Update UI state
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
   const labelByStatus = {
     pending: "Pending",
     accepted: "Connected",
@@ -72,15 +57,39 @@ const FractionalTalentDetail = () => {
   const {
     func: funcTalent,
     data: talent,
-    loading,
+    loading: loadingTalent,
     error,
-  } = useFetch(getTalent, { talent_id: id });
+  } = useFetch(getTalent);
+
+  // Send connection request
+  const { func: funcSendRequest, error: errorSendRequest } = useFetch(
+    sendConnectionRequest
+  );
+
+  // Get connection status
+  const {
+    func: funcRequestStatus,
+    data: connectionStatus,
+    error: errorRequestStatus,
+  } = useFetch(getConnectionStatus);
 
   useEffect(() => {
-    if (isLoaded) funcTalent();
-  }, [isLoaded]);
+    if (isLoaded && id) {
+      // Load talent
+      funcTalent({ talent_id: id });
+    }
+  }, [isLoaded, id]);
 
-  if (loading || !talent) {
+  useEffect(() => {
+    if (isLoaded && talent?.user_info?.user_id && user?.id) {
+      funcRequestStatus({
+        requester_id: user.id,
+        target_id: talent.user_info.user_id,
+      });
+    }
+  }, [isLoaded, talent, user]);
+
+  if (loadingTalent || !talent) {
     return <BarLoader width="100%" color="#36d7b7" />;
   }
 
@@ -102,6 +111,31 @@ const FractionalTalentDetail = () => {
   const image_url = user_info.profile_picture_url;
   const full_name = user_info.full_name;
 
+  const handleSendRequest = async (message) => {
+    if (!isLoaded || !user?.id || !user_info?.user_id) return;
+    await funcSendRequest({
+      requester_id: user.id,
+      target_id: user_info.user_id,
+      message,
+    });
+
+    if (!errorSendRequest) {
+      setStatus(labelByStatus.pending); // Update UI state
+    } else {
+      toast.error("Failed to send connection request.");
+    }
+  };
+
+  useEffect(() => {
+    if (isLoaded) {
+      // Load connection status
+      funcRequestStatus({
+        requester_id: user.id,
+        target_id: user_info.user_id,
+      });
+    }
+  }, [isLoaded]);
+
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
       {/* Header */}
@@ -110,7 +144,7 @@ const FractionalTalentDetail = () => {
           <img
             src={image_url}
             alt="Profile"
-            className="h-20 w-20 rounded-full border object-cover"
+            className="h-22 w-22 rounded-full border object-cover"
           />
           <div>
             <h1 className="text-3xl font-bold">{full_name}</h1>
@@ -135,22 +169,24 @@ const FractionalTalentDetail = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 text-sm">
-          <Button
-            variant="outline"
-            size="lg"
-            className="rounded-3xl px-7 py-5"
-            onClick={() => setDialogOpen(true)}
-            disabled={!!status}
-          >
-            {status ? labelByStatus[status] : "Contact"}
-          </Button>
-          <ConnectDialog
-            open={dialogOpen}
-            setOpen={setDialogOpen}
-            onSend={handleSendRequest}
-          />
-        </div>
+        {user_info.user_id !== user.id && (
+          <div className="flex flex-col gap-2 text-sm">
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-3xl px-7 py-5"
+              onClick={() => setDialogOpen(true)}
+              disabled={!!status}
+            >
+              {status ? labelByStatus[status] : "Contact"}
+            </Button>
+            <ConnectDialog
+              open={dialogOpen}
+              setOpen={setDialogOpen}
+              onSend={handleSendRequest}
+            />
+          </div>
+        )}
 
         {/* <div className="flex flex-col gap-2 text-sm">
           {linkedin_url && (
