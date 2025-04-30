@@ -183,9 +183,7 @@ const FractionalTalentDetail = () => {
           />
           <div>
             <h1 className="text-3xl font-bold">{full_name}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Fractional Talent
-            </p>
+
             <div className="flex flex-row gap-4 mt-2">
               {linkedin_url && (
                 <Link to={linkedin_url}>
