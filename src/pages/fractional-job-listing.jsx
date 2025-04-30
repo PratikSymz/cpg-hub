@@ -39,14 +39,14 @@ function FractionalJobListing() {
     func: funcJobs,
     data: jobs,
     loading: loadingJobs,
-  } = useFetch(getJobs, {
-    area_specialization: areaSpec,
-    level_exp: levelExp,
-    search_query: searchQuery,
-  });
+  } = useFetch(getJobs);
 
   useEffect(() => {
-    if (isLoaded) funcJobs();
+    if (isLoaded) funcJobs({
+      area_specialization: areaSpec,
+      level_exp: levelExp,
+      search_query: searchQuery,
+    });
   }, [isLoaded, areaSpec, levelExp, searchQuery]);
 
   const handleSearch = (e) => {

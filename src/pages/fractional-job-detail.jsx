@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { DoorClosed, DoorOpen } from "lucide-react";
 import {
@@ -16,6 +16,8 @@ import ApplicationCard from "@/components/application-card.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleJob, updateHiringStatus } from "@/api/apiFractionalJobs.js";
 import { Label } from "@radix-ui/react-label";
+import { FaGlobe, FaLinkedin } from "react-icons/fa";
+import { Button } from "@/components/ui/button.jsx";
 
 const className = "";
 const FractionalJobDetail = () => {
@@ -27,17 +29,31 @@ const FractionalJobDetail = () => {
     loading: loadingJob,
     data: job,
     func: funcJob,
-  } = useFetch(getSingleJob, { job_id: id });
+  } = useFetch(getSingleJob);
 
   useEffect(() => {
-    if (isLoaded) funcJob();
+    if (isLoaded) funcJob({ job_id: id });
   }, [isLoaded]);
 
+  // Job Info
+  const {
+    preferred_experience,
+    level_of_experience,
+    work_location,
+    scope_of_work,
+    job_title,
+    estimated_hrs_per_wk,
+    area_of_specialization,
+    is_open,
+  } = job || {};
+
+  // Brand info
+  const { brand_name, website, linkedin_url, brand_hq, logo_url, user_id } =
+    (job && job.brand) || {};
+
   // Load hiring status
-  const { loading: loadingHiringStatus, func: funcHiringStatus } = useFetch(
-    updateHiringStatus,
-    { job_id: id }
-  );
+  const { loading: loadingHiringStatus, func: funcHiringStatus } =
+    useFetch(updateHiringStatus);
 
   // Update hiring status and re-fetch job details
   const handleStatusChange = (value) => {
@@ -170,21 +186,52 @@ const FractionalJobDetail = () => {
     //   )}
     // </div>
     <div className="flex flex-col gap-10 mt-10 px-10">
-      {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {job?.brand?.website}
-          </p>
-        </div>
-        {job?.brand?.logo_url && (
+      {/* New Header */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
           <img
-            src={job.brand.logo_url}
-            alt={`${job.job_title} logo`}
-            className="h-14 w-auto object-contain rounded-md shadow-sm"
+            src={job?.brand && logo_url}
+            alt="Profile"
+            className="h-22 w-22 rounded-full border object-cover"
           />
-        )}
+          <div>
+            <h1 className="text-3xl font-bold">{job?.brand && brand_name}</h1>
+            <div className="flex flex-row gap-4 mt-2">
+              {job?.brand && linkedin_url && (
+                <Link to={linkedin_url}>
+                  <FaLinkedin
+                    className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110"
+                    style={{ color: "#0072b1" }}
+                  />
+                </Link>
+              )}
+              {job?.brand && (
+                <Link to={website}>
+                  <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* {job?.brand && user_id !== user.id && (
+          <div className="flex flex-col gap-2 text-sm">
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-3xl px-7 py-5"
+              onClick={() => setDialogOpen(true)}
+              disabled={!!connection?.status}
+            >
+              {labelByStatus[connection?.status] || "Connect"}
+            </Button>
+            <ConnectDialog
+              open={dialogOpen}
+              setOpen={setDialogOpen}
+              onSend={handleSendRequest}
+            />
+          </div>
+        )} */}
       </div>
 
       {/* Section: Summary Info */}
@@ -193,11 +240,9 @@ const FractionalJobDetail = () => {
           <Label className="text-xs text-muted-foreground uppercase">
             Location
           </Label>
-          <p className="text-sm font-medium mt-1">
-            {job?.brand?.brand_hq || "Remote"}
-          </p>
+          <p className="text-sm font-medium mt-1">{brand_hq || "Remote"}</p>
         </div>
-        <div className="bg-muted rounded-md p-4">
+        {/* <div className="bg-muted rounded-md p-4">
           <Label className="text-xs text-muted-foreground uppercase">
             Applicants
           </Label>
@@ -210,7 +255,7 @@ const FractionalJobDetail = () => {
             Status
           </Label>
           <div className="mt-1 flex items-center gap-2">
-            {job?.is_open ? (
+            {job && is_open ? (
               <>
                 <DoorOpen className="w-4 h-4 text-green-500" />
                 <span className="text-sm font-medium text-green-600">Open</span>
@@ -222,39 +267,51 @@ const FractionalJobDetail = () => {
               </>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Section: Details */}
+      <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
       <div className="grid sm:grid-cols-2 gap-6">
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Scope of Work
           </Label>
-          <p className="text-muted-foreground">{job?.scope_of_work}</p>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {job && scope_of_work}
+          </span>
         </div>
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Work Location
           </Label>
-          <p className="text-muted-foreground">{job?.work_location}</p>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {job && work_location}
+          </span>
         </div>
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Weekly Hours
           </Label>
-          <p className="text-muted-foreground">
-            {job?.estimated_hrs_per_wk} hrs/week
-          </p>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {job && estimated_hrs_per_wk} hrs/week
+          </span>
         </div>
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Experience Level
           </Label>
-          <p className="text-muted-foreground">
-            {job?.level_of_experience &&
-              JSON.parse(job.level_of_experience).join(", ")}
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {job &&
+              JSON.parse(level_of_experience).map((level, idx) => (
+                <span
+                  key={idx}
+                  className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                >
+                  {level}
+                </span>
+              ))}
+          </div>
         </div>
       </div>
 
@@ -268,7 +325,7 @@ const FractionalJobDetail = () => {
             JSON.parse(job.area_of_specialization).map((area, idx) => (
               <span
                 key={idx}
-                className="bg-teal-100 text-cpg-teal text-xs font-medium px-3 py-1 rounded-full"
+                className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
               >
                 {area}
               </span>
@@ -293,7 +350,7 @@ const FractionalJobDetail = () => {
       </div>
 
       {/* Hiring Status Control */}
-      {job?.brand_id === user?.id && (
+      {/* {job?.brand_id === user?.id && (
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Hiring Status
@@ -318,20 +375,20 @@ const FractionalJobDetail = () => {
             </SelectContent>
           </Select>
         </div>
-      )}
+      )} */}
 
       {/* Apply or Manage */}
-      {job?.brand_id !== user?.id && (
+      {/* {job?.brand_id !== user?.id && (
         <ApplyJobDrawer
           job={job}
           user={user}
           fetchJob={funcJob}
           applied={job?.applications?.find((ap) => ap.user_id === user.id)}
         />
-      )}
+      )} */}
 
       {/* Section: Applications (if user owns job) */}
-      {loadingHiringStatus && <BarLoader width="100%" color="#36d7b7" />}
+      {/* {loadingHiringStatus && <BarLoader width="100%" color="#36d7b7" />}
 
       {job?.brand_id === user?.id && job?.applications?.length > 0 && (
         <div className="mt-10">
@@ -342,7 +399,7 @@ const FractionalJobDetail = () => {
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

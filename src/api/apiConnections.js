@@ -42,6 +42,23 @@ export async function sendConnectionRequest({
   return data;
 }
 
+// Get all connections requests for this talent
+export async function getRequestsForTalent(token, { target_id }) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from("connections")
+    .select("id, requester_id, status, message, created_at")
+    .eq("target_id", target_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching connection requests:", error);
+    return null;
+  }
+
+  return data;
+}
+
 export async function updateConnectionStatus(id, new_status) {
   const supabase = await supabaseClient();
   const { data, error } = await supabase

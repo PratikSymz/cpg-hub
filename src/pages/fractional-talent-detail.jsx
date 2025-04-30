@@ -13,10 +13,9 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs.jsx";
 import {
-  updateConnectionStatus,
-  deleteConnection,
   sendConnectionRequest,
   getConnectionStatus,
+  getRequestsForTalent,
 } from "@/api/apiConnections.js";
 import { toast } from "sonner";
 import ConnectDialog from "@/components/connect-dialog.jsx";
@@ -61,6 +60,20 @@ const FractionalTalentDetail = () => {
     error,
   } = useFetch(getTalent);
 
+  const {
+    level_of_experience = [],
+    area_of_specialization = [],
+    industry_experience,
+    linkedin_url,
+    portfolio_url,
+    resume_url,
+    user_info,
+  } = talent || {};
+
+  const email = user_info?.email || "";
+  const image_url = user_info?.profile_picture_url || "";
+  const full_name = user_info?.full_name || "";
+
   // Send connection request
   const { func: funcSendRequest, error: errorSendRequest } = useFetch(
     sendConnectionRequest
@@ -69,9 +82,17 @@ const FractionalTalentDetail = () => {
   // Get connection status
   const {
     func: funcRequestStatus,
-    data: connectionStatus,
+    data: connection,
     error: errorRequestStatus,
   } = useFetch(getConnectionStatus);
+
+  // Get all connection requests to this talent
+  const {
+    func: fetchRequests,
+    data: requests,
+    loading: loadingRequests,
+    error: errorRequests,
+  } = useFetch(getRequestsForTalent);
 
   useEffect(() => {
     if (isLoaded && id) {
@@ -81,14 +102,31 @@ const FractionalTalentDetail = () => {
   }, [isLoaded, id]);
 
   useEffect(() => {
-    if (isLoaded && talent?.user_info?.user_id && user?.id) {
+    // Only load the connection status for users other than yourself
+    if (
+      isLoaded &&
+      talent?.user_info?.user_id &&
+      user?.id &&
+      user.id !== user_info?.user_id
+    ) {
       funcRequestStatus({
         requester_id: user.id,
-        target_id: talent.user_info.user_id,
+        target_id: user_info.user_id,
       });
     }
   }, [isLoaded, talent, user]);
-  console.log()
+
+  useEffect(() => {
+    // Only load connection requests for the logged in user
+    if (isLoaded && user?.id && user.id === user_info?.user_id) {
+      fetchRequests({ target_id: user.id });
+    }
+  }, [isLoaded, user, user_info]);
+  console.log(requests);
+
+  // if (connection) {
+  //   setStatus(labelByStatus[connection.status]);
+  // }
 
   if (loadingTalent || !talent) {
     return <BarLoader width="100%" color="#36d7b7" />;
@@ -97,20 +135,6 @@ const FractionalTalentDetail = () => {
   if (error) {
     return <p className="text-red-500 text-center">Error loading profile.</p>;
   }
-
-  const {
-    level_of_experience = [],
-    area_of_specialization = [],
-    industry_experience,
-    linkedin_url,
-    portfolio_url,
-    resume_url,
-    user_info,
-  } = talent;
-
-  const email = user_info.email;
-  const image_url = user_info.profile_picture_url;
-  const full_name = user_info.full_name;
 
   const handleSendRequest = async (message) => {
     if (!isLoaded || !user?.id || !user_info?.user_id) return;
@@ -167,9 +191,9 @@ const FractionalTalentDetail = () => {
               size="lg"
               className="rounded-3xl px-7 py-5"
               onClick={() => setDialogOpen(true)}
-              disabled={!!status}
+              disabled={!!connection?.status}
             >
-              {status ? labelByStatus[status] : "Contact"}
+              {labelByStatus[connection?.status] || "Connect"}
             </Button>
             <ConnectDialog
               open={dialogOpen}
@@ -178,39 +202,6 @@ const FractionalTalentDetail = () => {
             />
           </div>
         )}
-
-        {/* <div className="flex flex-col gap-2 text-sm">
-          {linkedin_url && (
-            <a
-              href={linkedin_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-700 hover:underline flex items-center gap-1"
-            >
-              LinkedIn <ExternalLink size={14} />
-            </a>
-          )}
-          {portfolio_url && (
-            <a
-              href={portfolio_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-700 hover:underline flex items-center gap-1"
-            >
-              Portfolio <ExternalLink size={14} />
-            </a>
-          )}
-          {resume_url && (
-            <a
-              href={resume_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-700 hover:underline flex items-center gap-1"
-            >
-              Resume <ExternalLink size={14} />
-            </a>
-          )}
-        </div> */}
       </div>
 
       <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
@@ -230,10 +221,16 @@ const FractionalTalentDetail = () => {
             >
               Resume
             </TabsTrigger>
+            <TabsTrigger
+              value="connections"
+              className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
+            >
+              Connections
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab Contents */}
-          <TabsContent className={""} value="about">
+          <TabsContent className={"ms-2"} value="about">
             <div className="flex flex-col gap-10 mt-4">
               {/* Experience Section */}
               <div className="flex flex-col gap-4">
@@ -252,7 +249,7 @@ const FractionalTalentDetail = () => {
                   {JSON.parse(level_of_experience).map((level, idx) => (
                     <span
                       key={idx}
-                      className="bg-green-100 text-green-800 text-sm font-medium px-4 py-1 rounded-full"
+                      className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
                     >
                       {level}
                     </span>
@@ -268,7 +265,7 @@ const FractionalTalentDetail = () => {
                   {JSON.parse(area_of_specialization).map((area, idx) => (
                     <span
                       key={idx}
-                      className="bg-teal-100 text-teal-800 text-sm font-medium px-4 py-1 rounded-full"
+                      className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
                     >
                       {area}
                     </span>
@@ -278,7 +275,7 @@ const FractionalTalentDetail = () => {
             </div>
           </TabsContent>
 
-          <TabsContent className={""} value="resume">
+          <TabsContent className={"ms-6"} value="resume">
             {resume_url ? (
               <iframe
                 src={resume_url}
@@ -289,6 +286,56 @@ const FractionalTalentDetail = () => {
               />
             ) : (
               <p className="text-gray-600">No resume uploaded.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent className={"ms-4"} value="connections">
+            {user?.id === user_info?.user_id && (
+              <div className="">
+                <h2 className="text-2xl font-semibold mb-2">
+                  Connection Requests
+                </h2>
+                {loadingRequests && <BarLoader width="100%" color="#00A19A" />}
+                {errorRequests && (
+                  <p className="text-red-500">Error loading requests.</p>
+                )}
+
+                {requests?.length === 0 && (
+                  <p className="text-gray-500">No connection requests yet.</p>
+                )}
+
+                <ul className="space-y-4">
+                  {requests?.map((req) => (
+                    <li
+                      key={req.id}
+                      className="border rounded-lg p-4 bg-white shadow-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-md font-medium">
+                            From: <code>{req.requester_id}</code>
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {req.message}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-3 py-1 text-sm rounded-full ${
+                            req.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : req.status === "accepted"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {req.status.charAt(0).toUpperCase() +
+                            req.status.slice(1)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </TabsContent>
         </Tabs>

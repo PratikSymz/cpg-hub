@@ -40,7 +40,7 @@ const TalentCard = ({ talent }) => {
                 <img
                   src={image_url}
                   alt="Profile"
-                  className="h-15 w-15 rounded-full object-cover border"
+                  className="h-16 w-16 rounded-full object-cover border"
                 />
               )}
               <div className="flex flex-col">
@@ -66,7 +66,7 @@ const TalentCard = ({ talent }) => {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-3 text-sm text-black/90">
+      <CardContent className="flex flex-col gap-4 text-sm text-black/90">
         <p>
           <strong>Experience Level:</strong>{" "}
           {JSON.parse(level_of_experience).map((level, idx) => (
