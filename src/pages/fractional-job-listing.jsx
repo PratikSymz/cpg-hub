@@ -157,7 +157,7 @@ function FractionalJobListing() {
 
           {/* Job Listing */}
           {loadingJobs === false && (
-            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
               {jobs?.length ? (
                 jobs.map((job) => {
                   return (
