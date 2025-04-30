@@ -88,6 +88,7 @@ const FractionalTalentDetail = () => {
       });
     }
   }, [isLoaded, talent, user]);
+  console.log()
 
   if (loadingTalent || !talent) {
     return <BarLoader width="100%" color="#36d7b7" />;
@@ -125,16 +126,6 @@ const FractionalTalentDetail = () => {
       toast.error("Failed to send connection request.");
     }
   };
-
-  useEffect(() => {
-    if (isLoaded) {
-      // Load connection status
-      funcRequestStatus({
-        requester_id: user.id,
-        target_id: user_info.user_id,
-      });
-    }
-  }, [isLoaded]);
 
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
