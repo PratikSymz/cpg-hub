@@ -1,49 +1,9 @@
 import supabaseClient from "@/utils/supabase.js";
 
-const table_name = "connections";
+const table_name = "endorsements";
 
-export async function getConnectionStatus(token, { requester_id, target_id }) {
-  const supabase = await supabaseClient(token);
-  const { data, error } = await supabase
-    .from(table_name)
-    .select(`*`)
-    .eq("requester_id", requester_id)
-    .eq("target_id", target_id)
-    .single();
-
-  if (error) {
-    console.error(`Error fetching connection status ${requester_id}:`, error);
-    return null;
-  }
-
-  return data;
-}
-
-export async function sendConnectionRequest({
-  token,
-  requester_id,
-  target_id,
-  message,
-}) {
-  const supabase = await supabaseClient(token);
-  const { data, error } = await supabase.from(table_name).insert([
-    {
-      requester_id,
-      target_id,
-      message,
-    },
-  ]);
-
-  if (error) {
-    console.error(error);
-    throw new Error("Error sending connection request");
-  }
-
-  return data;
-}
-
-// Get all connections requests for this talent
-export async function getRequestsForTalent(token, { target_id }) {
+// Get all endorsements for this user (user_id)
+export async function getAllEndorsements(token, { user_id }) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
@@ -53,13 +13,13 @@ export async function getRequestsForTalent(token, { target_id }) {
       message,
       status,
       created_at,
-      requester:requester_id (
+      endorser:from_id (
         user_id,
         full_name,
         email,
         profile_picture_url
       ),
-      target:target_id (
+      target:to_id (
         user_id,
         full_name,
         email,
@@ -67,46 +27,55 @@ export async function getRequestsForTalent(token, { target_id }) {
       )
     `
     )
-    .eq("target_id", target_id)
+    .eq("to_id", user_id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching connection requests:", error);
+    console.error("Error fetching endorsements:", error);
     return null;
   }
 
   return data;
 }
 
-export async function updateConnectionStatus(
+// Create/Update an endorsement
+export async function updateEndorsement(
   token,
-  new_status,
-  { requester_id, target_id }
+  new_message,
+  { endorser_id, target_id }
 ) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
-    .update({ status: new_status })
-    .eq("requester_id", requester_id)
-    .eq("target_id", target_id)
+    .upsert(
+      {
+        from_id: endorser_id,
+        to_id: target_id,
+        message: new_message,
+      },
+      { onConflict: "from_id,to_id" }
+    )
     .select();
 
   if (error) {
     console.error(error);
-    throw new Error("Error updating connection request");
+    throw new Error("Error updating endorsement message");
   }
 
   return data;
 }
 
-export async function deleteConnection(id) {
+export async function deleteEndorsement(token, { endorser_id }) {
   const supabase = await supabaseClient();
 
-  const { data, error } = await supabase.from(table_name).delete().eq("id", id);
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("from_id", endorser_id);
 
   if (error) {
     console.error(error);
-    throw new Error("Error deleting connection");
+    throw new Error("Error deleting endorsement");
   }
   return data;
 }

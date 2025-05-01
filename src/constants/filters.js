@@ -8,6 +8,7 @@ export const areasOfSpecialization = [
   { label: "HR/Admin", value: "hr_admin" },
   { label: "E-commerce", value: "e_comm" },
   { label: "Trade Spend", value: "trade_spend" },
+  { label: "Data and insights", value: "data_ins" },
   { label: "Supply Chain", value: "supply_chain" },
   { label: "Other", value: "other" },
 ];

@@ -197,14 +197,14 @@ const FractionalJobDetail = () => {
           <div>
             <h1 className="text-3xl font-bold">{job?.brand && brand_name}</h1>
             <div className="flex flex-row gap-4 mt-2">
-              {job?.brand && linkedin_url && (
+              {/* {job?.brand && linkedin_url && (
                 <Link to={linkedin_url}>
                   <FaLinkedin
                     className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110"
                     style={{ color: "#0072b1" }}
                   />
                 </Link>
-              )}
+              )} */}
               {job?.brand && (
                 <Link to={website}>
                   <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />

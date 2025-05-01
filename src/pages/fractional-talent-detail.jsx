@@ -12,15 +12,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.jsx";
-import {
-  sendConnectionRequest,
-  getConnectionStatus,
-  getRequestsForTalent,
-  updateConnectionStatus,
-} from "@/api/apiConnections.js";
 import { toast } from "sonner";
-import ConnectDialog from "@/components/connect-dialog.jsx";
+import ConnectDialog from "@/components/endorsement-dialog.jsx";
 import { FaGlobe, FaLinkedin } from "react-icons/fa";
+import ComposeEmailDialog from "@/components/connect-email-dialog.jsx";
+import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
+import { getAllEndorsements, updateEndorsement } from "@/api/apiConnections.js";
+import EndorsementDialog from "@/components/endorsement-dialog.jsx";
 
 const tabs = [
   {
@@ -44,14 +42,8 @@ const FractionalTalentDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [status, setStatus] = useState(null); // 'pending', 'accepted', etc
-
-  const labelByStatus = {
-    pending: "Pending",
-    accepted: "Connected",
-    rejected: "Rejected",
-  };
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
 
   // Load talent
   const {
@@ -75,32 +67,20 @@ const FractionalTalentDetail = () => {
   const image_url = user_info?.profile_picture_url || "";
   const full_name = user_info?.full_name || "";
 
-  // Send connection request
-  const { func: funcSendRequest, error: errorSendRequest } = useFetch(
-    sendConnectionRequest
-  );
-
-  // Get connection status
+  // Get all endorsements to this talent
   const {
-    func: funcRequestStatus,
-    data: connection,
-    error: errorRequestStatus,
-  } = useFetch(getConnectionStatus);
+    func: fetchEndorsements,
+    data: endorsements,
+    loading: loadingEndorsements,
+    error: errorEndorsements,
+  } = useFetch(getAllEndorsements);
 
-  // Update connection status
+  // Update endorsement message
   const {
-    func: funcUpdateStatus,
-    loading: loadingUpdateStatus,
-    error: errorUpdateStatus,
-  } = useFetch(updateConnectionStatus);
-
-  // Get all connection requests to this talent
-  const {
-    func: fetchRequests,
-    data: requests,
-    loading: loadingRequests,
-    error: errorRequests,
-  } = useFetch(getRequestsForTalent);
+    func: funcUpdateEndorsement,
+    loading: loadingUpdateEndorsement,
+    error: errorUpdateEndorsement,
+  } = useFetch(updateEndorsement);
 
   useEffect(() => {
     if (isLoaded && id) {
@@ -110,58 +90,90 @@ const FractionalTalentDetail = () => {
   }, [isLoaded, id]);
 
   useEffect(() => {
-    // Only load the connection status for users other than yourself
-    if (
-      isLoaded &&
-      talent?.user_info?.user_id &&
-      user?.id &&
-      user.id !== user_info?.user_id
-    ) {
-      funcRequestStatus({
-        requester_id: user.id,
-        target_id: user_info.user_id,
-      });
-    }
-  }, [isLoaded, talent, user]);
-
-  useEffect(() => {
     // Only load connection requests for the logged in user
     if (isLoaded && user?.id && user.id === user_info?.user_id) {
-      fetchRequests({ target_id: user.id });
+      fetchEndorsements({ user_id: user_info.user_id });
     }
   }, [isLoaded, user, user_info]);
+  //   if (!isLoaded || !user?.id || !user_info?.user_id) return;
+  //   await funcSendRequest({
+  //     requester_id: user.id,
+  //     target_id: user_info.user_id,
+  //     message,
+  //   });
 
-  const handleSendRequest = async (message) => {
+  //   if (!errorSendRequest) {
+  //     setStatus(labelByStatus.pending); // Update UI state
+  //   } else {
+  //     toast.error("Failed to send connection request.");
+  //   }
+  // };
+
+  // const handleUpdateRequest = async (requester_id, updated_status) => {
+  //   if (!isLoaded || !user?.id) return;
+  //   await funcUpdateStatus({
+  //     requester_id: requester_id,
+  //     target_id: user.id,
+  //     new_status: updated_status,
+  //   });
+
+  //   if (errorUpdateStatus) {
+  //     toast.error("Failed to update connection request.");
+  //   }
+  // };
+
+  const handleEmailSend = async (message) => {
+    try {
+      const res = await fetch(
+        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_email: email,
+            sender_email: user?.primaryEmailAddress?.emailAddress,
+            target_name: full_name,
+            sender_name: user?.fullName,
+            message,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to send email.");
+      }
+
+      toast.success("Email sent!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send email.");
+    }
+  };
+
+  const handleEndorsementSubmit = async (message) => {
     if (!isLoaded || !user?.id || !user_info?.user_id) return;
-    await funcSendRequest({
-      requester_id: user.id,
-      target_id: user_info.user_id,
-      message,
-    });
 
-    if (!errorSendRequest) {
-      setStatus(labelByStatus.pending); // Update UI state
-    } else {
-      toast.error("Failed to send connection request.");
+    try {
+      const res = await fetch("/api/send-endorsement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from_user_id: user.id,
+          to_user_id: user_info.user_id,
+          message,
+        }),
+      });
+
+      if (!res.ok) {
+        toast.error("Failed to send endorsement.");
+        return;
+      }
+
+      toast.success("Endorsement sent!");
+    } catch (err) {
+      toast.error("Something went wrong.");
     }
   };
-
-  const handleUpdateRequest = async (requester_id, updated_status) => {
-    if (!isLoaded || !user?.id) return;
-    await funcUpdateStatus({
-      requester_id: requester_id,
-      target_id: user.id,
-      new_status: updated_status,
-    });
-
-    if (errorUpdateStatus) {
-      toast.error("Failed to update connection request.");
-    }
-  };
-
-  // if (connection) {
-  //   setStatus(labelByStatus[connection.status]);
-  // }
 
   if (loadingTalent || !talent) {
     return <BarLoader width="100%" color="#36d7b7" />;
@@ -170,6 +182,21 @@ const FractionalTalentDetail = () => {
   if (error) {
     return <p className="text-red-500 text-center">Error loading profile.</p>;
   }
+
+  const connectButton =
+    user_info.user_id !== user.id ? (
+      <div className="flex flex-col text-sm mt-10">
+        <ConnectEmailDialog
+          open={connectDialogOpen}
+          setOpen={setConnectDialogOpen}
+          targetUser={user_info}
+          senderUser={user}
+          onSend={handleEmailSend}
+        />
+      </div>
+    ) : (
+      <></>
+    );
 
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
@@ -201,25 +228,6 @@ const FractionalTalentDetail = () => {
             </div>
           </div>
         </div>
-
-        {user_info.user_id !== user.id && (
-          <div className="flex flex-col gap-2 text-sm">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-3xl px-7 py-5"
-              onClick={() => setDialogOpen(true)}
-              disabled={!!connection?.status}
-            >
-              {labelByStatus[connection?.status] || "Connect"}
-            </Button>
-            <ConnectDialog
-              open={dialogOpen}
-              setOpen={setDialogOpen}
-              onSend={handleSendRequest}
-            />
-          </div>
-        )}
       </div>
 
       <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
@@ -240,10 +248,10 @@ const FractionalTalentDetail = () => {
               Resume
             </TabsTrigger>
             <TabsTrigger
-              value="connections"
+              value="endorsements"
               className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
             >
-              Connections
+              Endorsements
             </TabsTrigger>
           </TabsList>
 
@@ -290,6 +298,8 @@ const FractionalTalentDetail = () => {
                   ))}
                 </div>
               </div>
+
+              <div>{connectButton}</div>
             </div>
           </TabsContent>
 
@@ -307,91 +317,69 @@ const FractionalTalentDetail = () => {
             )}
           </TabsContent>
 
-          <TabsContent className={"ms-4"} value="connections">
-            {user?.id === user_info?.user_id && (
-              <div className="">
-                <h2 className="text-2xl font-semibold mb-6">
-                  Connection Requests
-                </h2>
-                {loadingRequests && <BarLoader width="100%" color="#00A19A" />}
-                {errorRequests && (
-                  <p className="text-red-500">Error loading requests.</p>
-                )}
-
-                {requests?.length === 0 && (
-                  <p className="text-gray-500">No connection requests yet.</p>
-                )}
-
-                <ul className="space-y-4">
-                  {requests?.map((req) => (
-                    <li
-                      key={req.id}
-                      className="border rounded-lg p-4 bg-white shadow-sm flex justify-between items-center"
-                    >
-                      {/* Left side: Profile picture and message */}
-                      <div className="flex items-start gap-4">
-                        {/* Profile Picture */}
-                        <img
-                          src={req.requester?.profile_picture_url}
-                          alt={req.requester?.full_name}
-                          className="w-16 h-16 rounded-full object-cover border"
-                        />
-
-                        {/* Name, Email, Message */}
-                        <div>
-                          <p className="text-lg font-semibold text-gray-900">
-                            {req.requester?.full_name}
-                          </p>
-                          <p className="text-sm text-gray-500 mb-1">
-                            {req.requester?.email}
-                          </p>
-                          <p className="text-gray-700 mt-1">{req.message}</p>
-                        </div>
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="flex flex-row items-end gap-4">
-                        {req.status === "pending" ? (
-                          <>
-                            <Button
-                              variant="default"
-                              size="default"
-                              className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
-                              onClick={() =>
-                                handleUpdateRequest(req.id, "accepted")
-                              }
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="default"
-                              className="px-4 py-1 text-sm rounded"
-                              onClick={() =>
-                                handleUpdateRequest(req.id, "rejected")
-                              }
-                            >
-                              Deny
-                            </Button>
-                          </>
-                        ) : (
-                          <span
-                            className={`px-3 py-1 text-sm rounded-full font-medium ${
-                              req.status === "connected"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {req.status.charAt(0).toUpperCase() +
-                              req.status.slice(1)}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+          <TabsContent className={"ms-4"} value="endorsements">
+            <div className="">
+              <div className="flex flex-row justify-between">
+                <h2 className="text-2xl font-semibold mb-6">Endorsements</h2>
+                <EndorsementDialog
+                  open={endorseDialogOpen}
+                  setOpen={setEndorseDialogOpen}
+                  onSend={handleEndorsementSubmit}
+                />
               </div>
-            )}
+
+              {loadingEndorsements && (
+                <BarLoader width="100%" color="#00A19A" />
+              )}
+              {errorEndorsements && (
+                <p className="text-red-500">Error loading endorsements.</p>
+              )}
+
+              {(!endorsements || endorsements?.length === 0) && (
+                <p className="text-gray-500">No endorsements yet.</p>
+              )}
+
+              <ul className="space-y-4">
+                {endorsements?.map((req) => (
+                  <li
+                    key={req.id}
+                    className="border rounded-lg p-4 bg-white shadow-sm flex justify-between items-center"
+                  >
+                    {/* Left side: Profile picture and message */}
+                    <div className="flex items-start gap-4">
+                      {/* Profile Picture */}
+                      <img
+                        src={req.requester?.profile_picture_url}
+                        alt={req.requester?.full_name}
+                        className="w-16 h-16 rounded-full object-cover border"
+                      />
+
+                      {/* Name, Email, Message */}
+                      <div>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {req.requester?.full_name}
+                        </p>
+                        <p className="text-sm text-gray-500 mb-1">
+                          {req.requester?.email}
+                        </p>
+                        <p className="text-gray-700 mt-1">{req.message}</p>
+                      </div>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex flex-row items-end gap-4">
+                      <Button
+                        variant="default"
+                        size="default"
+                        className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

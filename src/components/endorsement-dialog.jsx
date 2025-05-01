@@ -6,11 +6,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog.jsx";
-import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Button } from "@/components/ui/button.jsx";
+import { DialogTrigger } from "@radix-ui/react-dialog";
 
-const ConnectDialog = ({ open, setOpen, onSend }) => {
+const EndorsementDialog = ({ open, setOpen, onSend }) => {
   const [message, setMessage] = React.useState("");
 
   const handleSubmit = () => {
@@ -21,16 +21,25 @@ const ConnectDialog = ({ open, setOpen, onSend }) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Send a connection request</DialogTitle>
+      <DialogTrigger asChild>
+        <Button
+          className="rounded-full cursor-pointer"
+          variant="outline"
+          size="lg"
+        >
+          Add
+        </Button>
+      </DialogTrigger>
+      <DialogContent className={""}>
+        <DialogHeader className={""}>
+          <DialogTitle className={""}>Add an endorsement</DialogTitle>
         </DialogHeader>
 
         <Textarea
           placeholder="Add a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="resize-none"
+          className="resize-y"
         />
 
         <DialogFooter className="mt-4">
@@ -40,7 +49,7 @@ const ConnectDialog = ({ open, setOpen, onSend }) => {
             onClick={handleSubmit}
             className="bg-cpg-teal hover:bg-cpg-teal/90"
           >
-            Send Request
+            Submit
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -48,4 +57,4 @@ const ConnectDialog = ({ open, setOpen, onSend }) => {
   );
 };
 
-export default ConnectDialog;
+export default EndorsementDialog;
