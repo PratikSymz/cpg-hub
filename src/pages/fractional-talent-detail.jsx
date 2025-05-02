@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getTalent } from "@/api/apiTalent.js"; // <- fetch talent_profiles by ID
 import { Copy, ExternalLink } from "lucide-react";
@@ -41,6 +41,8 @@ const tabs = [
 const FractionalTalentDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
+  const role = user?.unsafeMetadata?.role;
+  const navigate = useNavigate();
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
@@ -52,6 +54,13 @@ const FractionalTalentDetail = () => {
     loading: loadingTalent,
     error,
   } = useFetch(getTalent);
+
+  useEffect(() => {
+    if (isLoaded && id) {
+      // Load talent
+      funcTalent({ talent_id: id });
+    }
+  }, [isLoaded, id]);
 
   const {
     level_of_experience = [],
@@ -76,38 +85,15 @@ const FractionalTalentDetail = () => {
   } = useFetch(getAllEndorsements);
 
   // Update endorsement message
-  const {
-    func: funcUpdateEndorsement,
-    loading: loadingUpdateEndorsement,
-    error: errorUpdateEndorsement,
-  } = useFetch(updateEndorsement);
+  const { func: funcUpdateEndorsement, loading: loadingUpdateEndorsement } =
+    useFetch(updateEndorsement);
 
   useEffect(() => {
-    if (isLoaded && id) {
-      // Load talent
-      funcTalent({ talent_id: id });
-    }
-  }, [isLoaded, id]);
-
-  useEffect(() => {
-    // Only load connection requests for the logged in user
-    if (isLoaded && user?.id && user.id === user_info?.user_id) {
+    // Load endorsements for this talent
+    if (isLoaded && user_info) {
       fetchEndorsements({ user_id: user_info.user_id });
     }
   }, [isLoaded, user, user_info]);
-  //   if (!isLoaded || !user?.id || !user_info?.user_id) return;
-  //   await funcSendRequest({
-  //     requester_id: user.id,
-  //     target_id: user_info.user_id,
-  //     message,
-  //   });
-
-  //   if (!errorSendRequest) {
-  //     setStatus(labelByStatus.pending); // Update UI state
-  //   } else {
-  //     toast.error("Failed to send connection request.");
-  //   }
-  // };
 
   // const handleUpdateRequest = async (requester_id, updated_status) => {
   //   if (!isLoaded || !user?.id) return;
@@ -152,25 +138,14 @@ const FractionalTalentDetail = () => {
 
   const handleEndorsementSubmit = async (message) => {
     if (!isLoaded || !user?.id || !user_info?.user_id) return;
-
     try {
-      const res = await fetch("/api/send-endorsement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from_user_id: user.id,
-          to_user_id: user_info.user_id,
-          message,
-        }),
+      await funcUpdateEndorsement(message, {
+        endorser_id: user.id,
+        target_id: user_info.user_id,
       });
 
-      if (!res.ok) {
-        toast.error("Failed to send endorsement.");
-        return;
-      }
-
-      toast.success("Endorsement sent!");
-    } catch (err) {
+      toast.success("Endorsement added!");
+    } catch (error) {
       toast.error("Something went wrong.");
     }
   };
@@ -201,16 +176,15 @@ const FractionalTalentDetail = () => {
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+        <div className="flex flex-row items-center gap-4">
           <img
             src={image_url}
             alt="Profile"
             className="h-22 w-22 rounded-full border object-cover"
           />
-          <div>
+          <div className="flex flex-col">
             <h1 className="text-3xl font-bold">{full_name}</h1>
-
             <div className="flex flex-row gap-4 mt-2">
               {linkedin_url && (
                 <Link to={linkedin_url}>
@@ -228,10 +202,19 @@ const FractionalTalentDetail = () => {
             </div>
           </div>
         </div>
+
+        {user_info && user && user_info.user_id === user.id && (
+          <Button
+            className="rounded-full cursor-pointer"
+            variant="outline"
+            size="lg"
+            onClick={() => navigate("/edit-talent")}
+          >
+            Edit profile
+          </Button>
+        )}
       </div>
-
       <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
-
       <div className="flex flex-col gap-2 text-sm">
         <Tabs defaultValue="about" className="w-full">
           <TabsList className="flex justify-center gap-4 mb-8 bg-transparent">
@@ -321,11 +304,13 @@ const FractionalTalentDetail = () => {
             <div className="">
               <div className="flex flex-row justify-between">
                 <h2 className="text-2xl font-semibold mb-6">Endorsements</h2>
-                <EndorsementDialog
-                  open={endorseDialogOpen}
-                  setOpen={setEndorseDialogOpen}
-                  onSend={handleEndorsementSubmit}
-                />
+                {user_info && user && user_info.user_id !== user.id && (
+                  <EndorsementDialog
+                    open={endorseDialogOpen}
+                    setOpen={setEndorseDialogOpen}
+                    onSend={handleEndorsementSubmit}
+                  />
+                )}
               </div>
 
               {loadingEndorsements && (
@@ -339,43 +324,47 @@ const FractionalTalentDetail = () => {
                 <p className="text-gray-500">No endorsements yet.</p>
               )}
 
-              <ul className="space-y-4">
-                {endorsements?.map((req) => (
+              <ul className="space-y-4 mt-6">
+                {endorsements?.map((endorsement) => (
                   <li
-                    key={req.id}
+                    key={endorsement.id}
                     className="border rounded-lg p-4 bg-white shadow-sm flex justify-between items-center"
                   >
                     {/* Left side: Profile picture and message */}
                     <div className="flex items-start gap-4">
                       {/* Profile Picture */}
                       <img
-                        src={req.requester?.profile_picture_url}
-                        alt={req.requester?.full_name}
+                        src={endorsement.endorser?.profile_picture_url}
+                        alt={endorsement.endorser?.full_name}
                         className="w-16 h-16 rounded-full object-cover border"
                       />
 
                       {/* Name, Email, Message */}
                       <div>
                         <p className="text-lg font-semibold text-gray-900">
-                          {req.requester?.full_name}
+                          {endorsement.endorser?.full_name}
                         </p>
-                        <p className="text-sm text-gray-500 mb-1">
-                          {req.requester?.email}
+                        {/* <p className="text-sm text-gray-500 mb-1">
+                          {endorsement.endorser?.email}
+                        </p> */}
+                        <p className="text-gray-700 mt-1">
+                          {endorsement.message}
                         </p>
-                        <p className="text-gray-700 mt-1">{req.message}</p>
                       </div>
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex flex-row items-end gap-4">
-                      <Button
-                        variant="default"
-                        size="default"
-                        className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
-                      >
-                        Edit
-                      </Button>
-                    </div>
+                    {endorsement.endorser?.user_id === user.id && (
+                      <div className="flex flex-row items-end gap-4">
+                        <Button
+                          variant="default"
+                          size="default"
+                          className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

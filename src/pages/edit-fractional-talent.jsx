@@ -1,158 +1,144 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
-import {
-  getMyTalentProfile,
-  updateTalent,
-  deleteTalent,
-} from "@/api/apiTalent.js";
+import { getTalent, updateTalent } from "@/api/apiTalent.js";
+import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { Button } from "@/components/ui/button.jsx";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   areasOfSpecialization,
   levelsOfExperience,
 } from "@/constants/filters.js";
 import clsx from "clsx";
-import { useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
-import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
 
 const schema = z.object({
+  full_name: z.string().min(1, "Full Name is required"),
   level_of_experience: z
     .array(z.string())
-    .min(1, "Experience level is required")
-    .optional(),
-  industry_experience: z
-    .string()
-    .min(1, "Industry Experience is required")
-    .optional(),
+    .min(1, "Level of experience required"),
+  industry_experience: z.string().min(1, "Industry experience required"),
   area_of_specialization: z
     .array(z.string())
-    .min(1, "Area of specialization is required")
-    .optional(),
-  linkedin_url: z.string().url("Must be a valid URL").optional(),
-  portfolio_url: z.string().url("Must be a valid URL").optional(),
-  resume: z
-    .any()
-    .refine(
-      (file) =>
-        file?.[0] &&
-        [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ].includes(file[0]?.type),
-      {
-        message: "Only PDF, DOC, or DOCX files are allowed",
-      }
-    )
-    .optional(),
+    .min(1, "Select at least one area"),
+  linkedin_url: z.string().url("Invalid URL").optional(),
+  portfolio_url: z.string().url("Invalid URL").optional(),
+  resume: z.any().optional(),
 });
 
-const TalentEditProfile = () => {
+const EditTalentPage = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+
+  const { func: fetchTalent, data: talent, loading } = useFetch(getTalent);
+
+  const {
+    func: saveTalent,
+    loading: saving,
+    error: saveError,
+  } = useFetch(updateTalent);
+
+  const [otherSpec, setOtherSpec] = useState("");
 
   const {
     register,
     handleSubmit,
     control,
-    reset,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(schema),
     defaultValues: {
+      full_name: "",
       level_of_experience: [],
       industry_experience: "",
       area_of_specialization: [],
       linkedin_url: "",
       portfolio_url: "",
+      resume: undefined,
     },
+    resolver: zodResolver(schema),
   });
 
-  const {
-    func: fetchTalent,
-    data: talentData,
-    loading: loadingTalent,
-  } = useFetch(getMyTalentProfile);
-  const {
-    func: updateTalentProfile,
-    loading: loadingUpdate,
-    error: errorUpdateTalent,
-  } = useFetch(updateTalent);
-  const { func: deleteTalentProfile, loading: loadingDelete } =
-    useFetch(deleteTalent);
-
+  // Load talent profile
   useEffect(() => {
-    if (isLoaded && user && user.id) {
+    if (isLoaded) {
       fetchTalent({ user_id: user.id });
     }
-  }, [isLoaded, user]);
+  }, [isLoaded]);
 
+  // Prefill form
   useEffect(() => {
-    if (talentData) {
-      reset({
-        industry_experience: talentData.industry_experience || "",
-        area_of_specialization:
-          JSON.parse(talentData.area_of_specialization) || [],
-        level_of_experience: JSON.parse(talentData.level_of_experience) || [],
-        linkedin_url: talentData.linkedin_url || "",
-        portfolio_url: talentData.portfolio_url || "",
+    if (talent) {
+      setValue("full_name", user.fullName);
+      setValue("level_of_experience", talent.level_of_experience ?? []);
+      setValue("industry_experience", talent.industry_experience ?? "");
+      setValue("area_of_specialization", talent.area_of_specialization ?? []);
+      setValue("linkedin_url", talent.linkedin_url ?? "");
+      setValue("portfolio_url", talent.portfolio_url ?? "");
+    }
+  }, [talent]);
+
+  const onSubmit = async (data) => {
+    const combinedAreaOfSpec = otherSpec
+      ? [...data.area_of_specialization, otherSpec]
+      : data.area_of_specialization;
+
+    const nameParts = data.full_name.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ");
+
+    // Update Clerk first and last name if changed
+    if (firstName !== user?.firstName || lastName !== user?.lastName) {
+      await user.update({
+        firstName,
+        lastName,
       });
     }
-  }, [talentData, reset]);
 
-  const onSubmit = async (formData) => {
-    if (!isLoaded || !user?.id || !talentData) return;
-    await updateTalentProfile(formData, { user_id: user.id });
+    // Save Talent profile
+    await saveTalent({
+      user_id: user.id,
+      ...data,
+      area_of_specialization: combinedAreaOfSpec,
+    });
 
-    if (errorUpdateTalent) {
-      toast.error("Failed to update talent profile.");
-    } else {
-      toast.success("Talent profile updated!");
-    }
+    toast.success("Profile Updated!");
   };
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete your profile?"
-    );
-    if (confirmed) {
-      await deleteTalentProfile({ user_id: user.id });
-      navigate("/talents");
-    }
-  };
-
-  if (!isLoaded || loadingTalent) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  if (loading || !isLoaded) {
+    return <BarLoader width={"100%"} color="#36d7b7" />;
   }
 
-  const classLabel = "mb-1 block";
-  const classInput = "input-class";
-
   return (
-    <div className="px-6 py-10">
-      <h1 className="text-3xl font-bold mb-8 text-center">
-        Edit Talent Profile
-      </h1>
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <h1 className="text-4xl font-bold mb-6">Edit Your Talent Profile</h1>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 w-5/6 mx-auto"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Profile Pic + Full Name */}
+        <div>
+          <img
+            src={user?.imageUrl}
+            alt="Profile"
+            className="h-24 w-24 rounded-full border object-cover mb-4"
+          />
+          <Input placeholder="Full Name" {...register("full_name")} />
+          {errors.full_name && (
+            <p className="text-red-500">{errors.full_name.message}</p>
+          )}
+        </div>
+
         {/* Industry Experience */}
         <div>
-          <Label className={classLabel}>Industry Experience</Label>
           <Textarea
-            className="textarea-class resize block w-full h-24"
-            placeholder="e.g. 8 years in food & beverage..."
+            placeholder="Industry Experience"
             {...register("industry_experience")}
+            className="resize-none"
           />
           {errors.industry_experience && (
             <p className="text-red-500">{errors.industry_experience.message}</p>
@@ -161,10 +147,10 @@ const TalentEditProfile = () => {
 
         {/* Area of Specialization */}
         <div>
-          <Label className={classLabel}>Area of Specialization</Label>
+          <p className="font-medium mb-2">Area of Specialization</p>
           <Controller
-            name="area_of_specialization"
             control={control}
+            name="area_of_specialization"
             render={({ field }) => {
               const toggleValue = (value) => {
                 const selected = field.value.includes(value);
@@ -176,7 +162,7 @@ const TalentEditProfile = () => {
 
               return (
                 <div className="grid grid-cols-2 gap-3">
-                  {areasOfSpecialization.map(({ label }) => (
+                  {areasOfSpecialization.map(({ label, value }) => (
                     <button
                       key={label}
                       type="button"
@@ -194,15 +180,22 @@ const TalentEditProfile = () => {
                 </div>
               );
             }}
+          />
+          {/* Other field */}
+          <Input
+            placeholder="Other (if any)"
+            value={otherSpec}
+            onChange={(e) => setOtherSpec(e.target.value)}
+            className="mt-2"
           />
         </div>
 
         {/* Level of Experience */}
         <div>
-          <Label className={classLabel}>Level of Experience</Label>
+          <p className="font-medium mb-2">Level of Experience</p>
           <Controller
-            name="level_of_experience"
             control={control}
+            name="level_of_experience"
             render={({ field }) => {
               const toggleValue = (value) => {
                 const selected = field.value.includes(value);
@@ -214,7 +207,7 @@ const TalentEditProfile = () => {
 
               return (
                 <div className="grid grid-cols-2 gap-3">
-                  {levelsOfExperience.map(({ label }) => (
+                  {levelsOfExperience.map(({ label, value }) => (
                     <button
                       key={label}
                       type="button"
@@ -235,51 +228,37 @@ const TalentEditProfile = () => {
           />
         </div>
 
-        {/* LinkedIn URL */}
+        {/* Links */}
+        <Input placeholder="LinkedIn URL" {...register("linkedin_url")} />
+        <Input placeholder="Portfolio URL" {...register("portfolio_url")} />
+
+        {/* Resume upload */}
         <div>
-          <Label className={classLabel}>LinkedIn URL</Label>
-          <Input
-            type="text"
-            className={classInput}
-            placeholder="https://linkedin.com/in/your-profile"
-            {...register("linkedin_url")}
-          />
+          <p className="font-medium mb-2">Resume</p>
+          {talent?.resume_url && (
+            <a
+              href={talent.resume_url}
+              target="_blank"
+              className="underline text-teal-600 mb-4 block"
+            >
+              View Current Resume
+            </a>
+          )}
+          <Input type="file" {...register("resume")} />
         </div>
 
-        {/* Portfolio URL */}
-        <div>
-          <Label className={classLabel}>Website URL</Label>
-          <Input
-            type="text"
-            className={classInput}
-            placeholder="https://yourwebsite.com"
-            {...register("portfolio_url")}
-          />
-        </div>
+        {saveError && <p className="text-red-500">{saveError.message}</p>}
 
-        {/* Submit Button */}
         <Button
           type="submit"
-          size="lg"
-          variant="default"
-          className="mt-4 bg-cpg-teal hover:bg-cpg-teal/90"
+          disabled={saving}
+          className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
         >
-          {loadingUpdate ? "Updating..." : "Save Changes"}
-        </Button>
-
-        {/* Delete Button */}
-        <Button
-          type="button"
-          size="lg"
-          variant="destructive"
-          className="mt-4"
-          onClick={handleDelete}
-        >
-          {loadingDelete ? "Deleting..." : "Delete Profile"}
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </form>
     </div>
   );
 };
 
-export default TalentEditProfile;
+export default EditTalentPage;

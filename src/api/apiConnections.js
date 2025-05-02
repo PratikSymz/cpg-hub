@@ -11,15 +11,14 @@ export async function getAllEndorsements(token, { user_id }) {
       `
       id,
       message,
-      status,
       created_at,
-      endorser:from_id (
+      endorser:from_user_id (
         user_id,
         full_name,
         email,
         profile_picture_url
       ),
-      target:to_id (
+      target:to_user_id (
         user_id,
         full_name,
         email,
@@ -27,7 +26,7 @@ export async function getAllEndorsements(token, { user_id }) {
       )
     `
     )
-    .eq("to_id", user_id)
+    .eq("to_user_id", user_id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -49,11 +48,11 @@ export async function updateEndorsement(
     .from(table_name)
     .upsert(
       {
-        from_id: endorser_id,
-        to_id: target_id,
+        from_user_id: endorser_id,
+        to_user_id: target_id,
         message: new_message,
       },
-      { onConflict: "from_id,to_id" }
+      { onConflict: "from_user_id,to_user_id" }
     )
     .select();
 
@@ -71,7 +70,7 @@ export async function deleteEndorsement(token, { endorser_id }) {
   const { data, error } = await supabase
     .from(table_name)
     .delete()
-    .eq("from_id", endorser_id);
+    .eq("from_user_id", endorser_id);
 
   if (error) {
     console.error(error);

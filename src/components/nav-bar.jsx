@@ -124,15 +124,6 @@ const NavBar = () => {
                     href="/saved-jobs"
                   />
                 )}
-                {role && (
-                  <UserButton.Link
-                    label="Edit profile"
-                    labelIcon={<Edit size={15} />}
-                    href={
-                      role === ROLE_TALENT ? "/edit-talent" : "/talents"
-                    }
-                  />
-                )}
                 <UserButton.Action label="manageAccount" />
               </UserButton.MenuItems>
             </UserButton>
