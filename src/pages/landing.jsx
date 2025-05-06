@@ -36,16 +36,16 @@ const LandingPage = () => {
     }
   };
 
-  const { func: updateUserProfile, data } = useFetch(syncUserProfile, {
-    user_id: user?.id,
-    full_name: user?.fullName || "",
-    email: user?.primaryEmailAddress?.emailAddress || "",
-    profile_picture_url: user?.imageUrl || "",
-  });
+  const { func: updateUserProfile, data } = useFetch(syncUserProfile);
 
   useEffect(() => {
     if (isSignedIn && isLoaded && user) {
-      updateUserProfile();
+      updateUserProfile({
+        user_id: user?.id,
+        full_name: user?.fullName || "",
+        email: user?.primaryEmailAddress?.emailAddress || "",
+        profile_picture_url: user?.imageUrl || "",
+      });
     }
   }, [isLoaded, isSignedIn, user]);
 

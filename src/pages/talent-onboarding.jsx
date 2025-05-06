@@ -251,7 +251,7 @@ const TalentOnboarding = () => {
 
                     {/* Show selected values as tags */}
                     <div className="flex flex-wrap gap-2 my-4">
-                      {field.value.map((val, idx) => (
+                      {(field.value ?? []).map((val, idx) => (
                         <span
                           key={idx}
                           className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"

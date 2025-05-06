@@ -48,7 +48,7 @@ const FractionalJobDetail = () => {
   } = job || {};
 
   // Brand info
-  const { brand_name, website, linkedin_url, brand_hq, logo_url, user_id } =
+  const { brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url, user_id } =
     (job && job.brand) || {};
 
   // Load hiring status
@@ -235,6 +235,13 @@ const FractionalJobDetail = () => {
       </div>
 
       {/* Section: Summary Info */}
+      <div className="bg-muted rounded-md p-4">
+          <Label className="text-xs text-muted-foreground uppercase">
+            About
+          </Label>
+          <p className="text-sm font-medium mt-1">{job?.brand && brand_desc}</p>
+        </div>
+        
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
         <div className="bg-muted rounded-md p-4">
           <Label className="text-xs text-muted-foreground uppercase">

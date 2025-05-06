@@ -8,7 +8,7 @@ export async function getJobs(
 
   let query = supabase.from("job_listings").select(
     `*, 
-    brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url),
+    brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
     saved: saved_jobs(id)`
   );
 
@@ -44,7 +44,7 @@ export async function getSingleJob(token, { job_id }) {
     .from("job_listings")
     .select(
       `*, 
-      brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url),
+      brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
       applications: applications(*)`
     )
     .eq("id", job_id)
@@ -65,7 +65,7 @@ export async function getSavedJobs(token) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase.from("saved_jobs").select(
     `*, 
-      job: job_listings(*, brand: brand_profiles(brand_name, website, linkedin_url, brand_hq, logo_url))`
+      job: job_listings(*, brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url))`
   );
 
   if (error) {

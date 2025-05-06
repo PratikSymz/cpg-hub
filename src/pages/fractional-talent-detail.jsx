@@ -110,13 +110,15 @@ const FractionalTalentDetail = () => {
 
   const handleEmailSend = async (message) => {
     try {
+      console.log(email);
+      console.log(user?.primaryEmailAddress?.emailAddress);
       const res = await fetch(
         "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            target_email: email,
+            target_email: "pratikbudhiraja@gmail.com",
             sender_email: user?.primaryEmailAddress?.emailAddress,
             target_name: full_name,
             sender_name: user?.fullName,
@@ -126,6 +128,8 @@ const FractionalTalentDetail = () => {
       );
 
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Email send failed:", errorText);
         throw new Error("Failed to send email.");
       }
 
