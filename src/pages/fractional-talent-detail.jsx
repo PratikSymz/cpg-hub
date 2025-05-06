@@ -163,7 +163,7 @@ const FractionalTalentDetail = () => {
   }
 
   const connectButton =
-    user_info.user_id !== user.id ? (
+    user_info && user && user_info.user_id !== user.id ? (
       <div className="flex flex-col text-sm mt-10">
         <ConnectEmailDialog
           open={connectDialogOpen}
@@ -358,7 +358,7 @@ const FractionalTalentDetail = () => {
                     </div>
 
                     {/* Right: Actions */}
-                    {endorsement.endorser?.user_id === user.id && (
+                    {endorsement.endorser?.user_id === user?.id && (
                       <div className="flex flex-row items-end gap-4">
                         <Button
                           variant="default"
