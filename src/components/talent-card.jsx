@@ -29,6 +29,7 @@ const TalentCard = ({ talent }) => {
   const email = user_info.email;
   const image_url = user_info.profile_picture_url;
   const full_name = user_info.full_name;
+  console.log(talent);
 
   return (
     <Card className="flex flex-col">
@@ -69,7 +70,7 @@ const TalentCard = ({ talent }) => {
       <CardContent className="flex flex-col gap-4 text-sm text-black/90">
         <p>
           <strong>Experience Level:</strong>{" "}
-          {JSON.parse(level_of_experience).map((level, idx) => (
+          {level_of_experience.map((level, idx) => (
             <span
               key={idx}
               className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"
@@ -80,7 +81,7 @@ const TalentCard = ({ talent }) => {
         </p>
         <p>
           <strong>Specialization:</strong>{" "}
-          {JSON.parse(area_of_specialization).map((level, idx) => (
+          {area_of_specialization.map((level, idx) => (
             <span
               key={idx}
               className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"

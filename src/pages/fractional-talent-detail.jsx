@@ -259,7 +259,7 @@ const FractionalTalentDetail = () => {
                   Level of Experience
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {JSON.parse(level_of_experience).map((level, idx) => (
+                  {level_of_experience.map((level, idx) => (
                     <span
                       key={idx}
                       className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
@@ -275,7 +275,7 @@ const FractionalTalentDetail = () => {
                   Area of Specialization
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {JSON.parse(area_of_specialization).map((area, idx) => (
+                  {area_of_specialization.map((area, idx) => (
                     <span
                       key={idx}
                       className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"

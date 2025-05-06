@@ -31,6 +31,7 @@ const schema = z.object({
         message: "Only Images are allowed",
       }
     ),
+  brand_desc: z.string().min(1, { message: "Brand description is required" }),
 });
 
 const BrandOnboarding = () => {
@@ -99,6 +100,18 @@ const BrandOnboarding = () => {
           />
           {errors.brand_name && (
             <p className="text-sm text-red-500">{errors.brand_name.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label className="mb-1 block">Brand Description</Label>
+          <Textarea
+            className="textarea-class resize block w-full h-24"
+            {...register("brand_desc")}
+            placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
+          />
+          {errors.brand_desc && (
+            <p className="text-sm text-red-500">{errors.brand_desc.message}</p>
           )}
         </div>
 

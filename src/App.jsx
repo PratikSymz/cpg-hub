@@ -19,6 +19,7 @@ import FractionalTalentDetail from "./pages/fractional-talent-detail.jsx";
 import TalentOnboarding from "./pages/talent-onboarding.jsx";
 import ProtectedRoute from "./components/protected-route.jsx";
 import TalentEditProfile from "./pages/edit-fractional-talent.jsx";
+import BrandEditProfile from "./pages/edit-brand.jsx";
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
       {
         path: "/edit-job/:id",
         element: <FractionalJobDetail />,
+      },
+      {
+        path: "/edit-brand",
+        element: <BrandEditProfile />,
       },
       {
         path: "/services",
