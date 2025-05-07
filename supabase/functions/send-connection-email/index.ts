@@ -49,7 +49,7 @@ serve(async (req) => {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "CPG Hub <notifications@yourdomain.com>",
+      from: sender_email,
       to: target_email,
       reply_to: sender_email,
       subject: `${sender_name} sent you a connection request!`,
