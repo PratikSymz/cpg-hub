@@ -13,8 +13,11 @@ import useFetch from "@/hooks/use-fetch.jsx";
 import { getMyBrandProfile, updateBrand } from "@/api/apiBrands.js";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
+import { syncUserProfile } from "@/api/apiUsers.js";
 
 const schema = z.object({
+  first_name: z.string().min(1, "First Name is required"),
+  last_name: z.string().min(1, "Last Name is required"),
   brand_name: z.string().min(1, { message: "Brand name is required" }),
   website: z.string().url().optional(),
   linkedin_url: z.string().url().optional(),
@@ -24,7 +27,7 @@ const schema = z.object({
     .optional()
     .refine(
       (file) =>
-        !file?.[0] ||
+        !file?.[0] || // allow if no file selected
         ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
       { message: "Only PNG, JPG, or JPEG allowed" }
     ),
@@ -39,20 +42,26 @@ const EditBrandPage = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
+  if (!user) {
+    // navigate("/");
+  }
+
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(schema),
     defaultValues: {
+      first_name: "",
+      last_name: "",
       brand_name: "",
       website: "",
       linkedin_url: "",
       brand_hq: "",
       brand_desc: "",
     },
+    resolver: zodResolver(schema),
   });
 
   const {
@@ -60,7 +69,15 @@ const EditBrandPage = () => {
     data: brandData,
     func: fetchBrand,
   } = useFetch(getMyBrandProfile);
-  const { loading: saving, func: saveBrand } = useFetch(updateBrand);
+
+  const {
+    loading: savingBrand,
+    func: saveBrand,
+    error: saveError,
+  } = useFetch(updateBrand);
+
+  // Update User Profile
+  const { func: updateUserProfile, data } = useFetch(syncUserProfile);
 
   const [logoPreview, setLogoPreview] = useState("");
 
@@ -72,40 +89,21 @@ const EditBrandPage = () => {
 
   useEffect(() => {
     if (brandData) {
+      setValue("first_name", user.firstName || "");
+      setValue("last_name", user.lastName || "");
       setValue("brand_name", brandData.brand_name || "");
       setValue("website", brandData.website || "");
       setValue("linkedin_url", brandData.linkedin_url || "");
       setValue("brand_hq", brandData.brand_hq || "");
+      setValue("brand_desc", brandData.brand_desc || "");
       if (brandData.logo_url) {
         setLogoPreview(brandData.logo_url);
       }
     }
-  }, [brandData]);
-
-  const onSubmit = async (data) => {
-    const logoFile = data.logo?.[0];
-
-    try {
-      await saveBrand(
-        null,
-        {
-          brand_name: data.brand_name,
-          website: data.website,
-          linkedin_url: data.linkedin_url,
-          brand_hq: data.brand_hq,
-          logo: logoFile,
-        },
-        { user_id: user.id }
-      );
-
-      toast.success("Brand profile updated!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update brand profile.");
-    }
-  };
+  }, [user, brandData]);
 
   const [profileLoad, showProfileLoad] = useState(false);
+
   const handleProfilePictureClick = () => {
     fileInputRef.current.click();
   };
@@ -126,6 +124,44 @@ const EditBrandPage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to update profile picture.");
+    }
+  };
+
+  const onSubmit = async (data) => {
+    const firstName = data.first_name;
+    const lastName = data.last_name;
+
+    try {
+      // Update Clerk first and last name if changed
+      if (firstName !== user?.firstName || lastName !== user?.lastName) {
+        await user.update({
+          firstName,
+          lastName,
+        });
+      }
+
+      // Save Brand profile
+      if (user && user.id) {
+        await saveBrand(
+          { ...data, logo_url: brandData.logo_url },
+          { user_id: user.id }
+        );
+      }
+
+      // Sync User profile
+      if (isSignedIn && isLoaded && user) {
+        await updateUserProfile({
+          user_id: user?.id,
+          full_name: user?.fullName || "",
+          email: user?.primaryEmailAddress?.emailAddress || "",
+          profile_picture_url: user?.imageUrl || "",
+        });
+      }
+
+      toast.success("Brand profile updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update brand profile.");
     }
   };
 
@@ -198,8 +234,9 @@ const EditBrandPage = () => {
 
         {/* Brand Name */}
         <div>
-          <Label>Brand Name</Label>
+          <Label className={classLabel}>Brand Name</Label>
           <Input
+            className={classInput}
             type="text"
             {...register("brand_name")}
             placeholder="e.g. Slingshot Coffee"
@@ -210,7 +247,7 @@ const EditBrandPage = () => {
         </div>
 
         <div>
-          <Label className="mb-1 block">Brand Description</Label>
+          <Label className={classLabel}>Brand Description</Label>
           <Textarea
             className="textarea-class resize block w-full h-24"
             {...register("brand_desc")}
@@ -223,8 +260,9 @@ const EditBrandPage = () => {
 
         {/* Website */}
         <div>
-          <Label>Website</Label>
+          <Label className={classLabel}>Website</Label>
           <Input
+            className={classInput}
             type="url"
             {...register("website")}
             placeholder="https://yourbrand.com"
@@ -236,8 +274,9 @@ const EditBrandPage = () => {
 
         {/* LinkedIn */}
         <div>
-          <Label>LinkedIn URL</Label>
+          <Label className={classLabel}>LinkedIn URL</Label>
           <Input
+            className={classInput}
             type="url"
             {...register("linkedin_url")}
             placeholder="https://linkedin.com/company/your-brand"
@@ -249,8 +288,9 @@ const EditBrandPage = () => {
 
         {/* Brand HQ */}
         <div>
-          <Label>Brand HQ</Label>
+          <Label className={classLabel}>Brand HQ</Label>
           <Input
+            className={classInput}
             type="text"
             {...register("brand_hq")}
             placeholder="New York, NY"
@@ -259,22 +299,35 @@ const EditBrandPage = () => {
 
         {/* Logo */}
         <div>
-          <Label>Brand Logo</Label>
+          <Label className={classLabel}>Brand Logo</Label>
           {logoPreview && (
             <div className="mb-4">
               <img
                 src={logoPreview}
                 alt="Current Logo"
-                className="h-24 w-24 object-cover rounded border"
+                className="h-24 w-24 aspect-3/2 object-contain rounded border scale-100"
               />
             </div>
           )}
-          <Input type="file" accept="image/*" {...register("logo")} />
-          {errors.logo && <p className="text-red-500">{errors.logo.message}</p>}
+          <Input
+            className={classInput}
+            type="file"
+            accept="image/*"
+            {...register("logo")}
+          />
         </div>
 
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
+        {saveError && <p className="text-red-500">{saveError.message}</p>}
+
+        <Button
+          variant="default"
+          type="submit"
+          size="lg"
+          className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
+          disabled={savingBrand}
+        >
+          {savingBrand ? "Saving..." : "Save Changes"}
+          {savingBrand && <Loader2Icon className="animate-spin h-6 w-6" />}
         </Button>
       </form>
     </div>

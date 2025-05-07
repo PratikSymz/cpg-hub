@@ -136,6 +136,7 @@ export async function updateBrand(token, brandData, { user_id }) {
     company_logo_url = publicUrlData?.publicUrl;
   }
 
+
   const { data, error } = await supabase
     .from(table_name)
     .update({

@@ -92,7 +92,7 @@ const EditTalentPage = () => {
     }
   }, [isLoaded]);
 
-  // Update User Profike
+  // Update User Profile
   const { func: updateUserProfile, data } = useFetch(syncUserProfile);
 
   const selectedOther = useWatch({ control, name: "area_of_specialization" });
@@ -175,11 +175,13 @@ const EditTalentPage = () => {
           {
             ...data,
             area_of_specialization: combinedAreaOfSpec,
+            resume_url: talentData.resume_url,
           },
           { user_id: user.id }
         );
       }
 
+      // Sync User profile
       if (isSignedIn && isLoaded && user) {
         await updateUserProfile({
           user_id: user?.id,

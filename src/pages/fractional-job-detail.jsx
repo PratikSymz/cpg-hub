@@ -48,8 +48,15 @@ const FractionalJobDetail = () => {
   } = job || {};
 
   // Brand info
-  const { brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url, user_id } =
-    (job && job.brand) || {};
+  const {
+    brand_name,
+    brand_desc,
+    website,
+    linkedin_url,
+    brand_hq,
+    logo_url,
+    user_id,
+  } = (job && job.brand) || {};
 
   // Load hiring status
   const { loading: loadingHiringStatus, func: funcHiringStatus } =
@@ -235,13 +242,15 @@ const FractionalJobDetail = () => {
       </div>
 
       {/* Section: Summary Info */}
-      <div className="bg-muted rounded-md p-4">
+      {brand_desc && (
+        <div className="bg-muted rounded-md p-4">
           <Label className="text-xs text-muted-foreground uppercase">
             About
           </Label>
           <p className="text-sm font-medium mt-1">{job?.brand && brand_desc}</p>
         </div>
-        
+      )}
+
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
         <div className="bg-muted rounded-md p-4">
           <Label className="text-xs text-muted-foreground uppercase">
@@ -310,7 +319,7 @@ const FractionalJobDetail = () => {
           </Label>
           <div className="flex flex-wrap gap-2">
             {job &&
-              JSON.parse(level_of_experience).map((level, idx) => (
+              level_of_experience.map((level, idx) => (
                 <span
                   key={idx}
                   className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
@@ -328,8 +337,8 @@ const FractionalJobDetail = () => {
           Area of Specialization
         </Label>
         <div className="flex flex-wrap gap-2">
-          {job?.area_of_specialization &&
-            JSON.parse(job.area_of_specialization).map((area, idx) => (
+          {area_of_specialization &&
+            area_of_specialization.map((area, idx) => (
               <span
                 key={idx}
                 className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"

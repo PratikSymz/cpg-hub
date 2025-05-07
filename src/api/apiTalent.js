@@ -130,7 +130,6 @@ export async function updateTalent(token, talentData, { user_id }) {
   const bucket = "resumes";
 
   let resume_url = talentData.resume_url;
-
   const newFile = talentData.resume?.[0];
 
   if (newFile) {

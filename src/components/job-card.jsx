@@ -135,7 +135,7 @@ const JobCard = ({
         </p>
         <p>
           <strong>Area of Specialization:</strong>{" "}
-          {JSON.parse(area_of_specialization).map((level, idx) => (
+          {area_of_specialization.map((level, idx) => (
             <span
               key={idx}
               className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"
