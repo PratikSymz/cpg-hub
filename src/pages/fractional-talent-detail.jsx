@@ -148,6 +148,11 @@ const FractionalTalentDetail = () => {
         target_id: user_info.user_id,
       });
 
+      // Load endorsements for this talent
+      if (isLoaded && user_info) {
+        await fetchEndorsements({ user_id: user_info.user_id });
+      }
+
       toast.success("Endorsement added!");
     } catch (error) {
       toast.error("Something went wrong.");
