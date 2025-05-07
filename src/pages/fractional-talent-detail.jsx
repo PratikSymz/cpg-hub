@@ -118,7 +118,7 @@ const FractionalTalentDetail = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            target_email: "pratikbudhiraja@gmail.com",
+            target_email: email,
             sender_email: user?.primaryEmailAddress?.emailAddress,
             target_name: full_name,
             sender_name: user?.fullName,

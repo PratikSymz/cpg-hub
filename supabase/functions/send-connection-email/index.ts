@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { Resend } from "npm:resend";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FROM_EMAIL = "CPG Hub <connect@mycpghub.com>";
 
 serve(async (req) => {
   // ✅ Handle preflight CORS request
@@ -15,14 +16,11 @@ serve(async (req) => {
     });
   }
 
-  const raw = await req.text();
-  console.log(raw);
-
+  // Read and parse request
   let payload;
   try {
-    payload = JSON.parse(raw);
+    payload = await req.json();
   } catch (err) {
-    console.error("Invalid JSON", err);
     return new Response("Invalid JSON", {
       status: 400,
       headers: {
@@ -32,11 +30,10 @@ serve(async (req) => {
     });
   }
 
-  console.log("Payload:", payload);
-
   const { target_email, sender_email, message, target_name, sender_name } =
     payload;
 
+  // Validate required fields
   if (
     !target_email ||
     !sender_email ||
@@ -47,9 +44,12 @@ serve(async (req) => {
     return new Response("Missing parameters", { status: 400 });
   }
 
+  // Sanitize message (basic)
+  const sanitizedMessage = escapeHtml(message);
+
   try {
     const { data, error } = await resend.emails.send({
-      from: sender_email,
+      from: `${sender_name} via CPG Hub <connect@mycpghub.com>`,
       to: target_email,
       reply_to: sender_email,
       subject: `${sender_name} sent you a connection request!`,
@@ -58,7 +58,7 @@ serve(async (req) => {
           <p>Hi ${target_name},</p>
           <p>You received a new connection request on <strong>CPG Hub</strong>.</p>
           <p><strong>Message:</strong></p>
-          <blockquote style="border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;">${message}</blockquote>
+          <blockquote style="border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;">${sanitizedMessage}</blockquote>
         </div>
       `,
     });
@@ -92,3 +92,13 @@ serve(async (req) => {
     });
   }
 });
+
+// Basic HTML escaping to avoid injection
+function escapeHtml(unsafe: string) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
