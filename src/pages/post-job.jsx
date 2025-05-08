@@ -17,7 +17,7 @@ import { ROLE_BRAND, ROLE_TALENT } from "@/constants/roles.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
@@ -27,6 +27,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import clsx from "clsx";
+import { X } from "lucide-react";
 
 const schema = z.object({
   preferred_experience: z
@@ -112,6 +113,16 @@ const PostJob = () => {
   if (user?.unsafeMetadata?.role !== ROLE_BRAND) {
     return <Navigate to="/jobs" />;
   }
+
+  const [otherSpec, setOtherSpec] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const toTitleCase = (str) =>
+    str
+      .toLowerCase()
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
 
   return (
     <div>
@@ -218,25 +229,41 @@ const PostJob = () => {
         </div>
 
         {/* Area of Spec and Level of Exp */}
-        <div className="flex flex-row gap-24 justify-around my-6">
+        <div className="flex flex-col lg:flex-row gap-20 my-6">
+          {/* Area of Specialization */}
           <div className="flex-1">
             <Controller
               name="area_of_specialization"
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
-                  const selected = field.value.includes(value);
-                  const updated = selected
+                  if (value === "Other") {
+                    setShowOtherInput((prev) => !prev);
+                    return;
+                  }
+
+                  const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
+
                   field.onChange(updated);
+                };
+
+                const removeValue = (value) => {
+                  const updated = field.value.filter((v) => v !== value);
+                  field.onChange(updated);
+
+                  // if (value === "Other") {
+                  //   setShowOtherInput(false);
+                  //   setOtherSpec("");
+                  // }
                 };
 
                 return (
                   <div>
                     <Label className="mb-4 block">Area of Specialization</Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {areasOfSpecialization.map(({ label, value }) => (
+                      {areasOfSpecialization.map(({ label }) => (
                         <button
                           key={label}
                           type="button"
@@ -252,6 +279,60 @@ const PostJob = () => {
                         </button>
                       ))}
                     </div>
+
+                    {/* Other input box */}
+                    {showOtherInput && (
+                      <div className="flex gap-2 items-center my-4">
+                        <Input
+                          type="text"
+                          placeholder="Enter your specialization"
+                          value={otherSpec}
+                          onChange={(e) => setOtherSpec(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          className=""
+                          variant="default"
+                          size="lg"
+                          type="button"
+                          onClick={() => {
+                            const trimmed = toTitleCase(otherSpec.trim());
+                            // Check: valid string, not a duplicate (case-insensitive)
+                            const isDuplicate = field.value.some(
+                              (val) =>
+                                val.toLowerCase() === trimmed.toLowerCase()
+                            );
+                            // Min 3 letters, no special chars
+                            const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
+                            if (trimmed && !isDuplicate && isValid) {
+                              field.onChange([...field.value, trimmed]);
+                              setOtherSpec("");
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Show selected values as tags */}
+                    <div className="flex flex-wrap gap-2 my-4">
+                      {(field.value ?? []).map((val, idx) => (
+                        <span
+                          key={idx}
+                          className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"
+                        >
+                          {val}
+                          <button
+                            type="button"
+                            onClick={() => removeValue(val)}
+                            className="ml-2 text-teal-800 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 );
               }}
@@ -263,14 +344,14 @@ const PostJob = () => {
             )}
           </div>
 
+          {/* Level of Experience */}
           <div className="flex-1">
             <Controller
               name="level_of_experience"
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
-                  const selected = field.value.includes(value);
-                  const updated = selected
+                  const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
                   field.onChange(updated);
@@ -280,7 +361,7 @@ const PostJob = () => {
                   <div>
                     <Label className="mb-4 block">Level of Experience</Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {levelsOfExperience.map(({ label, value }) => (
+                      {levelsOfExperience.map(({ label }) => (
                         <button
                           key={label}
                           type="button"
@@ -359,7 +440,7 @@ const PostJob = () => {
           <p className="text-sm text-red-500">{errorCreateJob?.message}</p>
         )}
         {loadingCreateJob && <BarLoader width={"100%"} color="#36d7b7" />}
-        <Button type="submit" variant="default" size="lg" className="mt-12">
+        <Button type="submit" variant="default" size="lg" className="mt-12 bg-cpg-brown hover:bg-cpg-brown/90">
           Submit
         </Button>
       </form>

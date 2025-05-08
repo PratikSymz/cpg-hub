@@ -1,12 +1,13 @@
 import supabaseClient from "@/utils/supabase.js";
 
+const table_name = "job_listings";
 export async function getJobs(
   token,
   { area_specialization, level_exp, search_query }
 ) {
   const supabase = await supabaseClient(token);
 
-  let query = supabase.from("job_listings").select(
+  let query = supabase.from(table_name).select(
     `*, 
     brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
     saved: saved_jobs(id)`
@@ -22,9 +23,7 @@ export async function getJobs(
 
   const safeQuery = search_query.replace(/[%_]/g, "\\$&");
   if (search_query) {
-    query = query.or(
-      `job_title.ilike.%${safeQuery}%`
-    );
+    query = query.or(`job_title.ilike.%${safeQuery}%`);
   }
 
   const { data, error } = await query;
@@ -41,7 +40,7 @@ export async function getJobs(
 export async function getSingleJob(token, { job_id }) {
   const supabase = await supabaseClient(token);
   let query = supabase
-    .from("job_listings")
+    .from(table_name)
     .select(
       `*, 
       brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
@@ -55,6 +54,59 @@ export async function getSingleJob(token, { job_id }) {
   if (error) {
     console.error("Error fetching Job:", error);
     return null;
+  }
+
+  return data;
+}
+
+// Post job
+export async function addNewJob(token, jobData) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from("job_listings")
+    .insert([jobData])
+    .select();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error Creating Job");
+  }
+
+  return data;
+}
+
+// Update job
+export async function updateJob(token, { jobData, job_id }) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .update([jobData])
+    .eq("id", job_id)
+    .select();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Error updating Job");
+  }
+
+  return data;
+}
+
+// Delete job
+export async function deleteJob(token, { job_id }) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error: deleteError } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("id", job_id)
+    .select();
+
+  if (deleteError) {
+    console.error("Error deleting job:", deleteError);
+    return data;
   }
 
   return data;
@@ -139,41 +191,6 @@ export async function getMyJobs(token, { recruiter_id }) {
   if (error) {
     console.error("Error fetching Jobs:", error);
     return null;
-  }
-
-  return data;
-}
-
-// Delete job
-export async function deleteJob(token, { job_id }) {
-  const supabase = await supabaseClient(token);
-
-  const { data, error: deleteError } = await supabase
-    .from("job_listings")
-    .delete()
-    .eq("id", job_id)
-    .select();
-
-  if (deleteError) {
-    console.error("Error deleting job:", deleteError);
-    return data;
-  }
-
-  return data;
-}
-
-// - Post job
-export async function addNewJob(token, _, jobData) {
-  const supabase = await supabaseClient(token);
-
-  const { data, error } = await supabase
-    .from("job_listings")
-    .insert([jobData])
-    .select();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Error Creating Job");
   }
 
   return data;

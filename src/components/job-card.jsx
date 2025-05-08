@@ -155,23 +155,6 @@ const JobCard = ({
         >
           <Link to={`/job/${job.id}`}>More Details</Link>
         </Button>
-
-        {/* Handle save */}
-        {!isMySubmission && (
-          <Button
-            variant="outline"
-            size="default"
-            className="flex-none w-16"
-            onClick={handleSaveJob}
-            disabled={loadingSavedJob}
-          >
-            {saved ? (
-              <Heart size={20} fill="red" stroke="red" />
-            ) : (
-              <Heart size={20} />
-            )}
-          </Button>
-        )}
       </CardFooter>
     </Card>
   );
