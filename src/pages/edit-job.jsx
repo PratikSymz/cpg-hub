@@ -84,9 +84,10 @@ const EditJobPage = () => {
   const { id } = useParams();
   const { user, isLoaded, isSignedIn } = useUser();
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   if (!user) {
-    // navigate("/");
+    navigate("/");
   }
 
   const brandForm = useForm({
@@ -253,6 +254,7 @@ const EditJobPage = () => {
     try {
       await jobDelete({ job_id: id });
       toast.success("Job successfully deleted!");
+      navigate('/jobs');
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete job!");

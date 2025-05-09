@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -8,6 +8,9 @@ import { getSingleJob } from "@/api/apiFractionalJobs.js";
 import { Label } from "@radix-ui/react-label";
 import { FaGlobe, FaLinkedin } from "react-icons/fa";
 import { Button } from "@/components/ui/button.jsx";
+import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
+import { toast } from "sonner";
+import { getUser } from "@/api/apiUsers.js";
 
 const FractionalJobDetail = () => {
   const { id } = useParams();
@@ -20,6 +23,13 @@ const FractionalJobDetail = () => {
     data: job,
     func: funcJob,
   } = useFetch(getSingleJob);
+
+  // Load brand owner profile
+  const {
+    loading: loadingBrand,
+    data: brandProfile,
+    func: fetchBrand,
+  } = useFetch(getUser);
 
   useEffect(() => {
     if (isLoaded) {
@@ -44,6 +54,15 @@ const FractionalJobDetail = () => {
   const { brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url } =
     (job && job.brand) || {};
 
+  useEffect(() => {
+    if (brand_id) {
+      fetchBrand({ user_id: brand_id });
+    }
+  });
+
+  // Brand user profile
+  const { full_name, email, profile_picture_url } = brandProfile || {};
+
   // // Load hiring status
   // const { loading: loadingHiringStatus, func: funcHiringStatus } =
   //   useFetch(updateHiringStatus);
@@ -56,6 +75,53 @@ const FractionalJobDetail = () => {
   //   );
   // };
 
+  const handleEmailSend = async (message) => {
+    try {
+      const res = await fetch(
+        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_email: email,
+            sender_email: user?.primaryEmailAddress?.emailAddress,
+            target_name: full_name,
+            sender_name: user?.fullName,
+            message,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Email send failed:", errorText);
+        throw new Error("Failed to send email.");
+      }
+
+      toast.success("Email sent!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send email.");
+    }
+  };
+
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const connectButton =
+    brand_id && user && brand_id !== user.id ? (
+      <div className="flex flex-col text-sm mt-10">
+        <ConnectEmailDialog
+          open={connectDialogOpen}
+          setOpen={setConnectDialogOpen}
+          targetUser={brandProfile}
+          senderUser={user}
+          onSend={handleEmailSend}
+        />
+      </div>
+    ) : (
+      <></>
+    );
+
+    
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
@@ -225,6 +291,8 @@ const FractionalJobDetail = () => {
           />
         </div>
       </div>
+
+      <div>{connectButton}</div>
 
       {/* Hiring Status Control */}
       {/* {job?.brand_id === user?.id && (

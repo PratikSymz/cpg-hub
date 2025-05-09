@@ -45,7 +45,7 @@ const ConnectEmailDialog = ({
         </DialogHeader>
         <Textarea
           rows={5}
-          placeholder={`Hi ${targetUser.email}, I'd love to connect!`}
+          placeholder={`Hi ${targetUser?.email}, I'd love to connect!`}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="mt-4"

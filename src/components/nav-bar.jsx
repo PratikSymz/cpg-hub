@@ -109,19 +109,11 @@ const NavBar = () => {
               }}
             >
               <UserButton.MenuItems>
-                {role !== ROLE_SERVICE && role !== ROLE_TALENT && (
+                {role === ROLE_BRAND && (
                   <UserButton.Link
                     label="My Jobs"
                     labelIcon={<BriefcaseBusiness size={15} />}
                     href="/my-jobs"
-                  />
-                )}
-
-                {role !== ROLE_SERVICE && role !== ROLE_TALENT && (
-                  <UserButton.Link
-                    label="Saved Jobs"
-                    labelIcon={<Heart size={15} />}
-                    href="/saved-jobs"
                   />
                 )}
                 <UserButton.Action label="manageAccount" />

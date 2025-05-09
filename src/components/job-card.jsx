@@ -87,7 +87,7 @@ const JobCard = ({
                       {job.brand && brand_name}
                     </h1>
                   </div>
-                  <div className="flex flex-row gap-2 items-center text-black/90">
+                  <div className="flex flex-row gap-2 items-center text-base text-black/90">
                     <MapPinIcon size={15} /> {job.brand && brand_hq}
                   </div>
                 </div>
@@ -114,14 +114,14 @@ const JobCard = ({
 
         <div className="flex flex-row justify-between items-center font-bold mt-4 w-full">
           {job_title}
-          {isMySubmission && (
+          {/* {isMySubmission && (
             <Trash2Icon
               fill="red"
               size={20}
               className="text-red-200 cursor-pointer"
               onClick={handleDeleteJob}
             />
-          )}
+          )} */}
         </div>
       </CardHeader>
 
