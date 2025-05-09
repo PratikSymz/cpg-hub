@@ -49,14 +49,15 @@ serve(async (req) => {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `${sender_name} via CPG Hub <connect@mycpghub.com>`,
+      from: `${sender_name} via CPG Hub <no-reply@mycpghub.com>`,
       to: target_email,
       reply_to: sender_email,
       subject: `${sender_name} sent you a connection request!`,
       html: `
         <div style="font-family: sans-serif; font-size: 16px; color: #333;">
           <p>Hi ${target_name},</p>
-          <p>You received a new connection request on <strong>CPG Hub</strong>.</p>
+          <p>${sender_name} is interested to connect with you.</p>
+          <p>Reach out to them via ${sender_email}.</p>
           <p><strong>Message:</strong></p>
           <blockquote style="border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em;">${sanitizedMessage}</blockquote>
         </div>

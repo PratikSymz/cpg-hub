@@ -100,6 +100,8 @@ const ServiceProviderDetail = () => {
     return <p className="text-red-500 text-center">Error loading profile.</p>;
   }
 
+  console.log(service);
+
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
       {/* Header */}
@@ -111,7 +113,7 @@ const ServiceProviderDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">{full_name}</h1>
+            <h1 className="text-3xl font-bold">{company_name}</h1>
             <div className="flex flex-row gap-4 mt-2">
               {company_website && (
                 <Link to={company_website}>
@@ -166,7 +168,7 @@ const ServiceProviderDetail = () => {
           Categories of Service
         </Label>
         <div className="flex flex-wrap gap-2">
-          {category_of_service.map((category, idx) => (
+          {category_of_service && category_of_service.map((category, idx) => (
             <span
               key={idx}
               className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"

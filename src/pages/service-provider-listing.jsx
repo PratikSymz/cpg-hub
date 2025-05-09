@@ -60,9 +60,9 @@ function ServiceProviderListing() {
   }
 
   return (
-    <div className="mt-8">
-      <h1 className="font-extrabold text-6xl sm:text-7xl text-center pb-8">
-        Service Providers/Brokers
+    <div className="px-6 py-10">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        Browse Service Providers/Brokers
       </h1>
 
       {/* Loading bar */}
@@ -153,7 +153,7 @@ function ServiceProviderListing() {
 
           {/* Service Listing */}
           {loadingServices === false && (
-            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
               {services?.length ? (
                 services.map((service) => {
                   return (
