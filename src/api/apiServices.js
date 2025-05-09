@@ -39,7 +39,10 @@ export async function getSingleService(token, { broker_id }) {
   const supabase = await supabaseClient(token);
   let query = supabase
     .from(table_name)
-    .select("*")
+    .select(
+      `*,
+      user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
+    )
     .eq("id", broker_id)
     .single();
 
@@ -54,7 +57,7 @@ export async function getSingleService(token, { broker_id }) {
 }
 
 // - Post Service
-export async function addNewService(token, _, serviceData) {
+export async function addNewService(token, serviceData) {
   const supabase = await supabaseClient(token);
 
   const folder = "services";

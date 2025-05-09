@@ -223,7 +223,11 @@ const FractionalTalentDetail = () => {
           </Button>
         )}
       </div>
+
+      {/* Horizontal divider */}
       <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
+
+      {/* Profile Summary tabs */}
       <div className="flex flex-col gap-2 text-sm">
         <Tabs defaultValue="about" className="w-full">
           <TabsList className="flex justify-center gap-4 mb-8 bg-transparent">

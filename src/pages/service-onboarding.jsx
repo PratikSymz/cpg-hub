@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -25,20 +25,18 @@ const schema = z.object({
   company_website: z.string().url().optional(),
   logo: z
     .any()
+    .optional()
     .refine(
       (file) =>
-        file[0] &&
-        (file[0].type === "image/png" ||
-          file[0].type === "image/jpg" ||
-          file[0].type === "image/jpeg"),
-      {
-        message: "Only Images are allowed",
-      }
+        !file?.[0] || // allow no file
+        ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
+      { message: "Only JPG, PNG, or JPEG images are allowed" }
     ),
-  num_employees: z.preprocess(
-    (val) => parseInt(z.string().parse(val), 10),
-    z.number().int().nonnegative().optional()
-  ),
+  num_employees: z.preprocess((val) => {
+    if (typeof val === "string") return parseInt(val, 10);
+    if (typeof val === "number") return val;
+    return undefined;
+  }, z.number().int().nonnegative().optional()),
   area_of_specialization: z
     .string()
     .min(1, "Service specialization is required"),
@@ -83,6 +81,8 @@ const ServiceOnboarding = () => {
     },
     resolver: zodResolver(schema),
   });
+  const selectedCategories =
+    useWatch({ control, name: "category_of_service" }) ?? [];
 
   const {
     func: submitBrokerProfile,
@@ -104,19 +104,18 @@ const ServiceOnboarding = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
-  if (data) {
-    navigate("/services");
-  }
+  useEffect(() => {
+    if (data) {
+      navigate("/services");
+    }
+  }, [data, navigate]);
 
-  const selectedCategories = useWatch({ control, name: "category_of_service" });
   // Define what triggers the next field
-  const shouldShowBrokerServices = selectedCategories?.some((val) =>
-    ["Broker"].includes(val)
-  );
-
-  const shouldShowMarketsCovered = selectedCategories?.some((val) =>
+  const shouldShowBrokerServices = selectedCategories.includes("Broker");
+  const shouldShowMarketsCovered = selectedCategories.some((val) =>
     ["Broker", "Sales", "Merchandising"].includes(val)
   );
+
   return (
     <div>
       <h1 className="text-4xl font-bold text-center mb-10">

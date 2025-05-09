@@ -15,7 +15,6 @@ import { getUser } from "@/api/apiUsers.js";
 const FractionalJobDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
-  const navigate = useNavigate();
 
   // Load Job and Brand info
   const {

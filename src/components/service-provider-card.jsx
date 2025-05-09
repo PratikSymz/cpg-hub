@@ -9,88 +9,104 @@ import {
   CardTitle,
 } from "./ui/card.jsx";
 import { Link } from "react-router-dom";
+import { FaGlobe } from "react-icons/fa";
 
 const ServiceProviderCard = ({ service }) => {
   const {
     id,
     company_name,
-    logo_url,
     company_website,
-    brand_hq,
+    logo_url,
+    num_employees,
     area_of_specialization,
     category_of_service,
+    is_broker,
     type_of_broker_service,
-    markets_covered
+    markets_covered,
+    customers_covered,
+    user_id,
   } = service;
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="flex">
-        <CardTitle className="flex justify-between font-bold text-black/90">
-          <span>{company_name}</span>
-          {logo_url && (
-            <img
-              src={logo_url}
-              alt="Logo"
-              className="h-6 w-auto object-contain"
-            />
-          )}
+        <CardTitle className="flex justify-between items-center text-lg font-bold">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              {logo_url && (
+                <img
+                  src={logo_url}
+                  alt="Logo"
+                  className="h-16 w-16 rounded-full object-cover border"
+                />
+              )}
+              <div className="flex flex-col">
+                <h1 className="text-2xl font-bold">{company_name}</h1>
+                <div className="flex flex-row gap-4 mt-2">
+                  {company_website && (
+                    <Link to={company_website}>
+                      <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 flex-1 text-black/90">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <MapPinIcon size={15} />
-            <span>{brand_hq || "HQ not provided"}</span>
-          </div>
-
-          {company_website && (
-            <a
-              href={company_website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sm text-blue-700 hover:underline"
+      <CardContent className="flex flex-col gap-4 text-sm text-black/90">
+        <p>
+          <strong>Categories of Service:</strong>{" "}
+          {category_of_service.map((category, idx) => (
+            <span
+              key={idx}
+              className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"
             >
-              Website <ExternalLink size={14} />
-            </a>
-          )}
-        </div>
-
-        <hr />
-
-        <div className="text-sm">
-          <strong>Specialization:</strong> {area_of_specialization}
-        </div>
-
-        <div className="text-sm">
-          <strong>Categories:</strong>{" "}
-          {JSON.parse(category_of_service).join(", ")}
-        </div>
-
-        <div className="text-sm">
-          <strong>Broker Services:</strong>{" "}
-          {JSON.parse(type_of_broker_service).join(", ")}
-        </div>
-
-        {markets_covered.length > 0 && (
-          <div className="text-sm">
-            <strong>Markets Covered:</strong>{" "}
-            {JSON.parse(markets_covered).join(", ")}
-          </div>
+              {category}
+            </span>
+          )) || "N/A"}
+        </p>
+        {is_broker && type_of_broker_service && (
+          <p>
+            <strong>Broker Services:</strong>{" "}
+            {type_of_broker_service.map((service, idx) => (
+              <span
+                key={idx}
+                className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"
+              >
+                {service}
+              </span>
+            )) || "N/A"}
+          </p>
         )}
+        {markets_covered && (
+          <p>
+            <strong>Markets Covered:</strong>{" "}
+            {markets_covered.map((market, idx) => (
+              <span
+                key={idx}
+                className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 mx-1 rounded-full"
+              >
+                {market}
+              </span>
+            )) || "N/A"}
+          </p>
+        )}
+        <p className="text-muted-foreground">{area_of_specialization}</p>
       </CardContent>
 
-      <CardFooter className={""}>
-        <Link to={`/services/${id}`} className="w-full">
-          <Button
-            variant="secondary"
-            size="default"
-            className="w-full text-black/90"
-          >
+      <CardFooter className="flex flex-row gap-6">
+        <Button
+          variant="default"
+          size="default"
+          className="flex-1 bg-cpg-brown hover:bg-cpg-brown/90"
+          asChild
+        >
+          <Link to={`/services/${id}`} className="w-full">
             View Profile
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
   );

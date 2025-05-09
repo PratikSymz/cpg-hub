@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -106,9 +106,11 @@ const TalentOnboarding = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
-  if (data) {
-    navigate("/talents");
-  }
+  useEffect(() => {
+    if (data) {
+      navigate("/talents");
+    }
+  }, [data, navigate]);
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const imageUrl = user?.imageUrl;
@@ -236,7 +238,7 @@ const TalentOnboarding = () => {
                               (val) =>
                                 val.toLowerCase() === trimmed.toLowerCase()
                             );
-                             // Min 3 letters, no special chars
+                            // Min 3 letters, no special chars
                             const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
                             if (trimmed && !isDuplicate && isValid) {
                               field.onChange([...field.value, trimmed]);

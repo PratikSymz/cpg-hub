@@ -1,10 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { ExternalLink } from "lucide-react";
 import { getSingleService } from "@/api/apiServices.js";
+import { toast } from "sonner";
+import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
+import { FaGlobe } from "react-icons/fa";
+import { Button } from "@/components/ui/button.jsx";
+import { Label } from "@/components/ui/label.jsx";
 
 const ServiceProviderDetail = () => {
   const { id } = useParams();
@@ -15,15 +19,12 @@ const ServiceProviderDetail = () => {
     loading: loadingService,
     data: service,
     func: funcService,
-  } = useFetch(getSingleService, { broker_id: id });
+    error,
+  } = useFetch(getSingleService);
 
   useEffect(() => {
-    if (isLoaded) funcService();
+    if (isLoaded) funcService({ broker_id: id });
   }, [isLoaded]);
-
-  if (!isLoaded || loadingService) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
-  }
 
   const {
     company_name,
@@ -32,101 +33,181 @@ const ServiceProviderDetail = () => {
     num_employees,
     area_of_specialization,
     category_of_service,
+    is_broker,
     type_of_broker_service,
     markets_covered,
     customers_covered,
-  } = service;
+    user_info,
+  } = service || {};
+
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const email = user_info?.email || "";
+  const image_url = user_info?.profile_picture_url || "";
+  const full_name = user_info?.full_name || "";
+
+  const handleEmailSend = async (message) => {
+    try {
+      console.log(email);
+      console.log(user?.primaryEmailAddress?.emailAddress);
+      const res = await fetch(
+        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_email: email,
+            sender_email: user?.primaryEmailAddress?.emailAddress,
+            target_name: full_name,
+            sender_name: user?.fullName,
+            message,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Email send failed:", errorText);
+        throw new Error("Failed to send email.");
+      }
+
+      toast.success("Email sent!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send email.");
+    }
+  };
+
+  const connectButton =
+    user_info && user && user_info.user_id !== user.id ? (
+      <div className="flex flex-col text-sm mt-10">
+        <ConnectEmailDialog
+          open={connectDialogOpen}
+          setOpen={setConnectDialogOpen}
+          targetUser={user_info}
+          senderUser={user}
+          onSend={handleEmailSend}
+        />
+      </div>
+    ) : (
+      <></>
+    );
+
+  if (!isLoaded || loadingService) {
+    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  }
+
+  if (error) {
+    return <p className="text-red-500 text-center">Error loading profile.</p>;
+  }
 
   return (
-    <div className="flex flex-col gap-10 mt-10">
+    <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-4xl font-extrabold">{company_name}</h1>
-          {company_website && (
-            <a
-              href={company_website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground text-sm flex items-center gap-1 hover:underline"
-            >
-              {company_website}
-              <ExternalLink size={14} />
-            </a>
-          )}
-        </div>
-        {logo_url && (
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+        <div className="flex flex-row items-center gap-4">
           <img
             src={logo_url}
             alt={`${company_name} logo`}
-            className="h-16 w-auto object-contain rounded-md shadow-sm"
+            className="h-22 w-22 rounded-full border object-cover"
           />
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold">{full_name}</h1>
+            <div className="flex flex-row gap-4 mt-2">
+              {company_website && (
+                <Link to={company_website}>
+                  <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {user_info && user && user_info.user_id === user.id && (
+          <Button
+            className="rounded-full cursor-pointer"
+            variant="outline"
+            size="lg"
+            asChild
+          >
+            <Link to={`/edit-service/${id}`}>Edit profile</Link>
+          </Button>
         )}
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm sm:text-base text-muted-foreground">
-        <div className="bg-muted p-4 rounded-md">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-            Employees
-          </p>
-          <p className="font-medium">{num_employees ?? "N/A"}</p>
+      {/* Section: Details */}
+      <div className="grid sm:grid-cols-2 gap-6">
+        <div>
+          <Label className="text-sm font-semibold block mb-2">Employees</Label>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {num_employees ?? "N/A"}
+          </span>
         </div>
-        <div className="bg-muted p-4 rounded-md">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+        <div>
+          <Label className="text-sm font-semibold block mb-2">
             Specialization
-          </p>
-          <p className="font-medium">{area_of_specialization}</p>
+          </Label>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {area_of_specialization}
+          </span>
         </div>
-        <div className="bg-muted p-4 rounded-md">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+        <div>
+          <Label className="text-sm font-semibold block mb-2">
             Customers Covered
-          </p>
-          <p className="font-medium">{customers_covered || "N/A"}</p>
+          </Label>
+          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+            {customers_covered}
+          </span>
         </div>
       </div>
 
-      {/* Categories of Service */}
+      {/* Section: Categories of Service */}
       <div>
-        <h2 className="text-xl font-bold mb-2">Categories of Service</h2>
+        <Label className="text-sm font-semibold block mb-2">
+          Categories of Service
+        </Label>
         <div className="flex flex-wrap gap-2">
-          {category_of_service &&
-            JSON.parse(category_of_service).map((item, idx) => (
-              <span
-                key={idx}
-                className="bg-cpg-brown/10 text-cpg-brown text-xs font-medium px-3 py-1 rounded-full"
-              >
-                {item}
-              </span>
-            ))}
+          {category_of_service.map((category, idx) => (
+            <span
+              key={idx}
+              className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+            >
+              {category}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Type of Broker Services */}
-      <div>
-        <h2 className="text-xl font-bold mb-2">Types of Broker Services</h2>
-        <div className="flex flex-wrap gap-2">
-          {type_of_broker_service &&
-            JSON.parse(type_of_broker_service).map((item, idx) => (
-              <span
-                key={idx}
-                className="bg-teal-100 text-cpg-teal text-xs font-medium px-3 py-1 rounded-full"
-              >
-                {item}
-              </span>
-            ))}
+      {/* Section: Types of Broker Services */}
+      {is_broker && (
+        <div>
+          <Label className="text-sm font-semibold block mb-2">
+            Broker Services offerred
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {type_of_broker_service &&
+              type_of_broker_service.map((service, idx) => (
+                <span
+                  key={idx}
+                  className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                >
+                  {service}
+                </span>
+              ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Markets Covered */}
+      {/* Section: Markets Covered */}
       {markets_covered && (
         <div>
-          <h2 className="text-xl font-bold mb-2">Markets Covered</h2>
+          <Label className="text-sm font-semibold block mb-2">
+            Markets Covered
+          </Label>
           <div className="flex flex-wrap gap-2">
-            {JSON.parse(markets_covered).map((market, idx) => (
+            {markets_covered.map((market, idx) => (
               <span
                 key={idx}
-                className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full"
+                className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
               >
                 {market}
               </span>
@@ -134,6 +215,8 @@ const ServiceProviderDetail = () => {
           </div>
         </div>
       )}
+
+      <div>{connectButton}</div>
     </div>
   );
 };

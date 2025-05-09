@@ -76,9 +76,11 @@ const BrandOnboarding = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
-  if (dataBrandCreate) {
-    navigate("/post-job");
-  }
+  useEffect(() => {
+    if (dataBrandCreate) {
+      navigate("/post-job");
+    }
+  }, [dataBrandCreate, navigate]);
 
   return (
     <div>

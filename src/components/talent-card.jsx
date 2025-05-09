@@ -29,7 +29,6 @@ const TalentCard = ({ talent }) => {
   const email = user_info.email;
   const image_url = user_info.profile_picture_url;
   const full_name = user_info.full_name;
-  console.log(talent);
 
   return (
     <Card className="flex flex-col">

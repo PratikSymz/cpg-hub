@@ -36,14 +36,15 @@ function ServiceProviderListing() {
     func: funcServices,
     data: services,
     loading: loadingServices,
-  } = useFetch(getServices, {
-    category_of_service: category,
-    markets_covered: markets,
-    search_query: searchQuery,
-  });
+  } = useFetch(getServices);
 
   useEffect(() => {
-    if (isLoaded) funcServices();
+    if (isLoaded)
+      funcServices({
+        category_of_service: category,
+        markets_covered: markets,
+        search_query: searchQuery,
+      });
   }, [isLoaded, category, markets, searchQuery]);
 
   const handleSearch = (e) => {
