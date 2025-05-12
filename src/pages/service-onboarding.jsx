@@ -94,9 +94,9 @@ const ServiceOnboarding = () => {
   const onSubmit = (data) => {
     handleRoleSelection(ROLE_SERVICE);
     submitBrokerProfile({
-      ...data,
       is_broker: shouldShowBrokerServices,
       user_id: user.id,
+      ...data,
     });
   };
 

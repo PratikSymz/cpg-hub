@@ -53,7 +53,7 @@ export async function getMyBrandProfile(token, { user_id }) {
 }
 
 // Add Brand
-export async function addNewBrand(token, _, brandData) {
+export async function addNewBrand(token, brandData) {
   const supabase = await supabaseClient(token);
 
   const file = brandData.logo?.[0];
@@ -90,6 +90,7 @@ export async function addNewBrand(token, _, brandData) {
         linkedin_url: brandData.linkedin_url,
         brand_hq: brandData.brand_hq,
         logo_url: logo_url,
+        user_id: brandData.user_id,
         brand_desc: brandData.brand_desc,
       },
     ])
@@ -136,7 +137,6 @@ export async function updateBrand(token, brandData, { user_id }) {
     company_logo_url = publicUrlData?.publicUrl;
   }
 
-
   const { data, error } = await supabase
     .from(table_name)
     .update({
@@ -152,7 +152,7 @@ export async function updateBrand(token, brandData, { user_id }) {
 
   if (error) {
     console.error("Error Updating Brand information:", error);
-    return null;
+    throw new Error("Error Updating Brand information:", error);
   }
 
   return data;
@@ -163,6 +163,6 @@ const formatCompanyLogoUrl = (user_id, file) => {
   // Get a safe file extension
   const extension = file.name.split(".").pop().toLowerCase();
   // Generate a clean file name
-  const fileName = `resume-${random}-${user_id}.${extension}`;
+  const fileName = `company-${random}-${user_id}.${extension}`;
   return fileName;
 };

@@ -20,6 +20,8 @@ import TalentOnboarding from "./pages/talent-onboarding.jsx";
 import ProtectedRoute from "./components/protected-route.jsx";
 import TalentEditProfile from "./pages/edit-fractional-talent.jsx";
 import EditJobPage from "./pages/edit-job.jsx";
+import EditServicePage from "./pages/edit-service.jsx";
+import FeedbackForm from "./pages/feedback-form.jsx";
 
 const router = createBrowserRouter([
   {
@@ -63,7 +65,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/edit-service/:id",
-        element: <ServiceProviderDetail />,
+        element: <EditServicePage />,
       },
       {
         path: "/talents",
@@ -88,6 +90,10 @@ const router = createBrowserRouter([
       {
         path: "/my-jobs",
         element: <MyJobs />,
+      },
+      {
+        path: "/feedback",
+        element: <FeedbackForm />,
       },
     ],
   },

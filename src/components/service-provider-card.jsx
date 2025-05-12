@@ -55,7 +55,7 @@ const ServiceProviderCard = ({ service }) => {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 text-sm text-black/90">
+      <CardContent className="flex flex-col gap-4 text-sm w-full text-black/90">
         <p>
           <strong>Categories of Service:</strong>{" "}
           {category_of_service.map((category, idx) => (
