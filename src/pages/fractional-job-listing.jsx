@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import JobCard from "@/components/job-card.jsx";
@@ -24,38 +24,57 @@ function FractionalJobListing() {
   const { isLoaded } = useUser();
 
   // Job Filters
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [areaSpec, setAreaSpec] = useState("");
   const [levelExp, setLevelExp] = useState("");
 
+  const {
+    func: funcJobs,
+    data: jobList,
+    loading: loadingJobs,
+  } = useFetch(getJobs);
+
+  useEffect(() => {
+    if (isLoaded) funcJobs({});
+  }, [isLoaded]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
   // Clear filters
   const clearFilters = () => {
+    setSearchInput("");
     setSearchQuery("");
     setAreaSpec("");
     setLevelExp("");
   };
 
-  const {
-    func: funcJobs,
-    data: jobs,
-    loading: loadingJobs,
-  } = useFetch(getJobs);
+  const filteredJobs = useMemo(() => {
+    if (!jobList) return [];
 
-  useEffect(() => {
-    if (isLoaded) funcJobs({
-      area_specialization: areaSpec,
-      level_exp: levelExp,
-      search_query: searchQuery,
+    return jobList.filter((job) => {
+      if (areaSpec && Array.isArray(job.area_of_specialization)) {
+        if (!job.area_of_specialization.includes(areaSpec)) return false;
+      }
+
+      if (levelExp && Array.isArray(job.level_of_experience)) {
+        if (!job.level_of_experience.includes(levelExp)) return false;
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const title = job?.job_title?.toLowerCase() ?? "";
+        if (!title.includes(q)) return false;
+      }
+      return true;
     });
-  }, [isLoaded, areaSpec, levelExp, searchQuery]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    let formData = new FormData(e.target);
-
-    const query = formData.get("search-query");
-    if (typeof query === "string") setSearchQuery(query);
-  };
+  }, [jobList, areaSpec, levelExp, searchQuery]);
 
   if (!isLoaded) {
     return <BarLoader className="mb-4" width={"90%"} color="#00A19A" />;
@@ -121,7 +140,7 @@ function FractionalJobListing() {
 
               <div className="flex">
                 <Button
-                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
+                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
                   size="default"
                   variant="default"
                   onClick={clearFilters}
@@ -136,30 +155,24 @@ function FractionalJobListing() {
         <div className="flex-auto mx-8">
           {/* Search box */}
           <form
-            onSubmit={handleSearch}
+            onSubmit={(e) => e.preventDefault()}
             className="h-14 flex flex-row w-full gap-2 items-center mb-3"
           >
             <Input
               type="text"
               placeholder="Search Jobs"
               name="search-query"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="h-full flex-1 placeholder:text-black/60 placeholder:font-medium text-black/90 px-4 text-md"
             />
-            <Button
-              variant="default"
-              size="default"
-              type="submit"
-              className="h-full bg-cpg-brown hover:bg-cpg-brown/90 sm:w-28"
-            >
-              Search
-            </Button>
           </form>
 
           {/* Job Listing */}
           {loadingJobs === false && (
             <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
-              {jobs?.length ? (
-                jobs.map((job) => {
+              {filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => {
                   return (
                     <JobCard
                       key={job.id}

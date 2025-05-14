@@ -13,18 +13,18 @@ export async function getJobs(
     saved: saved_jobs(id)`
   );
 
-  if (area_specialization) {
-    query = query.ilike("area_of_specialization", `%${area_specialization}%`);
-  }
+  // if (area_specialization) {
+  //   query = query.ilike("area_of_specialization", `%${area_specialization}%`);
+  // }
 
-  if (level_exp) {
-    query = query.ilike("level_of_experience", `%${level_exp}%`);
-  }
+  // if (level_exp) {
+  //   query = query.ilike("level_of_experience", `%${level_exp}%`);
+  // }
 
-  const safeQuery = search_query.replace(/[%_]/g, "\\$&");
-  if (search_query) {
-    query = query.or(`job_title.ilike.%${safeQuery}%`);
-  }
+  // const safeQuery = search_query.replace(/[%_]/g, "\\$&");
+  // if (search_query) {
+  //   query = query.or(`job_title.ilike.%${safeQuery}%`);
+  // }
 
   const { data, error } = await query;
 
@@ -51,18 +51,18 @@ export async function getMyJobs(
     )
     .eq("brand_id", brand_id);
 
-  if (area_specialization) {
-    query = query.contains("area_of_specialization", [area_specialization]);
-  }
+  // if (area_specialization) {
+  //   query = query.contains("area_of_specialization", [area_specialization]);
+  // }
 
-  if (level_exp) {
-    query = query.contains("level_of_experience", [level_exp]);
-  }
+  // if (level_exp) {
+  //   query = query.contains("level_of_experience", [level_exp]);
+  // }
 
-  if (search_query) {
-    const safeQuery = search_query.replace(/[%_]/g, "\\$&");
-    query = query.ilike("job_title", `%${safeQuery}%`);
-  }
+  // if (search_query) {
+  //   const safeQuery = search_query.replace(/[%_]/g, "\\$&");
+  //   query = query.ilike("job_title", `%${safeQuery}%`);
+  // }
 
   const { data, error } = await query;
 

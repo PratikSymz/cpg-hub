@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { categoryOfService, marketsCovered } from "@/constants/filters.js";
 import { useUser } from "@clerk/clerk-react";
@@ -20,40 +20,58 @@ function ServiceProviderListing() {
   // Once user is loaded, fetch job data -> session()
   const { isLoaded } = useUser();
 
-  // Job Filters
+  // Service Filters
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("");
   const [markets, setMarkets] = useState("");
 
+  const {
+    func: funcServices,
+    data: serviceList,
+    loading: loadingServices,
+  } = useFetch(getServices);
+
+  useEffect(() => {
+    if (isLoaded) funcServices({});
+  }, [isLoaded]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
   // Clear filters
   const clearFilters = () => {
+    setSearchInput("");
     setSearchQuery("");
     setCategory("");
     setMarkets("");
   };
 
-  const {
-    func: funcServices,
-    data: services,
-    loading: loadingServices,
-  } = useFetch(getServices);
+  const filteredServices = useMemo(() => {
+    if (!serviceList) return [];
 
-  useEffect(() => {
-    if (isLoaded)
-      funcServices({
-        category_of_service: category,
-        markets_covered: markets,
-        search_query: searchQuery,
-      });
-  }, [isLoaded, category, markets, searchQuery]);
+    return serviceList.filter((service) => {
+      if (category && Array.isArray(service.category_of_service)) {
+        if (!service.category_of_service.includes(category)) return false;
+      }
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    let formData = new FormData(e.target);
+      if (markets && Array.isArray(service.markets_covered)) {
+        if (!service.markets_covered.includes(markets)) return false;
+      }
 
-    const query = formData.get("search-query");
-    if (typeof query === "string") setSearchQuery(query);
-  };
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const companyName = service?.company_name?.toLowerCase() ?? "";
+        if (!companyName.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [serviceList, category, markets, searchQuery]);
 
   if (!isLoaded) {
     return <BarLoader className="mb-4" width={"90%"} color="#00A19A" />;
@@ -117,7 +135,7 @@ function ServiceProviderListing() {
 
               <div className="flex">
                 <Button
-                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
+                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
                   size="default"
                   variant="default"
                   onClick={clearFilters}
@@ -132,30 +150,24 @@ function ServiceProviderListing() {
         <div className="flex-auto mx-8">
           {/* Search box */}
           <form
-            onSubmit={handleSearch}
+            onSubmit={(e) => e.preventDefault()}
             className="h-14 flex flex-row w-full gap-2 items-center mb-3"
           >
             <Input
               type="text"
               placeholder="Search Services"
               name="search-query"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="h-full flex-1 placeholder:text-black/60 placeholder:font-medium text-black/90 px-4 text-md"
             />
-            <Button
-              variant="default"
-              size="default"
-              type="submit"
-              className="h-full bg-cpg-brown hover:bg-cpg-brown/90 sm:w-28"
-            >
-              Search
-            </Button>
           </form>
 
           {/* Service Listing */}
           {loadingServices === false && (
             <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
-              {services?.length ? (
-                services.map((service) => {
+              {filteredServices.length > 0 ? (
+                filteredServices.map((service) => {
                   return (
                     <ServiceProviderCard key={service.id} service={service} />
                   );

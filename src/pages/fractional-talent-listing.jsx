@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import TalentCard from "@/components/talent-card.jsx";
@@ -24,17 +24,11 @@ const FractionalTalentListing = () => {
   // Once user is loaded, fetch job data -> session()
   const { isLoaded } = useUser();
 
-  // Job Filters
+  // Talent Filters
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [areaSpec, setAreaSpec] = useState("");
   const [levelExp, setLevelExp] = useState("");
-
-  // Clear filters
-  const clearFilters = () => {
-    setSearchQuery("");
-    setAreaSpec("");
-    setLevelExp("");
-  };
 
   const {
     func: funcTalents,
@@ -44,22 +38,54 @@ const FractionalTalentListing = () => {
   } = useFetch(getAllTalent);
 
   useEffect(() => {
-    if (isLoaded)
-      funcTalents({
-        area_specialization: areaSpec,
-        level_exp: levelExp,
-        search_query: searchQuery,
-        function: "",
-      });
-  }, [isLoaded, areaSpec, levelExp, searchQuery]);
+    if (isLoaded) funcTalents({});
+  }, [isLoaded]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    let formData = new FormData(e.target);
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
 
-    const query = formData.get("search-query");
-    if (typeof query === "string") setSearchQuery(query);
+  // Clear filters
+  const clearFilters = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setAreaSpec("");
+    setLevelExp("");
   };
+
+  const filteredTalents = useMemo(() => {
+    if (!talentList) return [];
+
+    return talentList.filter((talent) => {
+      if (areaSpec && Array.isArray(talent.area_of_specialization)) {
+        if (!talent.area_of_specialization.includes(areaSpec)) return false;
+      }
+
+      if (levelExp && Array.isArray(talent.level_of_experience)) {
+        if (!talent.level_of_experience.includes(levelExp)) return false;
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const name = talent?.user_info?.full_name?.toLowerCase() ?? "";
+        const email = talent?.user_info?.email?.toLowerCase() ?? "";
+        if (!name.includes(q) && !email.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [talentList, areaSpec, levelExp, searchQuery]);
+
+  // const handleSearch = (e) => {
+  //   e.preventDefault();
+  //   let formData = new FormData(e.target);
+
+  //   const query = formData.get("search-query");
+  //   if (typeof query === "string") setSearchQuery(query);
+  // };
 
   if (!isLoaded) {
     return <BarLoader className="mb-4" width={"90%"} color="#00A19A" />;
@@ -72,7 +98,7 @@ const FractionalTalentListing = () => {
       </h1>
 
       {loading && <BarLoader width="100%" color="#36d7b7" />}
-      {error && <p className="text-red-500">Error loading talent.</p>}
+      {error && <p className="text-red-500">Error loading talent</p>}
 
       <div className="flex flex-row w-full">
         {/* Filters */}
@@ -123,7 +149,7 @@ const FractionalTalentListing = () => {
 
               <div className="flex">
                 <Button
-                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
+                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
                   size="default"
                   variant="default"
                   onClick={clearFilters}
@@ -138,29 +164,23 @@ const FractionalTalentListing = () => {
         <div className="flex-auto mx-8">
           {/* Search box */}
           <form
-            onSubmit={handleSearch}
+            onSubmit={(e) => e.preventDefault()}
             className="h-14 flex flex-row w-full gap-2 items-center mb-3"
           >
             <Input
               type="text"
               placeholder="Search Talent"
               name="search-query"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="h-full flex-1 placeholder:text-black/60 placeholder:font-medium text-black/90 px-4 text-md"
             />
-            <Button
-              variant="default"
-              size="default"
-              type="submit"
-              className="h-full bg-cpg-brown hover:bg-cpg-brown/90 sm:w-28"
-            >
-              Search
-            </Button>
           </form>
 
           {/* Talent Listing */}
           <div className="grid grid-rows sm:grid-rows lg:grid-rows gap-6 mt-8">
-            {talentList?.length ? (
-              talentList?.map((talent) => (
+            {filteredTalents.length > 0 ? (
+              filteredTalents.map((talent) => (
                 <TalentCard key={talent.id} talent={talent} />
               ))
             ) : (

@@ -77,8 +77,8 @@ const jobSchema = z.object({
     .min(1, "Select at least one specialization"),
 });
 
-const classLabel = "mb-1 block";
-const classInput = "input-class";
+export const classLabel = "mb-1 block";
+export const classInput = "input-class";
 
 const EditJobPage = () => {
   const { id } = useParams();

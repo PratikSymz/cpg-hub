@@ -14,21 +14,21 @@ export async function getAllTalent(
     `*, 
       user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
   );
-  if (area_specialization) {
-    query = query.ilike("area_of_specialization", `%${area_specialization}%`);
-  }
 
-  if (level_exp) {
-    query = query.ilike("level_of_experience", `%${level_exp}%`);
-  }
+  // if (area_specialization) {
+  //   query = query.contains("area_of_specialization", [area_specialization]);
+  // }
+
+  // if (level_exp) {
+  //   query = query.contains("level_of_experience", [level_exp]);
+  // }
 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching Talents:", error);
-    return null;
+    console.error("Supabase error:", error.message);
+    console.error("Details:", error.details);
   }
-  console.log(data);
 
   return data;
 }

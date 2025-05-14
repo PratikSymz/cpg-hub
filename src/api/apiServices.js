@@ -11,18 +11,18 @@ export async function getServices(
 
   let query = supabase.from(table_name).select("*");
 
-  if (category_of_service) {
-    query = query.ilike("category_of_service", `%${category_of_service}%`);
-  }
+  // if (category_of_service) {
+  //   query = query.contains("category_of_service", [category_of_service]);
+  // }
 
-  if (markets_covered) {
-    query = query.ilike("markets_covered", `%${markets_covered}%`);
-  }
+  // if (markets_covered) {
+  //   query = query.contains("markets_covered", [markets_covered]);
+  // }
 
-  const safeQuery = search_query.replace(/[%_]/g, "\\$&");
-  if (search_query) {
-    query = query.or(`company_name.ilike.%${safeQuery}%`);
-  }
+  // const safeQuery = search_query.replace(/[%_]/g, "\\$&");
+  // if (search_query) {
+  //   query = query.or(`company_name.ilike.%${safeQuery}%`);
+  // }
 
   const { data, error } = await query;
 
