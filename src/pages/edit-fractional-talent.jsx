@@ -53,6 +53,7 @@ const classInput = "input-class";
 const EditTalentPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -192,6 +193,7 @@ const EditTalentPage = () => {
       }
 
       toast.success("Profile Updated!");
+      navigate("/talents", { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Failed to update profile.");

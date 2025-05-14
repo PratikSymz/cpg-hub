@@ -1,16 +1,29 @@
 // FeedbackForm.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const FeedbackForm = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const { user, isLoaded } = useUser();
+  const [name, setName] = useState(user?.fullName || "");
+  const [email, setEmail] = useState(
+    user?.primaryEmailAddress?.emailAddress || ""
+  );
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      setName(user.fullName || "");
+      setEmail(user.primaryEmailAddress?.emailAddress || "");
+    }
+  }, [isLoaded, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +54,7 @@ const FeedbackForm = () => {
       console.error(err);
     } finally {
       setSending(false);
+      navigate("/", { replace: true });
     }
   };
 
@@ -55,10 +69,9 @@ const FeedbackForm = () => {
             <Input
               className="input-class"
               type="text"
-              placeholder="Jane Smith"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              readOnly
+              disabled
             />
           </div>
 
@@ -67,10 +80,9 @@ const FeedbackForm = () => {
             <Input
               className="input-class"
               type="email"
-              placeholder="jane@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              readOnly
+              disabled
             />
           </div>
         </div>
@@ -78,7 +90,7 @@ const FeedbackForm = () => {
         <div>
           <Label className="mb-1 block">Message</Label>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className="textarea-class resize-y block w-full h-24"
             placeholder="Your message..."
             rows={5}
             value={message}

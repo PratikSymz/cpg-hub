@@ -1,7 +1,8 @@
 import CoincentricCircles from "@/components/CoincentricCircles.jsx";
 import NavBar from "@/components/nav-bar.jsx";
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
+import { Button } from "@/components/ui/button.jsx";
 
 const AppLayout = () => {
   return (
@@ -19,9 +20,12 @@ const AppLayout = () => {
         <p className="text-sm text-gray-700 mt-2">
           Welcome to the beta version of CPG HUB! Thank you for being here.
           Please{" "}
-          <a href="/feedback" className="text-blue-600 underline">
+          <Link
+            to="/feedback"
+            className="text-cpg-brown underline underline-offset-4 hover:text-cpg-teal transition"
+          >
             click here
-          </a>{" "}
+          </Link>{" "}
           to send any feedback on how we can improve the user experience and
           make this an even better tool for our CPG community.
         </p>

@@ -246,6 +246,8 @@ const EditJobPage = () => {
         },
         job_id: id,
       });
+
+      navigate("/jobs", { replace: true });
       toast.success("Job updated!");
     })();
   };
@@ -254,7 +256,7 @@ const EditJobPage = () => {
     try {
       await jobDelete({ job_id: id });
       toast.success("Job successfully deleted!");
-      navigate('/jobs');
+      navigate("/jobs");
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete job!");
@@ -416,6 +418,12 @@ const EditJobPage = () => {
               accept="image/*"
               {...brandForm.register("logo")}
             />
+
+            {brandErrors.logo && (
+              <p className="text-sm text-red-500">
+                {brandErrors.logo.message.toString()}
+              </p>
+            )}
           </div>
 
           {saveBrandError && (

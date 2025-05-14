@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { Resend } from "npm:resend";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const FROM_EMAIL = "CPG Hub <connect@mycpghub.com>";
 
 serve(async (req) => {
   // ✅ Handle preflight CORS request

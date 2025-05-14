@@ -47,14 +47,8 @@ const schema = z
     category_of_service: z
       .array(z.string())
       .min(1, "Select at least one category"),
-    type_of_broker_service: z
-      .array(z.string())
-      .optional()
-      .default([]),
-    markets_covered: z
-      .array(z.string())
-      .optional()
-      .default([]),
+    type_of_broker_service: z.array(z.string()).optional().default([]),
+    markets_covered: z.array(z.string()).optional().default([]),
     customers_covered: z.string().optional(),
   })
   .refine(
@@ -319,6 +313,12 @@ const EditServicePage = () => {
             accept="image/*"
             {...register("logo")}
           />
+
+          {errors.logo && (
+            <p className="text-sm text-red-500">
+              {errors.logo.message.toString()}
+            </p>
+          )}
         </div>
 
         {/* Num Employees */}

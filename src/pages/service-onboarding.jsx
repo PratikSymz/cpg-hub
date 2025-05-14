@@ -117,7 +117,7 @@ const ServiceOnboarding = () => {
   const onSubmit = (data) => {
     handleRoleSelection(ROLE_SERVICE);
     submitBrokerProfile({
-      is_broker: shouldShowBrokerServices,
+      is_broker: false,
       user_id: user.id,
       ...data,
     });
@@ -259,62 +259,12 @@ const ServiceOnboarding = () => {
             )}
           </div>
 
-          {shouldShowBrokerServices && (
-            <div className="flex-1">
-              <Controller
-                name="type_of_broker_service"
-                control={control}
-                render={({ field }) => {
-                  const toggleValue = (value) => {
-                    const selected = field.value.includes(value);
-                    const updated = selected
-                      ? field.value.filter((v) => v !== value)
-                      : [...field.value, value];
-                    field.onChange(updated);
-                  };
-
-                  return (
-                    <div>
-                      <Label className="mb-4 block">
-                        Type of Broker Service
-                      </Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {typeOfBrokerService.map(({ label, value }) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => toggleValue(label)}
-                            className={clsx(
-                              "rounded-md px-4 py-2 text-sm font-medium border",
-                              field.value.includes(label)
-                                ? "bg-teal-600 text-white border-transparent"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-              {errors.type_of_broker_service && (
-                <p className="text-sm text-red-500">
-                  {errors.type_of_broker_service.message}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Markets Covered */}
-        {shouldShowMarketsCovered && (
-          <div className="flex flex-row gap-24 justify-around my-6">
+          <div className="flex-1">
             <Controller
-              name="markets_covered"
+              name="type_of_broker_service"
               control={control}
-              render={({ field }) => {
+              render={({ field, formState }) => {
+
                 const toggleValue = (value) => {
                   const selected = field.value.includes(value);
                   const updated = selected
@@ -324,13 +274,10 @@ const ServiceOnboarding = () => {
                 };
 
                 return (
-                  <div className="flex-1">
-                    <Label className="mb-4 block">
-                      Markets covered (relevant to broker, sales, &
-                      merchandisers)
-                    </Label>
+                  <div>
+                    <Label className="mb-4 block">Type of Broker Service</Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {marketsCovered.map(({ label, value }) => (
+                      {typeOfBrokerService.map(({ label, value }) => (
                         <button
                           key={label}
                           type="button"
@@ -350,13 +297,61 @@ const ServiceOnboarding = () => {
                 );
               }}
             />
-            {errors.markets_covered && (
+            {errors.type_of_broker_service && (
               <p className="text-sm text-red-500">
-                {errors.markets_covered.message}
+                {errors.type_of_broker_service.message}
               </p>
             )}
           </div>
-        )}
+        </div>
+
+        {/* Markets Covered */}
+        <div className="flex flex-row gap-24 justify-around my-6">
+          <Controller
+            name="markets_covered"
+            control={control}
+            render={({ field, formState }) => {
+
+              const toggleValue = (value) => {
+                const selected = field.value.includes(value);
+                const updated = selected
+                  ? field.value.filter((v) => v !== value)
+                  : [...field.value, value];
+                field.onChange(updated);
+              };
+
+              return (
+                <div className="flex-1">
+                  <Label className="mb-4 block">
+                    Markets covered (relevant to broker, sales, & merchandisers)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {marketsCovered.map(({ label, value }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => toggleValue(label)}
+                        className={clsx(
+                          "rounded-md px-4 py-2 text-sm font-medium border",
+                          field.value.includes(label)
+                            ? "bg-teal-600 text-white border-transparent"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }}
+          />
+          {errors.markets_covered && (
+            <p className="text-sm text-red-500">
+              {errors.markets_covered.message}
+            </p>
+          )}
+        </div>
 
         <div>
           <Label className="mb-1 block">Customers Covered</Label>
