@@ -67,7 +67,10 @@ function ServiceProviderListing() {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const companyName = service?.company_name?.toLowerCase() ?? "";
-        if (!companyName.includes(q)) return false;
+        const customersCovered =
+          service?.customers_covered?.toLowerCase() ?? "";
+        if (!companyName.includes(q) && !customersCovered.includes(q))
+          return false;
       }
       return true;
     });

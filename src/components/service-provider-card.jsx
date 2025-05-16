@@ -93,7 +93,7 @@ const ServiceProviderCard = ({ service }) => {
             )) || "N/A"}
           </p>
         )}
-        <p className="text-muted-foreground">{area_of_specialization}</p>
+        <p className="text-muted-foreground">{customers_covered}</p>
       </CardContent>
 
       <CardFooter className="flex flex-row gap-6">
