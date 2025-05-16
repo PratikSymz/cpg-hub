@@ -78,17 +78,14 @@ const PostJob = () => {
     func: funcCreateJob,
   } = useFetch(addNewJob);
 
-  const onSubmit = (data) => {
-    funcCreateJob({
+  const onSubmit = async (data) => {
+    await funcCreateJob({
       ...data,
       brand_id: user.id,
       is_open: true,
     });
+    navigate("/jobs", { replace: true });
   };
-
-  useEffect(() => {
-    if (dataCreateJob?.length > 0) navigate("/jobs");
-  }, [loadingCreateJob]);
 
   // // Load the current brand info
   // const {
@@ -110,7 +107,7 @@ const PostJob = () => {
   //   return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   // }
 
-  if (user?.unsafeMetadata?.role !== ROLE_BRAND) {
+  if (user && isLoaded && user?.unsafeMetadata?.role !== ROLE_BRAND) {
     return <Navigate to="/jobs" />;
   }
 
@@ -440,7 +437,12 @@ const PostJob = () => {
           <p className="text-sm text-red-500">{errorCreateJob?.message}</p>
         )}
         {loadingCreateJob && <BarLoader width={"100%"} color="#36d7b7" />}
-        <Button type="submit" variant="default" size="lg" className="mt-12 bg-cpg-brown hover:bg-cpg-brown/90">
+        <Button
+          type="submit"
+          variant="default"
+          size="lg"
+          className="mt-12 bg-cpg-brown hover:bg-cpg-brown/90"
+        >
           Submit
         </Button>
       </form>

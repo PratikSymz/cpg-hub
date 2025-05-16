@@ -27,8 +27,40 @@ const schema = z.object({
   area_of_specialization: z
     .array(z.string())
     .min(1, "Area of specialization is required"),
-  linkedin_url: z.string().url("Must be a valid URL").optional(),
-  portfolio_url: z.string().url("Must be a valid URL").optional(),
+  linkedin_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val || // allow empty
+        /^(https:\/\/)?(www\.)?linkedin\.com\/(in|pub|company|jobs|school)\/[a-zA-Z0-9-_]+\/?$/i.test(
+          val
+        ),
+      {
+        message: "Must be a valid LinkedIn URL",
+      }
+    )
+    .optional(),
+  portfolio_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val ||
+        /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
+      {
+        message: "Must be a valid URL",
+      }
+    )
+    .optional(),
   resume: z
     .any()
     .refine(
@@ -52,16 +84,12 @@ const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
-  const handleRoleSelection = async (role) => {
-    await user
-      .update({ unsafeMetadata: { role } })
-      .then(() => {
-        console.log(`Role updated to: ${role}`);
-      })
-      .catch((err) => {
-        console.error("Error updating role:", err);
-      });
-  };
+  const email = user?.emailAddresses?.[0]?.emailAddress;
+  const imageUrl = user?.imageUrl;
+  const fullName = user?.fullName;
+
+  const [otherSpec, setOtherSpec] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
 
   const {
     register,
@@ -86,35 +114,29 @@ const TalentOnboarding = () => {
     data,
   } = useFetch(addNewTalent);
 
-  const onSubmit = (data) => {
-    handleRoleSelection(ROLE_TALENT);
-    submitTalentProfile({
+  const selectedOther = useWatch({ control, name: "area_of_specialization" });
+  // Define what triggers the next field
+  const shouldShowOtherInput = selectedOther?.some((val) =>
+    ["Other"].includes(val)
+  );
+
+  const handleRoleSelection = async (role) => {
+    try {
+      await user.update({ unsafeMetadata: { role } });
+      console.log(`Role updated to: ${role}`);
+    } catch (err) {
+      console.error("Error updating role:", err);
+    }
+  };
+
+  const onSubmit = async (data) => {
+    await handleRoleSelection(ROLE_TALENT);
+    await submitTalentProfile({
       ...data,
       user_id: user.id,
     });
+    navigate("/talents");
   };
-
-  const selectedOther = useWatch({ control, name: "area_of_specialization" });
-  // Define what triggers the next field
-  // const shouldShowOtherInput = selectedOther?.some((val) =>
-  //   ["Other"].includes(val)
-  // );
-  const [otherSpec, setOtherSpec] = useState("");
-  const [showOtherInput, setShowOtherInput] = useState(false);
-
-  if (!isLoaded || loading) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
-  }
-
-  useEffect(() => {
-    if (data) {
-      navigate("/talents");
-    }
-  }, [data, navigate]);
-
-  const email = user?.emailAddresses?.[0]?.emailAddress;
-  const imageUrl = user?.imageUrl;
-  const fullName = user?.fullName;
 
   const toTitleCase = (str) =>
     str
@@ -123,6 +145,10 @@ const TalentOnboarding = () => {
       .filter(Boolean)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
+
+  if (!isLoaded || loading) {
+    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  }
 
   return (
     <div className="flex flex-col gap-10 mt-10">

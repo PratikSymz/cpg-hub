@@ -15,9 +15,40 @@ import { ROLE_BRAND } from "@/constants/roles.js";
 
 const schema = z.object({
   brand_name: z.string().min(1, { message: "Brand name is required" }),
-  website: z.string().url().optional(),
-  // TODO: brand blurb (ABOUT)
-  linkedin_url: z.string().url().optional(),
+  website: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val ||
+        /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
+      {
+        message: "Must be a valid URL",
+      }
+    )
+    .optional(),
+  linkedin_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val || // allow empty
+        /^(https:\/\/)?(www\.)?linkedin\.com\/(in|pub|company|jobs|school)\/[a-zA-Z0-9-_]+\/?$/i.test(
+          val
+        ),
+      {
+        message: "Must be a valid LinkedIn URL",
+      }
+    )
+    .optional(),
   brand_hq: z.string().optional(),
   logo: z
     .any()
@@ -64,23 +95,18 @@ const BrandOnboarding = () => {
     func: funcCreateBrand,
   } = useFetch(addNewBrand);
 
-  const onSubmit = (data) => {
-    handleRoleSelection(ROLE_BRAND);
-    funcCreateBrand({
+  const onSubmit = async (data) => {
+    await handleRoleSelection(ROLE_BRAND);
+    await funcCreateBrand({
       ...data,
       user_id: user.id,
     });
+    navigate("/post-job", { replace: true });
   };
 
   if (!isLoaded || loadingBrandCreate) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
-
-  useEffect(() => {
-    if (dataBrandCreate) {
-      navigate("/post-job");
-    }
-  }, [dataBrandCreate, navigate]);
 
   return (
     <div>

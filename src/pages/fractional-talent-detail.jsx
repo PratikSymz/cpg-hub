@@ -19,6 +19,7 @@ import ComposeEmailDialog from "@/components/connect-email-dialog.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { getAllEndorsements, updateEndorsement } from "@/api/apiConnections.js";
 import EndorsementDialog from "@/components/endorsement-dialog.jsx";
+import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 
 const tabs = [
   {
@@ -46,6 +47,8 @@ const FractionalTalentDetail = () => {
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
+  const [activeEndorsement, setActiveEndorsement] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Load talent
   const {
@@ -159,13 +162,15 @@ const FractionalTalentDetail = () => {
     }
   };
 
-  if (loadingTalent || !talent) {
-    return <BarLoader width="100%" color="#36d7b7" />;
-  }
+  const hasEndorsed = endorsements?.some(
+    (e) => e.endorser?.user_id === user?.id
+  );
 
-  if (error) {
-    return <p className="text-red-500 text-center">Error loading profile.</p>;
-  }
+  // Current user's endorsement first
+  const sortedEndorsements = [...(endorsements || [])].sort((a, b) => {
+    const isCurrentUser = (e) => e.endorser?.user_id === user?.id;
+    return Number(isCurrentUser(b)) - Number(isCurrentUser(a));
+  });
 
   const connectButton =
     user_info && user && user_info.user_id !== user.id ? (
@@ -181,6 +186,14 @@ const FractionalTalentDetail = () => {
     ) : (
       <></>
     );
+
+  if (loadingTalent || !talent) {
+    return <BarLoader width="100%" color="#36d7b7" />;
+  }
+
+  if (error) {
+    return <p className="text-red-500 text-center">Error loading profile.</p>;
+  }
 
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
@@ -317,13 +330,16 @@ const FractionalTalentDetail = () => {
             <div className="">
               <div className="flex flex-row justify-between">
                 <h2 className="text-2xl font-semibold mb-6">Endorsements</h2>
-                {user_info && user && user_info.user_id !== user.id && (
-                  <EndorsementDialog
-                    open={endorseDialogOpen}
-                    setOpen={setEndorseDialogOpen}
-                    onSend={handleEndorsementSubmit}
-                  />
-                )}
+                {user_info &&
+                  user &&
+                  user_info.user_id !== user.id &&
+                  !hasEndorsed && (
+                    <EndorsementDialog
+                      open={endorseDialogOpen}
+                      setOpen={setEndorseDialogOpen}
+                      onSend={handleEndorsementSubmit}
+                    />
+                  )}
               </div>
 
               {loadingEndorsements && (
@@ -338,7 +354,7 @@ const FractionalTalentDetail = () => {
               )}
 
               <ul className="space-y-4 mt-6">
-                {endorsements?.map((endorsement) => (
+                {sortedEndorsements?.map((endorsement) => (
                   <li
                     key={endorsement.id}
                     className="border rounded-lg p-4 bg-white shadow-sm flex justify-between items-center"
@@ -368,18 +384,35 @@ const FractionalTalentDetail = () => {
 
                     {/* Right: Actions */}
                     {endorsement.endorser?.user_id === user?.id && (
-                      <div className="flex flex-row items-end gap-4">
-                        <Button
-                          variant="default"
-                          size="default"
-                          className="px-4 py-1 bg-cpg-brown text-white text-sm rounded hover:bg-cpg-brown/90"
-                        >
-                          Edit
-                        </Button>
-                      </div>
+                      <Button
+                        className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white cursor-pointer"
+                        variant="outline"
+                        size="lg"
+                        onClick={() => {
+                          setActiveEndorsement(endorsement);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
                     )}
                   </li>
                 ))}
+                {activeEndorsement && (
+                  <EndorsementEditDialog
+                    open={editDialogOpen}
+                    setOpen={(open) => {
+                      setEditDialogOpen(open);
+                      if (!open) setActiveEndorsement(null);
+                    }}
+                    initialMessage={activeEndorsement.message}
+                    onSave={async (newMessage) => {
+                      await handleEndorsementSubmit(newMessage);
+                      setEditDialogOpen(false);
+                      setActiveEndorsement(null);
+                    }}
+                  />
+                )}
               </ul>
             </div>
           </TabsContent>

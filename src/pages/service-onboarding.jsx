@@ -23,7 +23,22 @@ import { ROLE_SERVICE } from "@/constants/roles.js";
 const schema = z
   .object({
     company_name: z.string().min(1, "Company name is required"),
-    company_website: z.string().url().optional(),
+    company_website: z
+      .string()
+      .transform((val) => {
+        const trimmed = val.trim();
+        if (!trimmed) return "";
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      })
+      .refine(
+        (val) =>
+          !val ||
+          /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
+        {
+          message: "Must be a valid URL",
+        }
+      )
+      .optional(),
     logo: z
       .any()
       .optional()
@@ -114,24 +129,19 @@ const ServiceOnboarding = () => {
     data,
   } = useFetch(addNewService);
 
-  const onSubmit = (data) => {
-    handleRoleSelection(ROLE_SERVICE);
-    submitBrokerProfile({
+  const onSubmit = async (data) => {
+    await handleRoleSelection(ROLE_SERVICE);
+    await submitBrokerProfile({
       is_broker: false,
       user_id: user.id,
       ...data,
     });
+    navigate("/services", { replace: true });
   };
 
   if (!isLoaded || loading) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
-
-  useEffect(() => {
-    if (data) {
-      navigate("/services", { replace: true });
-    }
-  }, [data, navigate]);
 
   // Define what triggers the next field
   const shouldShowBrokerServices = selectedCategories.includes("Broker");
@@ -259,12 +269,62 @@ const ServiceOnboarding = () => {
             )}
           </div>
 
-          <div className="flex-1">
+          {shouldShowBrokerServices && (
+            <div className="flex-1">
+              <Controller
+                name="type_of_broker_service"
+                control={control}
+                render={({ field, formState }) => {
+                  const toggleValue = (value) => {
+                    const selected = field.value.includes(value);
+                    const updated = selected
+                      ? field.value.filter((v) => v !== value)
+                      : [...field.value, value];
+                    field.onChange(updated);
+                  };
+
+                  return (
+                    <div>
+                      <Label className="mb-4 block">
+                        Type of Broker Service
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {typeOfBrokerService.map(({ label, value }) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => toggleValue(label)}
+                            className={clsx(
+                              "rounded-md px-4 py-2 text-sm font-medium border",
+                              field.value.includes(label)
+                                ? "bg-teal-600 text-white border-transparent"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+              {errors.type_of_broker_service && (
+                <p className="text-sm text-red-500">
+                  {errors.type_of_broker_service.message}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Markets Covered */}
+        {shouldShowMarketsCovered && (
+          <div className="flex flex-row gap-24 justify-around my-6">
             <Controller
-              name="type_of_broker_service"
+              name="markets_covered"
               control={control}
               render={({ field, formState }) => {
-
                 const toggleValue = (value) => {
                   const selected = field.value.includes(value);
                   const updated = selected
@@ -274,10 +334,13 @@ const ServiceOnboarding = () => {
                 };
 
                 return (
-                  <div>
-                    <Label className="mb-4 block">Type of Broker Service</Label>
+                  <div className="flex-1">
+                    <Label className="mb-4 block">
+                      Markets covered (relevant to broker, sales, &
+                      merchandisers)
+                    </Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {typeOfBrokerService.map(({ label, value }) => (
+                      {marketsCovered.map(({ label, value }) => (
                         <button
                           key={label}
                           type="button"
@@ -297,61 +360,13 @@ const ServiceOnboarding = () => {
                 );
               }}
             />
-            {errors.type_of_broker_service && (
+            {errors.markets_covered && (
               <p className="text-sm text-red-500">
-                {errors.type_of_broker_service.message}
+                {errors.markets_covered.message}
               </p>
             )}
           </div>
-        </div>
-
-        {/* Markets Covered */}
-        <div className="flex flex-row gap-24 justify-around my-6">
-          <Controller
-            name="markets_covered"
-            control={control}
-            render={({ field, formState }) => {
-
-              const toggleValue = (value) => {
-                const selected = field.value.includes(value);
-                const updated = selected
-                  ? field.value.filter((v) => v !== value)
-                  : [...field.value, value];
-                field.onChange(updated);
-              };
-
-              return (
-                <div className="flex-1">
-                  <Label className="mb-4 block">
-                    Markets covered (relevant to broker, sales, & merchandisers)
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {marketsCovered.map(({ label, value }) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => toggleValue(label)}
-                        className={clsx(
-                          "rounded-md px-4 py-2 text-sm font-medium border",
-                          field.value.includes(label)
-                            ? "bg-teal-600 text-white border-transparent"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            }}
-          />
-          {errors.markets_covered && (
-            <p className="text-sm text-red-500">
-              {errors.markets_covered.message}
-            </p>
-          )}
-        </div>
+        )}
 
         <div>
           <Label className="mb-1 block">Customers Covered</Label>

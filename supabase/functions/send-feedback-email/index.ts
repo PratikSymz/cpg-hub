@@ -51,11 +51,17 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error(error);
-      return new Response("Failed to send email", { status: 500 });
+      console.error("Catch error:", error);
+      return new Response(JSON.stringify({ error }), {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
     }
 
-    return new Response("Feedback email sent", {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
@@ -63,7 +69,13 @@ serve(async (req) => {
       },
     });
   } catch (err) {
-    console.error(err);
-    return new Response("Server error", { status: 500 });
+    console.error("Catch error:", err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   }
 });

@@ -39,7 +39,7 @@ const EndorsementDialog = ({ open, setOpen, onSend }) => {
           placeholder="Add a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="resize-y"
+          className="mt-4 resize-y"
         />
 
         <DialogFooter className="mt-4">
@@ -47,7 +47,7 @@ const EndorsementDialog = ({ open, setOpen, onSend }) => {
             variant="default"
             size="default"
             onClick={handleSubmit}
-            className="bg-cpg-teal hover:bg-cpg-teal/90"
+            className="bg-cpg-teal hover:bg-cpg-teal/90 cursor-pointer"
           >
             Submit
           </Button>
