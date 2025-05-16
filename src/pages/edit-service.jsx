@@ -49,7 +49,7 @@ const schema = z
       .min(1, "Select at least one category"),
     type_of_broker_service: z.array(z.string()).optional().default([]),
     markets_covered: z.array(z.string()).optional().default([]),
-    customers_covered: z.string().optional(),
+    customers_covered: z.string().min(1, "Service description is required"),
   })
   .refine(
     (data) =>
@@ -321,6 +321,20 @@ const EditServicePage = () => {
           )}
         </div>
 
+        <div>
+          <Label className="mb-1 block">About</Label>
+          <Textarea
+            className="textarea-class resize block w-full h-24"
+            {...register("customers_covered")}
+            placeholder="e.g. Tell us more about your service..."
+          />
+        </div>
+        {errors.customers_covered && (
+          <p className="text-sm text-red-500">
+            {errors.customers_covered.message}
+          </p>
+        )}
+
         {/* Num Employees */}
         <div>
           <Label className="mb-1 block">Number of Employees</Label>
@@ -495,15 +509,6 @@ const EditServicePage = () => {
             )}
           </div>
         )}
-
-        <div>
-          <Label className="mb-1 block">Customers Covered</Label>
-          <Textarea
-            className="textarea-class resize block w-full h-24"
-            {...register("customers_covered")}
-            placeholder="e.g. Retailers, Distributors, Restaurants"
-          />
-        </div>
 
         {saveError && (
           <p className="text-sm text-red-500">{saveError.message}</p>

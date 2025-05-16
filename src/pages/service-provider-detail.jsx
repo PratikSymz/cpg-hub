@@ -37,6 +37,7 @@ const ServiceProviderDetail = () => {
     type_of_broker_service,
     markets_covered,
     customers_covered,
+    service_desc,
     user_info,
   } = service || {};
 
@@ -100,8 +101,6 @@ const ServiceProviderDetail = () => {
     return <p className="text-red-500 text-center">Error loading profile.</p>;
   }
 
-  console.log(service);
-
   return (
     <div className="flex flex-col gap-10 mt-10 px-6 pb-16 max-w-5xl mx-auto">
       {/* Header */}
@@ -136,6 +135,16 @@ const ServiceProviderDetail = () => {
         )}
       </div>
 
+      {/* Section: Summary Info */}
+      {customers_covered && (
+        <div className="bg-muted rounded-md p-4">
+          <Label className="text-xs text-muted-foreground uppercase">
+            About
+          </Label>
+          <p className="text-sm font-medium mt-1">{customers_covered}</p>
+        </div>
+      )}
+
       {/* Section: Details */}
       <div className="grid sm:grid-cols-2 gap-6">
         <div>
@@ -148,17 +157,7 @@ const ServiceProviderDetail = () => {
           <Label className="text-sm font-semibold block mb-2">
             Specialization
           </Label>
-          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-            {area_of_specialization}
-          </span>
-        </div>
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Customers Covered
-          </Label>
-          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-            {customers_covered}
-          </span>
+           <p className="text-sm font-base mt-1">{area_of_specialization}</p>
         </div>
       </div>
 
@@ -168,14 +167,15 @@ const ServiceProviderDetail = () => {
           Categories of Service
         </Label>
         <div className="flex flex-wrap gap-2">
-          {category_of_service && category_of_service.map((category, idx) => (
-            <span
-              key={idx}
-              className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-            >
-              {category}
-            </span>
-          ))}
+          {category_of_service &&
+            category_of_service.map((category, idx) => (
+              <span
+                key={idx}
+                className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+              >
+                {category}
+              </span>
+            ))}
         </div>
       </div>
 

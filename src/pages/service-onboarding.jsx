@@ -69,7 +69,7 @@ const schema = z
       .min(1, "Select at least one market")
       .optional()
       .default([]),
-    customers_covered: z.string().optional(),
+    customers_covered: z.string().min(1, "Service description is required"),
   })
   .refine(
     (data) =>
@@ -197,6 +197,20 @@ const ServiceOnboarding = () => {
             className="file:text-gray-500"
             {...register("logo")}
           />
+        </div>
+
+        <div>
+          <Label className="mb-1 block">About Service</Label>
+          <Textarea
+            className="textarea-class resize block w-full h-24"
+            {...register("customers_covered")}
+            placeholder="e.g. Tell us more about your service..."
+          />
+          {errors.customers_covered && (
+            <p className="text-sm text-red-500">
+              {errors.customers_covered.message}
+            </p>
+          )}
         </div>
 
         <div>
@@ -367,15 +381,6 @@ const ServiceOnboarding = () => {
             )}
           </div>
         )}
-
-        <div>
-          <Label className="mb-1 block">Customers Covered</Label>
-          <Textarea
-            className="textarea-class resize block w-full h-24"
-            {...register("customers_covered")}
-            placeholder="e.g. Retailers, Distributors, Restaurants"
-          />
-        </div>
 
         {error && <p className="text-sm text-red-500">{error.message}</p>}
 
