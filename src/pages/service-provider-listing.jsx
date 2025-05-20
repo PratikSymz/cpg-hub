@@ -83,7 +83,7 @@ function ServiceProviderListing() {
   return (
     <div className="px-6 py-10">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        Browse Service Providers/Brokers
+        Browse Service Providers
       </h1>
 
       {/* Loading bar */}

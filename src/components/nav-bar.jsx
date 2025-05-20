@@ -56,7 +56,7 @@ const NavBar = () => {
               className="h-26 w-auto"
             />
           </Link>
-          <p className="text-lg font-medium text-[#613f1b]">
+          <p className="text-xl font-medium text-[#613f1b]">
             The spot for CPG brands, fractional talent, and services to connect.
           </p>
         </div>

@@ -54,7 +54,7 @@ const LandingPage = () => {
       <section className="w-full py-12">
         {/* Heading */}
         <div className="text-center mb-10 bg-cpg-brown/5">
-          <h1 className="text-xl text-cpg-brown font-bold p-2 mb-24">
+          <h1 className="text-2xl text-cpg-brown font-bold p-5 mb-24">
             Welcome to your professional CPG Community
           </h1>
         </div>
@@ -67,7 +67,7 @@ const LandingPage = () => {
               className="flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
             >
               <CardHeader className="gap-2">
-                <CardTitle className="h-64 text-center content-center place-items-center text-cpg-teal font-semibold text-xl">
+                <CardTitle className="h-64 text-center content-center place-items-center text-cpg-teal font-semibold text-2xl">
                   {product.title}
                 </CardTitle>
               </CardHeader>

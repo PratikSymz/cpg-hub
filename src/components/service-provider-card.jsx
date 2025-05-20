@@ -10,6 +10,7 @@ import {
 } from "./ui/card.jsx";
 import { Link } from "react-router-dom";
 import { FaGlobe } from "react-icons/fa";
+import { Skeleton } from "./ui/skeleton.jsx";
 
 const ServiceProviderCard = ({ service }) => {
   const {
@@ -33,6 +34,7 @@ const ServiceProviderCard = ({ service }) => {
         <CardTitle className="flex justify-between items-center text-lg font-bold">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
+              {!logo_url && <Skeleton className="h-16 w-16 rounded-full bg-black/15" />}
               {logo_url && (
                 <img
                   src={logo_url}
