@@ -93,9 +93,9 @@ const TalentCard = ({ talent }) => {
       </CardContent>
 
       <CardFooter className="flex flex-row gap-6">
-        <Button variant="outline" size="default" className="flex-1" asChild>
+        {/* <Button variant="outline" size="default" className="flex-1" asChild>
           <Link to={resume_url}>View Resume</Link>
-        </Button>
+        </Button> */}
 
         <Button
           variant="default"
