@@ -120,7 +120,6 @@ const FractionalJobDetail = () => {
       <></>
     );
 
-    
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
@@ -136,7 +135,9 @@ const FractionalJobDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div>
-            <h1 className="text-3xl font-bold">{job?.brand && brand_name}</h1>
+            <h1 className="text-3xl font-bold hover:underline">
+              {job?.brand && <Link to={website}>{brand_name}</Link>}
+            </h1>
             <div className="flex flex-row gap-4 mt-2">
               {/* {job?.brand && linkedin_url && (
                 <Link to={linkedin_url}>
@@ -146,11 +147,6 @@ const FractionalJobDetail = () => {
                   />
                 </Link>
               )} */}
-              {job?.brand && (
-                <Link to={website}>
-                  <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
-                </Link>
-              )}
             </div>
           </div>
         </div>

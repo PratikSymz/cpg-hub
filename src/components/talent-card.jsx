@@ -44,7 +44,15 @@ const TalentCard = ({ talent }) => {
                 />
               )}
               <div className="flex flex-col">
-                <h1 className="text-2xl font-bold">{full_name}</h1>
+                <h1 className="text-2xl font-bold">
+                  {portfolio_url ? (
+                    <Link to={portfolio_url} className="hover:underline">
+                      {full_name}
+                    </Link>
+                  ) : (
+                    full_name
+                  )}
+                </h1>
                 <div className="flex flex-row gap-4 mt-2">
                   {linkedin_url && (
                     <Link to={linkedin_url}>
@@ -54,11 +62,11 @@ const TalentCard = ({ talent }) => {
                       />
                     </Link>
                   )}
-                  {portfolio_url && (
+                  {/* {portfolio_url && (
                     <Link to={portfolio_url}>
                       <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
                     </Link>
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>

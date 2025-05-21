@@ -28,6 +28,7 @@ export const categoryOfService = [
   { label: "Digital/Social", value: "digital" },
   { label: "Recruiting", value: "recruiting" },
   { label: "Supply Chain", value: "supply_chain" },
+  { label: "Demos/Sampling", value: "demos" },
   { label: "Other", value: "other" },
 ];
 

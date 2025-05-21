@@ -34,7 +34,9 @@ const ServiceProviderCard = ({ service }) => {
         <CardTitle className="flex justify-between items-center text-lg font-bold">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              {!logo_url && <Skeleton className="h-16 w-16 rounded-full bg-black/15" />}
+              {!logo_url && (
+                <Skeleton className="h-16 w-16 rounded-full bg-black/15" />
+              )}
               {logo_url && (
                 <img
                   src={logo_url}
@@ -43,14 +45,15 @@ const ServiceProviderCard = ({ service }) => {
                 />
               )}
               <div className="flex flex-col">
-                <h1 className="text-2xl font-bold">{company_name}</h1>
-                <div className="flex flex-row gap-4 mt-2">
-                  {company_website && (
-                    <Link to={company_website}>
-                      <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
+                <h1 className="text-2xl font-bold">
+                  {company_website ? (
+                    <Link to={company_website} className="hover:underline">
+                      {company_name}
                     </Link>
+                  ) : (
+                    company_name
                   )}
-                </div>
+                </h1>
               </div>
             </div>
           </div>

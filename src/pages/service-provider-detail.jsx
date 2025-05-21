@@ -112,14 +112,15 @@ const ServiceProviderDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">{company_name}</h1>
-            <div className="flex flex-row gap-4 mt-2">
-              {company_website && (
-                <Link to={company_website}>
-                  <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
+            <h1 className="text-3xl font-bold">
+              {company_website ? (
+                <Link to={company_website} className="hover:underline">
+                  {company_name}
                 </Link>
+              ) : (
+                company_name
               )}
-            </div>
+            </h1>
           </div>
         </div>
 
@@ -157,7 +158,7 @@ const ServiceProviderDetail = () => {
           <Label className="text-sm font-semibold block mb-2">
             Specialization
           </Label>
-           <p className="text-sm font-base mt-1">{area_of_specialization}</p>
+          <p className="text-sm font-base mt-1">{area_of_specialization}</p>
         </div>
       </div>
 

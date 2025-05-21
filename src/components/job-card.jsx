@@ -19,7 +19,7 @@ const JobCard = ({
   job,
   isMySubmission = false,
   isSaved = false,
-  onJobAction = () => {},
+  onJobAction = () => { },
 }) => {
   const [saved, setSaved] = useState(isSaved);
   const { user } = useUser();
@@ -83,29 +83,13 @@ const JobCard = ({
               <div className="flex flex-col w-full">
                 <div className="flex flex-row justify-between items-center w-full">
                   <div>
-                    <h1 className="text-2xl font-bold">
-                      {job.brand && brand_name}
+                    <h1 className="text-2xl font-bold hover:underline">
+                      {job.brand && <Link to={website}>{brand_name}</Link>}
                     </h1>
                   </div>
                   <div className="flex flex-row gap-2 items-center text-base text-black/90">
                     <MapPinIcon size={15} /> {job.brand && brand_hq}
                   </div>
-                </div>
-
-                <div className="flex flex-row gap-4 mt-2">
-                  {/* {linkedin_url && (
-                    <Link to={linkedin_url}>
-                      <FaLinkedin
-                        className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110"
-                        style={{ color: "#0072b1" }}
-                      />
-                    </Link>
-                  )} */}
-                  {job.brand && (
-                    <Link to={website}>
-                      <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
-                    </Link>
-                  )}
                 </div>
               </div>
             </div>
