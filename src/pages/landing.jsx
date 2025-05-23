@@ -32,7 +32,8 @@ const LandingPage = () => {
     if (isFirstTime || isDifferentRole) {
       setSelectedProduct(product); // set clicked product
     } else {
-      navigate(product.secondaryButton.link); // allow onboarding
+      setSelectedProduct(product);
+      // navigate(product.secondaryButton.link); // allow onboarding
     }
   };
 
@@ -101,6 +102,9 @@ const LandingPage = () => {
                     variant="default"
                     className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-5 py-2"
                     onClick={() => handleSecondarySubmit(product)}
+                    disabled={
+                      onboarded && role === product.secondaryButton.role
+                    }
                     // disabled={
                     //   role && product.secondaryButton.role !== role
                     //     ? true
