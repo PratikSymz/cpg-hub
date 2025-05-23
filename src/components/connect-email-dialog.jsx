@@ -33,7 +33,11 @@ const ConnectEmailDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={"bg-cpg-brown hover:bg-cpg-brown/90"} variant="default" size="lg">
+        <Button
+          className={"bg-cpg-brown hover:bg-cpg-brown/90"}
+          variant="default"
+          size="lg"
+        >
           Connect
         </Button>
       </DialogTrigger>

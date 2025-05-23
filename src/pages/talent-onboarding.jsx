@@ -18,6 +18,7 @@ import {
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
+import TalentExperienceSection from "@/components/experience-section.jsx";
 
 const schema = z.object({
   level_of_experience: z
@@ -189,6 +190,11 @@ const TalentOnboarding = () => {
             {...register("industry_experience")}
             placeholder="e.g. 8 years in food & beverage..."
           />
+        </div>
+
+        {/* Brand Experience */}
+        <div>
+          <TalentExperienceSection user_id={user?.id} showEdit={true} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10 my-6">

@@ -23,38 +23,42 @@ export async function getAllExperiences(token, { user_id }) {
 export async function addNewExperience(token, experienceData, { user_id }) {
   const supabase = await supabaseClient(token);
 
-  const file = experienceData.logo?.[0];
-  const folder = "talent";
-  const bucket = "brands-experience";
-  // A new file was uploaded → upload it
-  const fileName = formatBrandLogoUrl(user_id, file);
+  const file = experienceData.brand_logo?.[0];
+  let brand_logo_url = null;
+  if (file) {
+    const folder = "talent";
+    const bucket = "brands-experience";
+    // A new file was uploaded → upload it
+    const fileName = formatBrandLogoUrl(user_id, file);
 
-  // Upload the file
-  const { error: storageError } = await supabase.storage
-    .from(bucket)
-    .upload(`${folder}/${fileName}`, file, {
-      cacheControl: "3600",
-      upsert: false, // prevent overwriting
-    });
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false, // prevent overwriting
+      });
 
-  if (storageError) {
-    console.error("Error uploading new Brand logo:", storageError);
-    throw new Error("Error uploading new Brand logo");
+    if (storageError) {
+      console.error("Error uploading new Brand logo:", storageError);
+      throw new Error("Error uploading new Brand logo");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    brand_logo_url = publicUrlData?.publicUrl;
   }
-
-  // Get the public URL
-  const { data: publicUrlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(`${folder}/${fileName}`);
-  const brand_logo_url = publicUrlData?.publicUrl;
 
   const { data, error } = await supabase
     .from(table_name)
     .insert([
       {
         brand_name: experienceData.brand_name,
-        brand_website: experienceData.website,
+        brand_website: experienceData.brand_website,
         brand_logo: brand_logo_url,
+        user_id: user_id,
       },
     ])
     .select();

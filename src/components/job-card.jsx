@@ -13,7 +13,6 @@ import useFetch from "@/hooks/use-fetch.jsx";
 import { deleteJob, saveJob } from "@/api/apiFractionalJobs.js";
 import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
-import { FaGlobe, FaLinkedin } from "react-icons/fa";
 
 const JobCard = ({
   job,

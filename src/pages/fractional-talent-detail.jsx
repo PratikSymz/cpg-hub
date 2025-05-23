@@ -20,6 +20,7 @@ import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { getAllEndorsements, updateEndorsement } from "@/api/apiConnections.js";
 import EndorsementDialog from "@/components/endorsement-dialog.jsx";
 import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
+import TalentExperienceSection from "@/components/experience-section.jsx";
 
 const tabs = [
   {
@@ -113,8 +114,6 @@ const FractionalTalentDetail = () => {
 
   const handleEmailSend = async (message) => {
     try {
-      console.log(email);
-      console.log(user?.primaryEmailAddress?.emailAddress);
       const res = await fetch(
         "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
         {
@@ -281,6 +280,14 @@ const FractionalTalentDetail = () => {
                 <p className="text-muted-foreground text-base whitespace-pre-line">
                   {industry_experience}
                 </p>
+              </div>
+
+              {/* Brand Experience */}
+              <div>
+                <TalentExperienceSection
+                  user_id={user_info.user_id}
+                  showEdit={false}
+                />
               </div>
 
               {/* Tags */}

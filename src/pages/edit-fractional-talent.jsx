@@ -19,8 +19,9 @@ import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
 import { Loader2Icon, X } from "lucide-react";
 import { syncUserProfile } from "@/api/apiUsers.js";
+import TalentExperienceSection from "@/components/experience-section.jsx";
 
-const schema = z.object({
+export const schema = z.object({
   first_name: z.string().min(1, "First Name is required"),
   last_name: z.string().min(1, "Last Name is required"),
   level_of_experience: z
@@ -79,6 +80,7 @@ const EditTalentPage = () => {
     data: talentData,
     loading,
   } = useFetch(getMyTalentProfile);
+  console.log(talentData);
 
   const {
     func: saveTalent,
@@ -280,6 +282,11 @@ const EditTalentPage = () => {
           {errors.industry_experience && (
             <p className="text-red-500">{errors.industry_experience.message}</p>
           )}
+        </div>
+
+        {/* Brand Experience */}
+        <div>
+          <TalentExperienceSection user_id={user?.id} showEdit={true} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10 my-6">
