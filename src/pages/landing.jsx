@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { SignIn, useUser } from "@clerk/clerk-react";
 import {
   Card,
   CardHeader,
@@ -26,6 +26,12 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   const handleSecondarySubmit = (product) => {
+    if (!isSignedIn) {
+      // Not signed in — redirect to sign-up first
+      window.location.href = "https://accounts.mycpghub.com/sign-up";
+      return;
+    }
+
     const isFirstTime = !onboarded;
     const isDifferentRole = role && role !== product.secondaryButton.role;
 

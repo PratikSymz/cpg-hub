@@ -47,9 +47,7 @@ export default function OnboardingPromptDialog({
       <DialogContent className="">
         <DialogHeader className="">
           <DialogTitle className="">{title}</DialogTitle>
-          <DialogDescription className="">
-            {message}
-          </DialogDescription>
+          <DialogDescription className="">{message}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2">
           <Button

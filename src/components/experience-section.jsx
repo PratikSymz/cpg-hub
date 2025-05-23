@@ -79,7 +79,7 @@ const TalentExperienceSection = ({ user_id, showEdit = false }) => {
   const { func: removeExperience } = useFetch(deleteExperience);
 
   useEffect(() => {
-    if (user && user?.id && user.id === user_id) {
+    if (user_id) {
       fetchExperiences({ user_id });
     }
   }, [user]);
