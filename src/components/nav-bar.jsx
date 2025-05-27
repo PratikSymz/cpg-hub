@@ -175,7 +175,7 @@ const NavBar = () => {
             ) : (
               <div className="bg-white rounded-xl p-6 shadow-none relative">
                 <SignUp
-                  forceRedirectUrl="/"Ï
+                  forceRedirectUrl="/"
                   appearance={{
                     elements: {
                       card: "shadow-none border-none p-0",
