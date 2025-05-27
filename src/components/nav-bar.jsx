@@ -20,7 +20,7 @@ const NavBar = () => {
   const [search, setSearch] = useSearchParams();
   const { user } = useUser();
 
-  const [mode, setMode] = useState("sign-in");
+  const [authMode, setAuthMode] = useState("sign-in"); // or "sign-up"
 
   useEffect(() => {
     if (search.get("sign-in")) {
@@ -137,7 +137,7 @@ const NavBar = () => {
           >
             {/* Close Button */}
             <button
-              className="absolute top-1 right-1 text-white hover:text-gray-200 text-lg font-bold"
+              className="absolute top-1 right-1 text-white hover:text-gray-200 text-lg font-bold cursor-pointer"
               onClick={() => {
                 setShowSignIn(false);
                 setSearch({});
@@ -146,21 +146,58 @@ const NavBar = () => {
             >
               <X className="w-5 h-5" />
             </button>
-
-            <SignIn
-              signUpUrl="https://accounts.mycpghub.com/sign-up"
-              signUpForceRedirectUrl="/"
-              fallbackRedirectUrl="/"
-              appearance={{
-                elements: {
-                  card: "shadow-none border-none p-0",
-                  headerTitle: "text-xl font-semibold",
-                  formFieldInput: "border rounded px-3 py-2 w-full",
-                  socialButtonsBlockButton:
-                    "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
-                },
-              }}
-            />
+            {authMode === "sign-in" ? (
+              <div className="bg-white rounded-xl p-6 shadow-none relative">
+                <SignIn
+                  forceRedirectUrl="/"
+                  fallbackRedirectUrl="/"
+                  appearance={{
+                    elements: {
+                      card: "shadow-none border-none p-0",
+                      headerTitle: "text-xl font-semibold",
+                      formFieldInput: "border rounded px-3 py-2 w-full",
+                      socialButtonsBlockButton:
+                        "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
+                    },
+                  }}
+                  signUpUrl="#"
+                />
+                <div className="tmt-4 border-t pt-4 text-sm text-center text-gray-600">
+                  Don't have an account?{" "}
+                  <button
+                    className="text-cpg-teal underline cursor-pointer"
+                    onClick={() => setAuthMode("sign-up")}
+                  >
+                    Sign up
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl p-6 shadow-none relative">
+                <SignUp
+                  forceRedirectUrl="/"
+                  appearance={{
+                    elements: {
+                      card: "shadow-none border-none p-0",
+                      headerTitle: "text-xl font-semibold",
+                      formFieldInput: "border rounded px-3 py-2 w-full",
+                      socialButtonsBlockButton:
+                        "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
+                    },
+                  }}
+                  signInUrl="#"
+                />
+                <div className="tmt-4 border-t pt-4 text-sm text-center text-gray-600">
+                  Already have an account?{" "}
+                  <button
+                    className="text-cpg-teal underline cursor-pointer"
+                    onClick={() => setAuthMode("sign-in")}
+                  >
+                    Sign in
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
