@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   SignIn,
+  SignUp,
   SignedIn,
   SignedOut,
   SignInButton,
@@ -11,13 +12,15 @@ import {
 } from "@clerk/clerk-react";
 
 import { Button } from "./ui/button.jsx";
-import { BriefcaseBusiness, Edit, Heart, PenBox } from "lucide-react";
+import { BriefcaseBusiness, Edit, Heart, PenBox, X } from "lucide-react";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [search, setSearch] = useSearchParams();
   const { user } = useUser();
+
+  const [mode, setMode] = useState("sign-in");
 
   useEffect(() => {
     if (search.get("sign-in")) {
@@ -125,10 +128,40 @@ const NavBar = () => {
 
       {showSignIn && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
           onClick={handleOverlayClick}
         >
-          <SignIn signUpForceRedirectUrl="/" fallbackRedirectUrl="/" />
+          <div
+            className="relative bg-transparent p-10 rounded-xl shadow-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              className="absolute top-1 right-1 text-white hover:text-gray-200 text-lg font-bold"
+              onClick={() => {
+                setShowSignIn(false);
+                setSearch({});
+              }}
+              aria-label="Close sign-in"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <SignIn
+              signUpUrl="https://accounts.mycpghub.com/sign-up"
+              signUpForceRedirectUrl="/"
+              fallbackRedirectUrl="/"
+              appearance={{
+                elements: {
+                  card: "shadow-none border-none p-0",
+                  headerTitle: "text-xl font-semibold",
+                  formFieldInput: "border rounded px-3 py-2 w-full",
+                  socialButtonsBlockButton:
+                    "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
+                },
+              }}
+            />
+          </div>
         </div>
       )}
     </header>
