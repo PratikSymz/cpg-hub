@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { FaGlobe } from "react-icons/fa";
 import { Skeleton } from "./ui/skeleton.jsx";
+import clsx from "clsx";
 
 const ServiceProviderCard = ({ service }) => {
   const {
@@ -45,13 +46,16 @@ const ServiceProviderCard = ({ service }) => {
                 />
               )}
               <div className="flex flex-col">
-                <h1 className="text-2xl font-bold">
+                <h1
+                  className={clsx(
+                    "text-2xl font-bold",
+                    company_website && "hover:underline"
+                  )}
+                >
                   {company_website ? (
-                    <Link to={company_website} className="hover:underline">
-                      {company_name}
-                    </Link>
+                    <Link to={company_website}>{company_name}</Link>
                   ) : (
-                    company_name
+                    <span>{company_name}</span>
                   )}
                 </h1>
               </div>

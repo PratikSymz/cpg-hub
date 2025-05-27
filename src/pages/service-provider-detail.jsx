@@ -9,6 +9,7 @@ import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { FaGlobe } from "react-icons/fa";
 import { Button } from "@/components/ui/button.jsx";
 import { Label } from "@/components/ui/label.jsx";
+import clsx from "clsx";
 
 const ServiceProviderDetail = () => {
   const { id } = useParams();
@@ -112,13 +113,16 @@ const ServiceProviderDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">
+            <h1
+              className={clsx(
+                "text-3xl font-bold",
+                company_website && "hover:underline"
+              )}
+            >
               {company_website ? (
-                <Link to={company_website} className="hover:underline">
-                  {company_name}
-                </Link>
+                <Link to={company_website}>{company_name}</Link>
               ) : (
-                company_name
+                <span>{company_name}</span>
               )}
             </h1>
           </div>

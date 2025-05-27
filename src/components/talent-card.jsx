@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { FaLinkedin, FaGlobe, FaFileAlt } from "react-icons/fa";
+import clsx from "clsx";
 
 const TalentCard = ({ talent }) => {
   const { user } = useUser();
@@ -44,13 +45,16 @@ const TalentCard = ({ talent }) => {
                 />
               )}
               <div className="flex flex-col">
-                <h1 className="text-2xl font-bold">
+                <h1
+                  className={clsx(
+                    "text-2xl font-bold",
+                    portfolio_url && "hover:underline"
+                  )}
+                >
                   {portfolio_url ? (
-                    <Link to={portfolio_url} className="hover:underline">
-                      {full_name}
-                    </Link>
+                    <Link to={portfolio_url}>{full_name}</Link>
                   ) : (
-                    full_name
+                    <span>{full_name}</span>
                   )}
                 </h1>
                 <div className="flex flex-row gap-4 mt-2">

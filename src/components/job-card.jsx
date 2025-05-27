@@ -13,12 +13,13 @@ import useFetch from "@/hooks/use-fetch.jsx";
 import { deleteJob, saveJob } from "@/api/apiFractionalJobs.js";
 import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
+import clsx from "clsx";
 
 const JobCard = ({
   job,
   isMySubmission = false,
   isSaved = false,
-  onJobAction = () => { },
+  onJobAction = () => {},
 }) => {
   const [saved, setSaved] = useState(isSaved);
   const { user } = useUser();
@@ -28,7 +29,7 @@ const JobCard = ({
 
   // Brand info
   const { brand_name, website, linkedin_url, brand_hq, logo_url, user_id } =
-    job.brand || {};
+    job && job?.brand || {};
 
   // Saving jobs
   const {
@@ -40,7 +41,7 @@ const JobCard = ({
   const handleSaveJob = async () => {
     await funcSavedJob({
       user_id: user.id,
-      job_id: job.id,
+      job_id: job?.id,
     });
     onJobAction();
   };
@@ -49,7 +50,7 @@ const JobCard = ({
   const { loading: loadingDeleteJob, func: funcDeleteJob } = useFetch(
     deleteJob,
     {
-      job_id: job.id,
+      job_id: job?.id,
     }
   );
 
@@ -72,7 +73,7 @@ const JobCard = ({
         <CardTitle className="flex justify-between items-center text-lg font-normal w-full">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
             <div className="flex items-center gap-4 w-full">
-              {job.brand && (
+              {job?.brand && (
                 <img
                   src={logo_url}
                   alt="Profile"
@@ -82,12 +83,22 @@ const JobCard = ({
               <div className="flex flex-col w-full">
                 <div className="flex flex-row justify-between items-center w-full">
                   <div>
-                    <h1 className="text-2xl font-bold hover:underline">
-                      {job.brand && <Link to={website}>{brand_name}</Link>}
+                    <h1
+                      className={clsx(
+                        "text-2xl font-bold",
+                        website && "hover:underline"
+                      )}
+                    >
+                      {job?.brand &&
+                        (website ? (
+                          <Link to={website}>{brand_name}</Link>
+                        ) : (
+                          <span>{brand_name}</span>
+                        ))}
                     </h1>
                   </div>
                   <div className="flex flex-row gap-2 items-center text-base text-black/90">
-                    <MapPinIcon size={15} /> {job.brand && brand_hq}
+                    <MapPinIcon size={15} /> {job?.brand && brand_hq}
                   </div>
                 </div>
               </div>
@@ -136,7 +147,7 @@ const JobCard = ({
           className="flex-1 bg-cpg-brown hover:bg-cpg-brown/90"
           asChild
         >
-          <Link to={`/job/${job.id}`}>More Details</Link>
+          <Link to={`/job/${job?.id}`}>More Details</Link>
         </Button>
       </CardFooter>
     </Card>

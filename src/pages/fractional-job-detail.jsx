@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
 import { getUser } from "@/api/apiUsers.js";
+import clsx from "clsx";
 
 const FractionalJobDetail = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const FractionalJobDetail = () => {
 
   // Brand info
   const { brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url } =
-    (job && job.brand) || {};
+    (job && job?.brand) || {};
 
   useEffect(() => {
     if (brand_id) {
@@ -135,8 +136,18 @@ const FractionalJobDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div>
-            <h1 className="text-3xl font-bold hover:underline">
-              {job?.brand && <Link to={website}>{brand_name}</Link>}
+            <h1
+              className={clsx(
+                "text-3xl font-bold",
+                website && "hover:underline"
+              )}
+            >
+              {job?.brand &&
+                (website ? (
+                  <Link to={website}>{brand_name}</Link>
+                ) : (
+                  <span>{brand_name}</span>
+                ))}
             </h1>
             <div className="flex flex-row gap-4 mt-2">
               {/* {job?.brand && linkedin_url && (

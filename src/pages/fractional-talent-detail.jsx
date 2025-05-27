@@ -21,6 +21,7 @@ import { getAllEndorsements, updateEndorsement } from "@/api/apiConnections.js";
 import EndorsementDialog from "@/components/endorsement-dialog.jsx";
 import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 import TalentExperienceSection from "@/components/experience-section.jsx";
+import clsx from "clsx";
 
 const tabs = [
   {
@@ -205,13 +206,16 @@ const FractionalTalentDetail = () => {
             className="h-22 w-22 rounded-full border object-cover"
           />
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">
+            <h1
+              className={clsx(
+                "text-3xl font-bold",
+                portfolio_url && "hover:underline"
+              )}
+            >
               {portfolio_url ? (
-                <Link to={portfolio_url} className="hover:underline">
-                  {full_name}
-                </Link>
+                <Link to={portfolio_url}>{full_name}</Link>
               ) : (
-                full_name
+                <span>{full_name}</span>
               )}
             </h1>
             <div className="flex flex-row gap-4 mt-2">
