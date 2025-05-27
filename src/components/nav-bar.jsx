@@ -151,6 +151,7 @@ const NavBar = () => {
             {authMode === "sign-in" ? (
               <div className="bg-white rounded-xl p-6 shadow-none relative">
                 <SignIn
+                  forceRedirectUrl="/"
                   appearance={{
                     elements: {
                       card: "shadow-none border-none p-0",
@@ -160,7 +161,6 @@ const NavBar = () => {
                         "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
                     },
                   }}
-                  signUpUrl="#"
                 />
                 <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
                   Don't have an account?{" "}
@@ -175,6 +175,7 @@ const NavBar = () => {
             ) : (
               <div className="bg-white rounded-xl p-6 shadow-none relative">
                 <SignUp
+                  forceRedirectUrl="/"Ï
                   appearance={{
                     elements: {
                       card: "shadow-none border-none p-0",
@@ -184,7 +185,6 @@ const NavBar = () => {
                         "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
                     },
                   }}
-                  signInUrl="#"
                 />
                 <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
                   Already have an account?{" "}
