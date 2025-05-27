@@ -18,7 +18,7 @@ import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [search, setSearch] = useSearchParams();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
 
   const [authMode, setAuthMode] = useState("sign-in"); // or "sign-up"
 
@@ -34,6 +34,8 @@ const NavBar = () => {
       setSearch({});
     }
   };
+
+  if (!isLoaded) return null; // or loading spinner
 
   const role = user?.unsafeMetadata?.role;
   const getGreeting = () => {
