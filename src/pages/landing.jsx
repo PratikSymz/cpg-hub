@@ -15,6 +15,7 @@ import { Lock } from "lucide-react";
 import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
+import { ROLE_BRAND } from "@/constants/roles.js";
 
 const LandingPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -33,13 +34,17 @@ const LandingPage = () => {
     }
 
     const isFirstTime = !onboarded;
-    const isDifferentRole = role && role !== product.secondaryButton.role;
+    const isSameRole = role === product.secondaryButton.role;
+    const isDifferentRole = onboarded && !isSameRole;
 
     if (isFirstTime || isDifferentRole) {
-      setSelectedProduct(product); // set clicked product
+      setSelectedProduct(product); // show dialog
+    } else if (role === ROLE_BRAND) {
+      // Allow brands to proceed with posting jobs
+      navigate(product.secondaryButton.link);
     } else {
+      // Block talents/services from re-onboarding
       setSelectedProduct(product);
-      // navigate(product.secondaryButton.link); // allow onboarding
     }
   };
 
@@ -109,7 +114,9 @@ const LandingPage = () => {
                     className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-5 py-2"
                     onClick={() => handleSecondarySubmit(product)}
                     disabled={
-                      onboarded && role === product.secondaryButton.role
+                      onboarded &&
+                      role !== ROLE_BRAND &&
+                      role === product.secondaryButton.role
                     }
                     // disabled={
                     //   role && product.secondaryButton.role !== role
