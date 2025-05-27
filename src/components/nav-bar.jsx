@@ -151,8 +151,6 @@ const NavBar = () => {
             {authMode === "sign-in" ? (
               <div className="bg-white rounded-xl p-6 shadow-none relative">
                 <SignIn
-                  forceRedirectUrl="/"
-                  fallbackRedirectUrl="/"
                   appearance={{
                     elements: {
                       card: "shadow-none border-none p-0",
@@ -164,7 +162,7 @@ const NavBar = () => {
                   }}
                   signUpUrl="#"
                 />
-                <div className="tmt-4 border-t pt-4 text-sm text-center text-gray-600">
+                <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
                   Don't have an account?{" "}
                   <button
                     className="text-cpg-teal underline cursor-pointer"
@@ -177,7 +175,6 @@ const NavBar = () => {
             ) : (
               <div className="bg-white rounded-xl p-6 shadow-none relative">
                 <SignUp
-                  forceRedirectUrl="/"
                   appearance={{
                     elements: {
                       card: "shadow-none border-none p-0",
@@ -189,7 +186,7 @@ const NavBar = () => {
                   }}
                   signInUrl="#"
                 />
-                <div className="tmt-4 border-t pt-4 text-sm text-center text-gray-600">
+                <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
                   Already have an account?{" "}
                   <button
                     className="text-cpg-teal underline cursor-pointer"
