@@ -65,7 +65,7 @@ export async function updateEndorsement(
 }
 
 export async function deleteEndorsement(token, { endorser_id }) {
-  const supabase = await supabaseClient();
+  const supabase = await supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)
