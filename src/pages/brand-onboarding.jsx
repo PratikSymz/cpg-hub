@@ -7,56 +7,11 @@ import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BarLoader } from "react-spinners";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { addNewBrand } from "@/api/apiBrands.js";
 import { ROLE_BRAND } from "@/constants/roles.js";
-import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
-
-const schema = z.object({
-  brand_name: z.string().min(1, { message: "Brand name is required" }),
-  website: z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim();
-      if (!trimmed) return "";
-      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    })
-    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
-      message: "Must be a valid URL",
-    })
-    .optional(),
-  linkedin_url: z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim();
-      if (!trimmed) return "";
-      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    })
-    .refine(
-      (val) =>
-        !val || // allow empty
-        LINKEDIN_SCHEMA.test(val),
-      {
-        message: "Must be a valid LinkedIn URL",
-      }
-    )
-    .optional(),
-  brand_hq: z.string().optional(),
-  logo: z
-    .any()
-    .refine((file) => file && file.length > 0, {
-      message: "Logo is required",
-    })
-    .refine(
-      (file) =>
-        file &&
-        ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
-      { message: "Only JPG, PNG, or JPEG images are allowed" }
-    ),
-  brand_desc: z.string().min(1, { message: "Brand description is required" }),
-});
+import { BrandSchema } from "@/schemas/brand-schema.js";
 
 const BrandOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -80,7 +35,7 @@ const BrandOnboarding = () => {
     setValue,
     watch,
   } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(BrandSchema),
   });
 
   const {
@@ -102,8 +57,6 @@ const BrandOnboarding = () => {
   if (!isLoaded || loadingBrandCreate) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
-
-  console.log("Current logo value:", watch("logo"));
 
   return (
     <div>

@@ -78,7 +78,6 @@ export async function getMyServiceProfile(token, { user_id }) {
 
 // - Post Service
 export async function addNewService(token, serviceData) {
-  console.log(serviceData);
   const supabase = await supabaseClient(token);
 
   const file = serviceData.logo?.[0];

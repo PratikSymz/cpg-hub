@@ -7,7 +7,6 @@ import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BarLoader } from "react-spinners";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { z } from "zod";
 import { useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getMyBrandProfile, updateBrand } from "@/api/apiBrands.js";
@@ -28,80 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import clsx from "clsx";
-import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
-
-const brandSchema = z.object({
-  first_name: z.string().min(1, "First Name is required"),
-  last_name: z.string().min(1, "Last Name is required"),
-  brand_name: z.string().min(1, { message: "Brand name is required" }),
-  website: z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim();
-      if (!trimmed) return "";
-      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    })
-    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
-      message: "Must be a valid URL",
-    })
-    .optional(),
-  linkedin_url: z
-    .string()
-    .transform((val) => {
-      const trimmed = val.trim();
-      if (!trimmed) return "";
-      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    })
-    .refine(
-      (val) =>
-        !val || // allow empty
-        LINKEDIN_SCHEMA.test(val),
-      {
-        message: "Must be a valid LinkedIn URL",
-      }
-    )
-    .optional(),
-  brand_hq: z.string().optional(),
-  logo: z
-    .any()
-    .optional()
-    .refine(
-      (file) =>
-        !file?.[0] || // allow if no file selected
-        ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
-      { message: "Only PNG, JPG, or JPEG allowed" }
-    ),
-  brand_desc: z.string().min(1, { message: "Brand description is required" }),
-});
-
-const jobSchema = z.object({
-  preferred_experience: z
-    .string()
-    .min(1, { message: "Preferred experience is required" }),
-  level_of_experience: z.array(z.string()).min(1, "Select at least one level"),
-  work_location: z.enum(["Remote", "In-office"], {
-    message: "Select a work location",
-  }),
-  scope_of_work: z.enum(["Project-based", "Ongoing"], {
-    message: "Select a scope of work",
-  }),
-  job_title: z.string().min(1, { message: "Title is required" }),
-  estimated_hrs_per_wk: z.preprocess(
-    (a) => {
-      if (typeof a === "string") return parseInt(a, 10);
-      if (typeof a === "number") return a;
-      return undefined;
-    },
-    z
-      .number()
-      .int("Must be a whole number")
-      .min(1, "Must be at least 1 hour/week")
-      .lte(40, "Must be 40 or below")
-  ),
-  area_of_specialization: z
-    .array(z.string())
-    .min(1, "Select at least one specialization"),
-});
+import { BrandSchemaWithName } from "@/schemas/brand-schema.js";
+import { JobSchema } from "@/schemas/job-schema.js";
 
 export const classLabel = "mb-1 block";
 export const classInput = "input-class";
@@ -126,7 +53,7 @@ const EditJobPage = () => {
       brand_hq: "",
       brand_desc: "",
     },
-    resolver: zodResolver(brandSchema),
+    resolver: zodResolver(BrandSchemaWithName),
   });
   const brandErrors = brandForm.formState.errors;
 
@@ -140,7 +67,7 @@ const EditJobPage = () => {
       area_of_specialization: [],
       estimated_hrs_per_wk: "",
     },
-    resolver: zodResolver(jobSchema),
+    resolver: zodResolver(JobSchema),
   });
   const jobErrors = jobForm.formState.errors;
 

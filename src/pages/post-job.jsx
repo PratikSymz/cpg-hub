@@ -1,7 +1,6 @@
-import { getBrand } from "@/api/apiBrands.js";
+import React, { useEffect, useState } from "react";
 import { addNewJob } from "@/api/apiFractionalJobs.js";
 import { Button } from "@/components/ui/button.jsx";
-
 import { Input } from "@/components/ui/input.jsx";
 import {
   Select,
@@ -17,38 +16,16 @@ import { ROLE_BRAND, ROLE_TALENT } from "@/constants/roles.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
-import { z } from "zod";
 import {
   areasOfSpecialization,
   levelsOfExperience,
 } from "@/constants/filters.js";
 import clsx from "clsx";
 import { X } from "lucide-react";
-
-const schema = z.object({
-  preferred_experience: z
-    .string()
-    .min(1, { message: "Preferred experience is required" }),
-  level_of_experience: z.array(z.string()).min(1, "Select at least one level"),
-  work_location: z.enum(["Remote", "In-office"], {
-    message: "Select a work location",
-  }),
-  scope_of_work: z.enum(["Project-based", "Ongoing"], {
-    message: "Select a scope of work",
-  }),
-  job_title: z.string().min(1, { message: "Title is required" }),
-  estimated_hrs_per_wk: z.preprocess(
-    (a) => parseInt(z.string().parse(a), 10),
-    z.number().lte(40, "Must be 40 or below")
-  ),
-  area_of_specialization: z
-    .array(z.string())
-    .min(1, "Select at least one specialization"),
-});
+import { JobSchema } from "@/schemas/job-schema.js";
 
 const PostJob = () => {
   // Load the current user -> Brand
@@ -66,9 +43,12 @@ const PostJob = () => {
       preferred_experience: "",
       level_of_experience: [],
       job_title: "",
+      work_location: "Remote",
+      scope_of_work: "Ongoing",
       area_of_specialization: [],
+      estimated_hrs_per_wk: "",
     },
-    resolver: zodResolver(schema),
+    resolver: zodResolver(JobSchema),
   });
 
   const {
