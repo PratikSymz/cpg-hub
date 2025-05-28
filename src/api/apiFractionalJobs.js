@@ -13,19 +13,6 @@ export async function getJobs(
     saved: saved_jobs(id)`
   );
 
-  // if (area_specialization) {
-  //   query = query.ilike("area_of_specialization", `%${area_specialization}%`);
-  // }
-
-  // if (level_exp) {
-  //   query = query.ilike("level_of_experience", `%${level_exp}%`);
-  // }
-
-  // const safeQuery = search_query.replace(/[%_]/g, "\\$&");
-  // if (search_query) {
-  //   query = query.or(`job_title.ilike.%${safeQuery}%`);
-  // }
-
   const { data, error } = await query;
 
   if (error) {
@@ -81,8 +68,7 @@ export async function getSingleJob(token, { job_id }) {
     .from(table_name)
     .select(
       `*, 
-      brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
-      applications: applications(*)`
+      brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url)`
     )
     .eq("id", job_id)
     .single();

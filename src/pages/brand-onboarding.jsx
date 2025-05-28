@@ -46,15 +46,14 @@ const schema = z.object({
   brand_hq: z.string().optional(),
   logo: z
     .any()
+    .refine((file) => file && file.length > 0, {
+      message: "Logo is required",
+    })
     .refine(
       (file) =>
-        file[0] &&
-        (file[0].type === "image/png" ||
-          file[0].type === "image/jpg" ||
-          file[0].type === "image/jpeg"),
-      {
-        message: "Only Images are allowed",
-      }
+        file &&
+        ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
+      { message: "Only JPG, PNG, or JPEG images are allowed" }
     ),
   brand_desc: z.string().min(1, { message: "Brand description is required" }),
 });
@@ -78,6 +77,8 @@ const BrandOnboarding = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm({
     resolver: zodResolver(schema),
   });
@@ -101,6 +102,8 @@ const BrandOnboarding = () => {
   if (!isLoaded || loadingBrandCreate) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
+
+  console.log("Current logo value:", watch("logo"));
 
   return (
     <div>
@@ -181,13 +184,33 @@ const BrandOnboarding = () => {
         {/* Logo URL */}
         <div>
           <Label className="mb-1 block">Brand Logo</Label>
+          {watch("logo")?.[0] && (
+            <img
+              src={URL.createObjectURL(watch("logo")[0])}
+              alt="Logo Preview"
+              className="my-2 max-h-32 rounded-lg"
+            />
+          )}
           <Input
             type="file"
             accept="image/*"
             className="file:text-gray-500"
-            {...register("logo")}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files.length > 0) {
+                setValue("logo", files, { shouldValidate: true });
+              } else {
+                setValue("logo", null, { shouldValidate: true });
+              }
+            }}
           />
         </div>
+
+        {errors.logo && (
+          <p className="text-sm text-red-500">
+            {errors.logo.message.toString()}
+          </p>
+        )}
 
         {errorBrandCreate?.message && (
           <p className="text-sm text-red-500">{errorBrandCreate?.message}</p>
