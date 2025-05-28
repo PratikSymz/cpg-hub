@@ -74,7 +74,7 @@ export async function getMyTalentProfile(token, { user_id }) {
 }
 
 // Add Talent
-export async function addNewTalent(token, _, talentData) {
+export async function addNewTalent(token, talentData) {
   console.log(talentData);
   const supabase = await supabaseClient(token);
 
