@@ -18,7 +18,6 @@ import {
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
-import TalentExperienceSection from "@/components/experience-section.jsx";
 import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const schema = z.object({
