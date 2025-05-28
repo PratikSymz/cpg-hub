@@ -19,6 +19,7 @@ import {
 } from "@/constants/filters.js";
 import clsx from "clsx";
 import { ROLE_SERVICE } from "@/constants/roles.js";
+import { WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const schema = z
   .object({
@@ -30,14 +31,9 @@ const schema = z
         if (!trimmed) return "";
         return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
       })
-      .refine(
-        (val) =>
-          !val ||
-          /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
-        {
-          message: "Must be a valid URL",
-        }
-      )
+      .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+        message: "Must be a valid URL",
+      })
       .optional(),
     logo: z
       .any()

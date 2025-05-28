@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { addNewBrand } from "@/api/apiBrands.js";
 import { ROLE_BRAND } from "@/constants/roles.js";
+import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const schema = z.object({
   brand_name: z.string().min(1, { message: "Brand name is required" }),
@@ -22,14 +23,9 @@ const schema = z.object({
       if (!trimmed) return "";
       return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     })
-    .refine(
-      (val) =>
-        !val ||
-        /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
-      {
-        message: "Must be a valid URL",
-      }
-    )
+    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      message: "Must be a valid URL",
+    })
     .optional(),
   linkedin_url: z
     .string()
@@ -41,9 +37,7 @@ const schema = z.object({
     .refine(
       (val) =>
         !val || // allow empty
-        /^(https:\/\/)?(www\.)?linkedin\.com\/(in|pub|company|jobs|school)\/[a-zA-Z0-9-_]+\/?$/i.test(
-          val
-        ),
+        LINKEDIN_SCHEMA.test(val),
       {
         message: "Must be a valid LinkedIn URL",
       }

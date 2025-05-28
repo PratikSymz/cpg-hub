@@ -19,6 +19,7 @@ import clsx from "clsx";
 import { X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
 import TalentExperienceSection from "@/components/experience-section.jsx";
+import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const schema = z.object({
   level_of_experience: z
@@ -38,9 +39,7 @@ const schema = z.object({
     .refine(
       (val) =>
         !val || // allow empty
-        /^(https:\/\/)?(www\.)?linkedin\.com\/(in|pub|company|jobs|school)\/[a-zA-Z0-9-_]+\/?$/i.test(
-          val
-        ),
+        LINKEDIN_SCHEMA.test(val),
       {
         message: "Must be a valid LinkedIn URL",
       }
@@ -53,14 +52,9 @@ const schema = z.object({
       if (!trimmed) return "";
       return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     })
-    .refine(
-      (val) =>
-        !val ||
-        /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
-      {
-        message: "Must be a valid URL",
-      }
-    )
+    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      message: "Must be a valid URL",
+    })
     .optional(),
   resume: z
     .any()

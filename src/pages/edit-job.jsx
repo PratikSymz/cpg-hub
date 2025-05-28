@@ -28,13 +28,39 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import clsx from "clsx";
+import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const brandSchema = z.object({
   first_name: z.string().min(1, "First Name is required"),
   last_name: z.string().min(1, "Last Name is required"),
   brand_name: z.string().min(1, { message: "Brand name is required" }),
-  website: z.string().url().optional(),
-  linkedin_url: z.string().url().optional(),
+  website: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      message: "Must be a valid URL",
+    })
+    .optional(),
+  linkedin_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val || // allow empty
+        LINKEDIN_SCHEMA.test(val),
+      {
+        message: "Must be a valid LinkedIn URL",
+      }
+    )
+    .optional(),
   brand_hq: z.string().optional(),
   logo: z
     .any()

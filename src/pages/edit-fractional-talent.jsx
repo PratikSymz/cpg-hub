@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Loader2Icon, X } from "lucide-react";
 import { syncUserProfile } from "@/api/apiUsers.js";
 import TalentExperienceSection from "@/components/experience-section.jsx";
+import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 export const schema = z.object({
   first_name: z.string().min(1, "First Name is required"),
@@ -31,8 +32,33 @@ export const schema = z.object({
   area_of_specialization: z
     .array(z.string())
     .min(1, "Area of specialization is required"),
-  linkedin_url: z.string().url("Must be a valid URL").optional(),
-  portfolio_url: z.string().url("Must be a valid URL").optional(),
+  linkedin_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine(
+      (val) =>
+        !val || // allow empty
+        LINKEDIN_SCHEMA.test(val),
+      {
+        message: "Must be a valid LinkedIn URL",
+      }
+    )
+    .optional(),
+  portfolio_url: z
+    .string()
+    .transform((val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return "";
+      return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    })
+    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      message: "Must be a valid URL",
+    })
+    .optional(),
   resume: z
     .any()
     .optional()

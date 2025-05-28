@@ -20,13 +20,24 @@ import {
 } from "@/constants/filters.js";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
+import { WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const schema = z
   .object({
     first_name: z.string().min(1, "First Name is required"),
     last_name: z.string().min(1, "Last Name is required"),
     company_name: z.string().min(1, "Company name is required"),
-    company_website: z.string().url().optional(),
+    company_website: z
+      .string()
+      .transform((val) => {
+        const trimmed = val.trim();
+        if (!trimmed) return "";
+        return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      })
+      .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+        message: "Must be a valid URL",
+      })
+      .optional(),
     logo: z
       .any()
       .optional()

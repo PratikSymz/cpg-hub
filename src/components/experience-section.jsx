@@ -24,6 +24,7 @@ import {
 import { useUser } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import { Pencil, X } from "lucide-react";
+import { WEBSITE_SCHEMA } from "@/constants/schemas.js";
 
 const defaultClass = "";
 const classLabel = "mb-1 block";
@@ -39,14 +40,9 @@ const schema = z.object({
       if (!trimmed) return "";
       return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     })
-    .refine(
-      (val) =>
-        !val ||
-        /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(val),
-      {
-        message: "Must be a valid URL",
-      }
-    ),
+    .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      message: "Must be a valid URL",
+    }),
   brand_logo: z
     .any()
     .optional()
