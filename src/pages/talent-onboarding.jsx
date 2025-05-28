@@ -187,8 +187,13 @@ const TalentOnboarding = () => {
         </div>
 
         {/* Brand Experience */}
-        <div>
-          <TalentExperienceSection user_id={user?.id} showEdit={true} />
+        <div className="flex flex-col gap-4">
+          <h2 className="text-xl font-semibold">Brand I've Worked With</h2>
+          <p className="text-muted-foreground text-base whitespace-pre-line">
+            Add your basic profile info first to continue adding brand
+            experiences.
+          </p>
+          {/* <TalentExperienceSection user_id={user?.id} showEdit={true} /> */}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10 my-6">
