@@ -35,11 +35,13 @@ const ServiceOnboarding = () => {
       });
   };
 
+  
+
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     defaultValues: {
       category_of_service: [],
@@ -48,6 +50,7 @@ const ServiceOnboarding = () => {
     },
     resolver: zodResolver(ServiceSchema),
   });
+  console.log(isDirty);
   const selectedCategories =
     useWatch({ control, name: "category_of_service" }) ?? [];
 
@@ -126,6 +129,11 @@ const ServiceOnboarding = () => {
             className="file:text-gray-500"
             {...register("logo")}
           />
+          {errors.logo && (
+            <p className="text-sm text-red-500">
+              {errors.logo.message.toString()}
+            </p>
+          )}
         </div>
 
         <div>
@@ -164,6 +172,11 @@ const ServiceOnboarding = () => {
             {...register("area_of_specialization")}
             placeholder="e.g. Supply Chain, Packaging"
           />
+          {errors.area_of_specialization && (
+            <p className="text-sm text-red-500">
+              {errors.area_of_specialization.message}
+            </p>
+          )}
         </div>
 
         {/* Category of Service and Type of Broker Service */}

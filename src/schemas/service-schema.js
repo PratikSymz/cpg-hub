@@ -1,6 +1,5 @@
 import { WEBSITE_SCHEMA } from "@/constants/schemas.js";
 import { z } from "zod";
-import { NameSchema } from "./name-schema.js";
 
 export const ServiceSchema = z
   .object({
@@ -36,16 +35,8 @@ export const ServiceSchema = z
     category_of_service: z
       .array(z.string())
       .min(1, "Select at least one category"),
-    type_of_broker_service: z
-      .array(z.string())
-      .min(1, "Select at least one broker service")
-      .optional()
-      .default([]),
-    markets_covered: z
-      .array(z.string())
-      .min(1, "Select at least one market")
-      .optional()
-      .default([]),
+    type_of_broker_service: z.array(z.string()).optional().default([]),
+    markets_covered: z.array(z.string()).optional().default([]),
     customers_covered: z.string().min(1, "Service description is required"),
   })
   .refine(
