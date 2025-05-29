@@ -3,3 +3,5 @@ export const LINKEDIN_SCHEMA =
 
 export const WEBSITE_SCHEMA =
   /^(https:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/;
+
+export const OTHER_SCHEMA = /^[A-Za-z0-9\s\/\-&+:.()]{3,}$/;

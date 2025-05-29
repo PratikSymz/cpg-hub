@@ -21,6 +21,7 @@ import { Loader2Icon, X } from "lucide-react";
 import { syncUserProfile } from "@/api/apiUsers.js";
 import TalentExperienceSection from "@/components/experience-section.jsx";
 import { TalentSchemaWithName } from "@/schemas/talent-schema.js";
+import { OTHER_SCHEMA } from "@/constants/schemas.js";
 
 const classLabel = "mb-1 block";
 const classInput = "input-class";
@@ -54,7 +55,6 @@ const EditTalentPage = () => {
     data: talentData,
     loading,
   } = useFetch(getMyTalentProfile);
-  console.log(talentData);
 
   const {
     func: saveTalent,
@@ -79,6 +79,7 @@ const EditTalentPage = () => {
   // );
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherSpecError, setOtherSpecError] = useState("");
 
   // Prefill form
   useEffect(() => {
@@ -313,38 +314,65 @@ const EditTalentPage = () => {
 
                     {/* Other freeform specializations (already added by user) */}
                     {showOtherInput && (
-                      <div className="flex gap-2 items-center my-4">
-                        <Input
-                          type="text"
-                          placeholder="Enter your specialization"
-                          value={otherSpec}
-                          onChange={(e) => setOtherSpec(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button
-                          className=""
-                          variant="default"
-                          size="lg"
-                          type="button"
-                          onClick={() => {
-                            const trimmed = toTitleCase(otherSpec.trim());
-                            // Check: valid string, not a duplicate (case-insensitive)
-                            const isDuplicate = field.value.some(
-                              (val) =>
-                                val.toLowerCase() === trimmed.toLowerCase()
-                            );
-                            // Min 3 letters, no special chars
-                            const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
+                      <>
+                        <div className="flex gap-2 items-center my-4">
+                          <Input
+                            type="text"
+                            placeholder="Enter your specialization"
+                            value={otherSpec}
+                            onChange={(e) => setOtherSpec(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            className=""
+                            variant="default"
+                            size="lg"
+                            type="button"
+                            onClick={() => {
+                              const trimmed = toTitleCase(otherSpec.trim());
+                              // Check: valid string, not a duplicate (case-insensitive)
+                              const isDuplicate = field.value.some(
+                                (val) =>
+                                  val.toLowerCase() === trimmed.toLowerCase()
+                              );
+                              // Min 3 letters, no special chars
+                              const isValid = OTHER_SCHEMA.test(trimmed);
 
-                            if (trimmed && !isDuplicate && isValid) {
-                              field.onChange([...field.value, trimmed]);
-                              setOtherSpec("");
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
+                              if (!trimmed) {
+                                setOtherSpecError(
+                                  "Specialization cannot be empty."
+                                );
+                                return;
+                              }
+                              if (isDuplicate) {
+                                setOtherSpecError(
+                                  "This specialization has already been added."
+                                );
+                                return;
+                              }
+                              if (!isValid) {
+                                setOtherSpecError(
+                                  "Only letters and spaces allowed. Minimum 3 characters."
+                                );
+                                return;
+                              }
+
+                              if (trimmed && !isDuplicate && isValid) {
+                                field.onChange([...field.value, trimmed]);
+                                setOtherSpec("");
+                                setOtherSpecError("");
+                              }
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                        {otherSpecError && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {otherSpecError}
+                          </p>
+                        )}
+                      </>
                     )}
 
                     {/* Show selected values as tags */}
