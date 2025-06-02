@@ -140,6 +140,11 @@ const TalentOnboarding = () => {
             placeholder="e.g. 8 years in food & beverage..."
           />
         </div>
+        {errors.industry_experience && (
+          <p className="text-sm text-red-500">
+            {errors.industry_experience.message}
+          </p>
+        )}
 
         {/* Brand Experience */}
         <div className="flex flex-col gap-4">
