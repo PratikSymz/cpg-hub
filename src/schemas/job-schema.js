@@ -5,7 +5,7 @@ export const JobSchema = z.object({
     .string()
     .min(1, { message: "Preferred experience is required" }),
   level_of_experience: z.array(z.string()).min(1, "Select at least one level"),
-  work_location: z.enum(["Remote", "In-office"], {
+  work_location: z.enum(["Remote", "In-office", "Hybrid"], {
     message: "Select a work location",
   }),
   scope_of_work: z.enum(["Project-based", "Ongoing"], {

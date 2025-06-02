@@ -177,6 +177,9 @@ const PostJob = () => {
                     <SelectItem className="" value="In-office">
                       In-office
                     </SelectItem>
+                    <SelectItem className="" value="Hybrid">
+                      Hybrid
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               )}
