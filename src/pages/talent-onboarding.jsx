@@ -126,6 +126,11 @@ const TalentOnboarding = () => {
             {...register("resume")}
           />
         </div>
+        {errors.resume && (
+          <p className="text-sm text-red-500">
+            {errors.resume.message.toString()}
+          </p>
+        )}
 
         <div>
           <Label className={classLabel}>Industry Experience</Label>
