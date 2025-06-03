@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   areasOfSpecialization,
@@ -22,9 +21,13 @@ import { syncUserProfile } from "@/api/apiUsers.js";
 import TalentExperienceSection from "@/components/experience-section.jsx";
 import { TalentSchemaWithName } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
-
-const classLabel = "mb-1 block";
-const classInput = "input-class";
+import RequiredLabel from "@/components/required-label.jsx";
+import {
+  classLabel,
+  classInput,
+  classTextArea,
+} from "@/constants/classnames.js";
+import FormError from "@/components/form-error.jsx";
 
 const EditTalentPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -70,16 +73,12 @@ const EditTalentPage = () => {
   }, [isLoaded]);
 
   // Update User Profile
-  const { func: updateUserProfile, data } = useFetch(syncUserProfile);
+  const { func: updateUserProfile } = useFetch(syncUserProfile);
 
-  const selectedOther = useWatch({ control, name: "area_of_specialization" });
-  // Define what triggers the next field
-  // const shouldShowOtherInput = selectedOther?.some((val) =>
-  //   ["Other"].includes(val)
-  // );
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
+  const [profileLoad, showProfileLoad] = useState(false);
 
   // Prefill form
   useEffect(() => {
@@ -96,8 +95,6 @@ const EditTalentPage = () => {
       setValue("portfolio_url", talentData.portfolio_url || "");
     }
   }, [user, talentData]);
-
-  const [profileLoad, showProfileLoad] = useState(false);
 
   const handleProfilePictureClick = () => {
     fileInputRef.current.click();
@@ -217,7 +214,7 @@ const EditTalentPage = () => {
           {/* First and Last name */}
           <div className="grid grid-cols-2 gap-6 my-6">
             <div>
-              <Label className={classLabel}>First Name</Label>
+              <RequiredLabel className={classLabel}>First Name</RequiredLabel>
               <Input
                 className={classInput}
                 type="text"
@@ -226,12 +223,12 @@ const EditTalentPage = () => {
                 {...register("first_name")}
               />
               {errors.first_name && (
-                <p className="text-red-500">{errors.first_name.message}</p>
+                <FormError message={errors.first_name.message} />
               )}
             </div>
 
             <div>
-              <Label className={classLabel}>Last Name</Label>
+              <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
               <Input
                 className={classInput}
                 type="text"
@@ -240,7 +237,7 @@ const EditTalentPage = () => {
                 {...register("last_name")}
               />
               {errors.last_name && (
-                <p className="text-red-500">{errors.last_name.message}</p>
+                <FormError message={errors.last_name.message} />
               )}
             </div>
           </div>
@@ -248,14 +245,16 @@ const EditTalentPage = () => {
 
         {/* Industry Experience */}
         <div>
-          <Label className={classLabel}>Industry Experience</Label>
+          <RequiredLabel className={classLabel}>
+            Industry Experience
+          </RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("industry_experience")}
             placeholder="e.g. 8 years in food & beverage..."
           />
           {errors.industry_experience && (
-            <p className="text-red-500">{errors.industry_experience.message}</p>
+            <FormError message={errors.industry_experience.message} />
           )}
         </div>
 
@@ -292,8 +291,9 @@ const EditTalentPage = () => {
 
                 return (
                   <div>
-                    <Label className={classLabel}>Area of Specialization</Label>
-
+                    <RequiredLabel className={classLabel}>
+                      Area of Specialization
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {areasOfSpecialization.map(({ label }) => (
                         <button
@@ -352,7 +352,7 @@ const EditTalentPage = () => {
                               }
                               if (!isValid) {
                                 setOtherSpecError(
-                                  "Only letters and spaces allowed. Minimum 3 characters."
+                                  "Must be at least 3 characters and contain only letters, numbers, spaces.\nAllowed symbols: /, -, &, +, :, ., and ()"
                                 );
                                 return;
                               }
@@ -368,9 +368,7 @@ const EditTalentPage = () => {
                           </Button>
                         </div>
                         {otherSpecError && (
-                          <p className="text-sm text-red-500 mt-1">
-                            {otherSpecError}
-                          </p>
+                          <FormError message={otherSpecError} />
                         )}
                       </>
                     )}
@@ -393,15 +391,15 @@ const EditTalentPage = () => {
                         </span>
                       ))}
                     </div>
+                    {errors.area_of_specialization && (
+                      <FormError
+                        message={errors.area_of_specialization.message}
+                      />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.area_of_specialization && (
-              <p className="text-sm text-red-500">
-                {errors.area_of_specialization.message}
-              </p>
-            )}
           </div>
 
           {/* Level of Experience */}
@@ -419,7 +417,9 @@ const EditTalentPage = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Level of Experience</Label>
+                    <RequiredLabel className="mb-4 block">
+                      Level of Experience
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {levelsOfExperience.map(({ label }) => (
                         <button
@@ -437,40 +437,43 @@ const EditTalentPage = () => {
                         </button>
                       ))}
                     </div>
+
+                    {errors.level_of_experience && (
+                      <FormError message={errors.level_of_experience.message} />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.level_of_experience && (
-              <p className="text-sm text-red-500">
-                {errors.level_of_experience.message}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Links */}
-        <Label className={classLabel}>LinkedIn URL</Label>
-        <Input
-          className={classInput}
-          type="url"
-          placeholder="LinkedIn URL"
-          {...register("linkedin_url")}
-        />
-        {errors.linkedin_url && (
-          <p className="text-sm text-red-500">{errors.linkedin_url.message}</p>
-        )}
+        <div>
+          <Label className={classLabel}>LinkedIn URL</Label>
+          <Input
+            className={classInput}
+            type="url"
+            placeholder="LinkedIn URL"
+            {...register("linkedin_url")}
+          />
+          {errors.linkedin_url && (
+            <FormError message={errors.linkedin_url.message} />
+          )}
+        </div>
 
-        <Label className={classLabel}>Website URL</Label>
-        <Input
-          className={classInput}
-          type="url"
-          placeholder="Website URL"
-          {...register("portfolio_url")}
-        />
-        {errors.portfolio_url && (
-          <p className="text-sm text-red-500">{errors.portfolio_url.message}</p>
-        )}
+        <div>
+          <Label className={classLabel}>Website URL</Label>
+          <Input
+            className={classInput}
+            type="url"
+            placeholder="Website URL"
+            {...register("portfolio_url")}
+          />
+          {errors.portfolio_url && (
+            <FormError message={errors.portfolio_url.message} />
+          )}
+        </div>
 
         {/* Resume upload */}
         <div>
@@ -490,6 +493,9 @@ const EditTalentPage = () => {
             accept=".pdf,.doc,.docx"
             {...register("resume")}
           />
+          {errors.resume && (
+            <FormError message={errors.resume.message.toString()} />
+          )}
         </div>
 
         {saveError && <p className="text-red-500">{saveError.message}</p>}

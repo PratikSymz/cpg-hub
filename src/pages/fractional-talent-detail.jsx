@@ -261,12 +261,16 @@ const FractionalTalentDetail = () => {
             >
               About
             </TabsTrigger>
-            <TabsTrigger
-              value="resume"
-              className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
-            >
-              Resume
-            </TabsTrigger>
+
+            {resume_url && (
+              <TabsTrigger
+                value="resume"
+                className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
+              >
+                Resume
+              </TabsTrigger>
+            )}
+
             <TabsTrigger
               value="endorsements"
               className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
@@ -276,7 +280,7 @@ const FractionalTalentDetail = () => {
           </TabsList>
 
           {/* Tab Contents */}
-          <TabsContent className={"ms-2"} value="about">
+          <TabsContent className={"ms-4"} value="about">
             <div className="flex flex-col gap-10 mt-4">
               {/* Experience Section */}
               <div className="flex flex-col gap-4">
@@ -330,22 +334,24 @@ const FractionalTalentDetail = () => {
               <div>{connectButton}</div>
             </div>
           </TabsContent>
+          
+          {resume_url && (
+            <TabsContent className={"ms-6"} value="resume">
+              {resume_url ? (
+                <iframe
+                  src={resume_url}
+                  title="Resume"
+                  width="100%"
+                  height="800px"
+                  className="rounded-lg border"
+                />
+              ) : (
+                <p className="text-gray-600">No resume uploaded.</p>
+              )}
+            </TabsContent>
+          )}
 
-          <TabsContent className={"ms-6"} value="resume">
-            {resume_url ? (
-              <iframe
-                src={resume_url}
-                title="Resume"
-                width="100%"
-                height="800px"
-                className="rounded-lg border"
-              />
-            ) : (
-              <p className="text-gray-600">No resume uploaded.</p>
-            )}
-          </TabsContent>
-
-          <TabsContent className={"ms-4"} value="endorsements">
+          <TabsContent className={"ms-6"} value="endorsements">
             <div className="">
               <div className="flex flex-row justify-between">
                 <h2 className="text-2xl font-semibold mb-6">Endorsements</h2>

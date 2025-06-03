@@ -20,9 +20,14 @@ import { X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
 import { TalentSchema } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
-
-const classLabel = "mb-1 block";
-const classInput = "input-class";
+import RequiredLabel from "@/components/required-label.jsx";
+import FormError from "@/components/form-error.jsx";
+import {
+  classLabel,
+  classInput,
+  classTextArea,
+} from "@/constants/classnames.js";
+import { toast } from "sonner";
 
 const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -52,24 +57,15 @@ const TalentOnboarding = () => {
     resolver: zodResolver(TalentSchema),
   });
 
-  const {
-    func: submitTalentProfile,
-    loading,
-    error,
-    data,
-  } = useFetch(addNewTalent);
-
-  const selectedOther = useWatch({ control, name: "area_of_specialization" });
-  // Define what triggers the next field
-  const shouldShowOtherInput = selectedOther?.some((val) =>
-    ["Other"].includes(val)
-  );
+  const { func: submitTalentProfile, loading, error } = useFetch(addNewTalent);
 
   const handleRoleSelection = async (role) => {
     try {
       await user.update({ unsafeMetadata: { role } });
+      toast.success(`Role updated to: ${role}`);
       console.log(`Role updated to: ${role}`);
     } catch (err) {
+      toast.error("Error updating role");
       console.error("Error updating role:", err);
     }
   };
@@ -80,6 +76,7 @@ const TalentOnboarding = () => {
       ...data,
       user_id: user.id,
     });
+    toast.success("Profile Created!");
     navigate("/talents");
   };
 
@@ -125,26 +122,24 @@ const TalentOnboarding = () => {
             accept=".pdf,.doc,.docx"
             {...register("resume")}
           />
+          {errors.resume && (
+            <FormError message={errors.resume.message.toString()} />
+          )}
         </div>
-        {errors.resume && (
-          <p className="text-sm text-red-500">
-            {errors.resume.message.toString()}
-          </p>
-        )}
 
         <div>
-          <Label className={classLabel}>Industry Experience</Label>
+          <RequiredLabel className={classLabel}>
+            Industry Experience
+          </RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("industry_experience")}
             placeholder="e.g. 8 years in food & beverage..."
           />
+          {errors.industry_experience && (
+            <FormError message={errors.industry_experience?.message} />
+          )}
         </div>
-        {errors.industry_experience && (
-          <p className="text-sm text-red-500">
-            {errors.industry_experience.message}
-          </p>
-        )}
 
         {/* Brand Experience */}
         <div className="flex flex-col gap-4">
@@ -188,7 +183,9 @@ const TalentOnboarding = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Area of Specialization</Label>
+                    <RequiredLabel className={classLabel}>
+                      Area of Specialization
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {areasOfSpecialization.map(({ label }) => (
                         <button
@@ -247,7 +244,7 @@ const TalentOnboarding = () => {
                               }
                               if (!isValid) {
                                 setOtherSpecError(
-                                  "Only letters and spaces allowed. Minimum 3 characters."
+                                  "Must be at least 3 characters and contain only letters, numbers, spaces.\n Allowed symbols: /, -, &, +, :, ., and ()"
                                 );
                                 return;
                               }
@@ -261,17 +258,15 @@ const TalentOnboarding = () => {
                           >
                             Add
                           </Button>
+                          {otherSpecError && (
+                            <FormError message={otherSpecError} />
+                          )}
                         </div>
-                        {otherSpecError && (
-                          <p className="text-sm text-red-500 mt-1">
-                            {otherSpecError}
-                          </p>
-                        )}
                       </>
                     )}
 
                     {/* Show selected values as tags */}
-                    <div className="flex flex-wrap gap-2 my-4">
+                    <div className="flex flex-wrap gap-2 my-2">
                       {(field.value ?? []).map((val, idx) => (
                         <span
                           key={idx}
@@ -288,15 +283,15 @@ const TalentOnboarding = () => {
                         </span>
                       ))}
                     </div>
+                    {errors.area_of_specialization && (
+                      <FormError
+                        message={errors.area_of_specialization.message}
+                      />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.area_of_specialization && (
-              <p className="text-sm text-red-500">
-                {errors.area_of_specialization.message}
-              </p>
-            )}
           </div>
 
           {/* Level of Experience */}
@@ -314,7 +309,9 @@ const TalentOnboarding = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Level of Experience</Label>
+                    <RequiredLabel className={classLabel}>
+                      Level of Experience
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {levelsOfExperience.map(({ label }) => (
                         <button
@@ -332,15 +329,13 @@ const TalentOnboarding = () => {
                         </button>
                       ))}
                     </div>
+                    {errors.level_of_experience && (
+                      <FormError message={errors.level_of_experience.message} />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.level_of_experience && (
-              <p className="text-sm text-red-500">
-                {errors.level_of_experience.message}
-              </p>
-            )}
           </div>
         </div>
 
@@ -354,9 +349,7 @@ const TalentOnboarding = () => {
             placeholder="https://linkedin.com/in/your-profile"
           />
           {errors.linkedin_url && (
-            <p className="text-sm text-red-500">
-              {errors.linkedin_url.message}
-            </p>
+            <FormError message={errors.linkedin_url.message} />
           )}
         </div>
 
@@ -369,13 +362,11 @@ const TalentOnboarding = () => {
             placeholder="https://yourwebsite.com"
           />
           {errors.portfolio_url && (
-            <p className="text-sm text-red-500">
-              {errors.portfolio_url.message}
-            </p>
+            <FormError message={errors.portfolio_url.message} />
           )}
         </div>
 
-        {error && <p className="text-sm text-red-500">{error.message}</p>}
+        {error && <FormError message={error.message} />}
 
         <Button variant="default" type="submit" size="lg" className="mt-4">
           Submit Profile

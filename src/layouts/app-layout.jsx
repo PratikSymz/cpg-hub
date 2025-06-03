@@ -3,10 +3,12 @@ import NavBar from "@/components/nav-bar.jsx";
 import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button.jsx";
+import { Toaster } from "sonner";
 
 const AppLayout = () => {
   return (
     <div>
+      <Toaster position="bottom-left" richColors />
       {/* Header and Body */}
       <main className="min-h-screen min-w-screen container">
         <NavBar />

@@ -39,9 +39,10 @@ export const TalentSchema = z.object({
     .optional(),
   resume: z
     .any()
+    .optional()
     .refine(
       (file) =>
-        file?.[0] &&
+        !file?.[0] || // allow empty (optional)
         [
           "application/pdf",
           "application/msword",
