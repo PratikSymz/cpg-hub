@@ -66,11 +66,6 @@ const TalentCard = ({ talent }) => {
                       />
                     </Link>
                   )}
-                  {/* {portfolio_url && (
-                    <Link to={portfolio_url}>
-                      <FaGlobe className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110" />
-                    </Link>
-                  )} */}
                 </div>
               </div>
             </div>
@@ -101,7 +96,9 @@ const TalentCard = ({ talent }) => {
             </span>
           )) || "N/A"}
         </p>
-        <p className="text-muted-foreground">{industry_experience}</p>
+        <p className="text-sm text-muted-foreground line-clamp-4">
+          {industry_experience}
+        </p>
       </CardContent>
 
       <CardFooter className="flex flex-row gap-6">

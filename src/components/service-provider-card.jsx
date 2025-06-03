@@ -102,7 +102,9 @@ const ServiceProviderCard = ({ service }) => {
             )) || "N/A"}
           </p>
         )}
-        <p className="text-muted-foreground">{customers_covered}</p>
+        <p className="text-sm text-muted-foreground line-clamp-4">
+          {customers_covered}
+        </p>
       </CardContent>
 
       <CardFooter className="flex flex-row gap-6">

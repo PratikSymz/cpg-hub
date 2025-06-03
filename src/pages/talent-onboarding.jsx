@@ -61,7 +61,9 @@ const TalentOnboarding = () => {
 
   const handleRoleSelection = async (role) => {
     try {
-      await user.update({ unsafeMetadata: { role } });
+      if (user) {
+        await user.update({ unsafeMetadata: { role } });
+      }
       toast.success(`Role updated to: ${role}`);
       console.log(`Role updated to: ${role}`);
     } catch (err) {
@@ -71,13 +73,21 @@ const TalentOnboarding = () => {
   };
 
   const onSubmit = async (data) => {
-    await handleRoleSelection(ROLE_TALENT);
-    await submitTalentProfile({
-      ...data,
-      user_id: user.id,
-    });
-    toast.success("Profile Created!");
-    navigate("/talents");
+    try {
+      await handleRoleSelection(ROLE_TALENT);
+
+      if (user && user.id) {
+        await submitTalentProfile({
+          ...data,
+          user_id: user.id,
+        });
+      }
+      toast.success("Profile Created!");
+      navigate("/talents");
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to create profile!");
+    }
   };
 
   const toTitleCase = (str) =>
