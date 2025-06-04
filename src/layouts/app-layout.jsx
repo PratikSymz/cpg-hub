@@ -19,7 +19,7 @@ const AppLayout = () => {
       <div className="text-center mt-14 max-w-2xl mx-auto">
         <div className="px-8 h-0.5 bg-cpg-teal/80 rounded-full mb-8" />
         <h2 className="text-lg font-semibold text-cpg-brown">Feedback</h2>
-        <p className="text-sm text-gray-700 mt-2">
+        <p className="text-sm text-gray-700 my-2">
           Welcome to the beta version of CPG HUB! Thank you for being here.
           Please{" "}
           <Link

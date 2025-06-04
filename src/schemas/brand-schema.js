@@ -4,6 +4,7 @@ import { NameSchema } from "./name-schema.js";
 
 export const BrandSchema = z.object({
   brand_name: z.string().min(1, { message: "Brand name is required" }),
+  brand_desc: z.string().min(1, { message: "Brand description is required" }),
   website: z
     .string()
     .transform((val) => {
@@ -44,7 +45,6 @@ export const BrandSchema = z.object({
         ["image/png", "image/jpg", "image/jpeg"].includes(file[0]?.type),
       { message: "Only JPG, PNG, or JPEG images are allowed" }
     ),
-  brand_desc: z.string().min(1, { message: "Brand description is required" }),
 });
 
 export const BrandSchemaWithName = NameSchema.merge(BrandSchema);

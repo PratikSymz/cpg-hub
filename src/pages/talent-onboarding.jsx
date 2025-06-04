@@ -378,7 +378,12 @@ const TalentOnboarding = () => {
 
         {error && <FormError message={error.message} />}
 
-        <Button variant="default" type="submit" size="lg" className="mt-4">
+        <Button
+          variant="default"
+          type="submit"
+          size="lg"
+          className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90"
+        >
           Submit Profile
         </Button>
       </form>

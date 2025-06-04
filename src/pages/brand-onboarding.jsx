@@ -12,6 +12,14 @@ import useFetch from "@/hooks/use-fetch.jsx";
 import { addNewBrand } from "@/api/apiBrands.js";
 import { ROLE_BRAND } from "@/constants/roles.js";
 import { BrandSchema } from "@/schemas/brand-schema.js";
+import RequiredLabel from "@/components/required-label.jsx";
+import FormError from "@/components/form-error.jsx";
+import {
+  classLabel,
+  classInput,
+  classTextArea,
+} from "@/constants/classnames.js";
+import { toast } from "sonner";
 
 const BrandOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -21,9 +29,11 @@ const BrandOnboarding = () => {
     await user
       .update({ unsafeMetadata: { role } })
       .then(() => {
+        toast.success(`Role updated to: ${role}`);
         console.log(`Role updated to: ${role}`);
       })
       .catch((err) => {
+        toast.error("Error updating role");
         console.error("Error updating role:", err);
       });
   };
@@ -41,17 +51,24 @@ const BrandOnboarding = () => {
   const {
     loading: loadingBrandCreate,
     error: errorBrandCreate,
-    data: dataBrandCreate,
     func: funcCreateBrand,
   } = useFetch(addNewBrand);
 
   const onSubmit = async (data) => {
-    await handleRoleSelection(ROLE_BRAND);
-    await funcCreateBrand({
-      ...data,
-      user_id: user.id,
-    });
-    navigate("/post-job", { replace: true });
+    try {
+      await handleRoleSelection(ROLE_BRAND);
+      if (user && user.id) {
+        await funcCreateBrand({
+          ...data,
+          user_id: user.id,
+        });
+      }
+      toast.success("Profile Created!");
+      navigate("/post-job", { replace: true });
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to create profile!");
+    }
   };
 
   if (!isLoaded || loadingBrandCreate) {
@@ -69,74 +86,73 @@ const BrandOnboarding = () => {
       >
         {/* Brand Name */}
         <div>
-          <Label className="mb-1 block">Brand Name</Label>
+          <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
           <Input
             type="text"
             placeholder="e.g. Slingshot Coffee"
-            className="input-class"
+            className={classInput}
             {...register("brand_name")}
           />
           {errors.brand_name && (
-            <p className="text-sm text-red-500">{errors.brand_name.message}</p>
+            <FormError message={errors.brand_name.message} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">Brand Description</Label>
+          <RequiredLabel className={classLabel}>
+            Brand Description
+          </RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("brand_desc")}
             placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
           />
           {errors.brand_desc && (
-            <p className="text-sm text-red-500">{errors.brand_desc.message}</p>
+            <FormError message={errors.brand_desc.message} />
           )}
         </div>
 
         {/* Website */}
         <div>
-          <Label className="mb-1 block">Website</Label>
+          <Label className={classLabel}>Website</Label>
           <Input
             type="text"
             placeholder="https://yourbrand.com"
-            className="input-class"
+            className={classInput}
             {...register("website")}
           />
-          {errors.website && (
-            <p className="text-sm text-red-500">{errors.website.message}</p>
-          )}
+          {errors.website && <FormError message={errors.website.message} />}
         </div>
 
         {/* LinkedIn */}
         <div>
-          <Label className="mb-1 block">LinkedIn URL</Label>
+          <Label className={classLabel}>LinkedIn URL</Label>
           <Input
             type="text"
-            className="input-class"
+            className={classInput}
             placeholder="https://linkedin.com/company/your-brand"
             {...register("linkedin_url")}
           />
           {errors.linkedin_url && (
-            <p className="text-sm text-red-500">
-              {errors.linkedin_url.message}
-            </p>
+            <FormError message={errors.linkedin_url.message} />
           )}
         </div>
 
         {/* Brand HQ */}
         <div>
-          <Label className="mb-1 block">Brand HQ / Location</Label>
+          <Label className={classLabel}>Brand HQ / Location</Label>
           <Input
             type="text"
-            className="input-class"
+            className={classInput}
             placeholder="New York, NY"
             {...register("brand_hq")}
           />
+          {errors.brand_hq && <FormError message={errors.brand_hq.message} />}
         </div>
 
         {/* Logo URL */}
         <div>
-          <Label className="mb-1 block">Brand Logo</Label>
+          <RequiredLabel className={classLabel}>Brand Logo</RequiredLabel>
           {watch("logo")?.[0] && (
             <img
               src={URL.createObjectURL(watch("logo")[0])}
@@ -157,18 +173,21 @@ const BrandOnboarding = () => {
               }
             }}
           />
+          {errors.logo && (
+            <FormError message={errors.logo.message.toString()} />
+          )}
         </div>
 
-        {errors.logo && (
-          <p className="text-sm text-red-500">
-            {errors.logo.message.toString()}
-          </p>
+        {errorBrandCreate?.message && (
+          <FormError message={errorBrandCreate?.message} />
         )}
 
-        {errorBrandCreate?.message && (
-          <p className="text-sm text-red-500">{errorBrandCreate?.message}</p>
-        )}
-        <Button variant="default" type="submit" className="mt-6" size="lg">
+        <Button
+          variant="default"
+          type="submit"
+          className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90"
+          size="lg"
+        >
           Submit
         </Button>
       </form>

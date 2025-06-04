@@ -19,6 +19,15 @@ import {
 import clsx from "clsx";
 import { ROLE_SERVICE } from "@/constants/roles.js";
 import { ServiceSchema } from "@/schemas/service-schema.js";
+import { toast } from "sonner";
+import RequiredLabel from "@/components/required-label.jsx";
+import {
+  classInput,
+  classLabel,
+  classTextArea,
+} from "@/constants/classnames.js";
+import FormError from "@/components/form-error.jsx";
+import NumberInput from "@/components/number-input.jsx";
 
 const ServiceOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -28,20 +37,20 @@ const ServiceOnboarding = () => {
     await user
       .update({ unsafeMetadata: { role } })
       .then(() => {
+        toast.success(`Role updated to: ${role}`);
         console.log(`Role updated to: ${role}`);
       })
       .catch((err) => {
+        toast.error("Error updating role");
         console.error("Error updating role:", err);
       });
   };
-
-  
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     defaultValues: {
       category_of_service: [],
@@ -50,25 +59,28 @@ const ServiceOnboarding = () => {
     },
     resolver: zodResolver(ServiceSchema),
   });
-  console.log(isDirty);
   const selectedCategories =
     useWatch({ control, name: "category_of_service" }) ?? [];
 
-  const {
-    func: submitBrokerProfile,
-    loading,
-    error,
-    data,
-  } = useFetch(addNewService);
+  const { func: submitBrokerProfile, loading, error } = useFetch(addNewService);
 
   const onSubmit = async (data) => {
-    await handleRoleSelection(ROLE_SERVICE);
-    await submitBrokerProfile({
-      is_broker: shouldShowBrokerServices,
-      user_id: user.id,
-      ...data,
-    });
-    navigate("/services", { replace: true });
+    try {
+      await handleRoleSelection(ROLE_SERVICE);
+
+      if (user && user.id) {
+        await submitBrokerProfile({
+          is_broker: shouldShowBrokerServices,
+          user_id: user.id,
+          ...data,
+        });
+      }
+      toast.success("Profile Created!");
+      navigate("/services", { replace: true });
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to create profile!");
+    }
   };
 
   if (!isLoaded || loading) {
@@ -92,37 +104,33 @@ const ServiceOnboarding = () => {
         className="flex flex-col gap-6 w-5/6 mx-auto"
       >
         <div>
-          <Label className="mb-1 block">Company Name</Label>
+          <RequiredLabel className={classLabel}>Company Name</RequiredLabel>
           <Input
             type="text"
-            className="input-class"
+            className={classInput}
             {...register("company_name")}
             placeholder="Finback Services"
           />
           {errors.company_name && (
-            <p className="text-sm text-red-500">
-              {errors.company_name.message}
-            </p>
+            <FormError message={errors.company_name.message} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">Company Website</Label>
+          <Label className={classLabel}>Company Website</Label>
           <Input
             type="text"
-            className="input-class"
+            className={classInput}
             {...register("company_website")}
             placeholder="https://company.com"
           />
           {errors.company_website && (
-            <p className="text-sm text-red-500">
-              {errors.company_website.message}
-            </p>
+            <FormError message={errors.company_website.message} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">Company Logo</Label>
+          <Label className={classLabel}>Company Logo</Label>
           <Input
             type="file"
             accept="image/*"
@@ -130,52 +138,47 @@ const ServiceOnboarding = () => {
             {...register("logo")}
           />
           {errors.logo && (
-            <p className="text-sm text-red-500">
-              {errors.logo.message.toString()}
-            </p>
+            <FormError message={errors.logo.message.toString()} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">About Service</Label>
+          <RequiredLabel className={classLabel}>About Service</RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("customers_covered")}
             placeholder="e.g. Tell us more about your service..."
           />
           {errors.customers_covered && (
-            <p className="text-sm text-red-500">
-              {errors.customers_covered.message}
-            </p>
+            <FormError message={errors.customers_covered.message} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">Number of Employees</Label>
-          <Input
-            type="number"
-            className="input-class"
-            {...register("num_employees")}
+          <RequiredLabel className={classLabel}>
+            Number of Employees
+          </RequiredLabel>
+          <NumberInput
             placeholder="10"
+            className={classInput}
+            {...register("num_employees")}
           />
           {errors.num_employees && (
-            <p className="text-sm text-red-500">
-              {errors.num_employees.message}
-            </p>
+            <FormError message={"Please enter the number of employees"} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">Area of Specialization</Label>
+          <RequiredLabel className={classLabel}>
+            Area of Specialization
+          </RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("area_of_specialization")}
             placeholder="e.g. Supply Chain, Packaging"
           />
           {errors.area_of_specialization && (
-            <p className="text-sm text-red-500">
-              {errors.area_of_specialization.message}
-            </p>
+            <FormError message={errors.area_of_specialization.message} />
           )}
         </div>
 
@@ -196,7 +199,9 @@ const ServiceOnboarding = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Category of Service</Label>
+                    <RequiredLabel className={classLabel}>
+                      Category of Service
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {categoryOfService.map(({ label, value }) => (
                         <button
@@ -219,9 +224,7 @@ const ServiceOnboarding = () => {
               }}
             />
             {errors.category_of_service && (
-              <p className="text-sm text-red-500">
-                {errors.category_of_service.message}
-              </p>
+              <FormError message={errors.category_of_service.message} />
             )}
           </div>
 
@@ -241,9 +244,9 @@ const ServiceOnboarding = () => {
 
                   return (
                     <div>
-                      <Label className="mb-4 block">
+                      <RequiredLabel className={classLabel}>
                         Type of Broker Service
-                      </Label>
+                      </RequiredLabel>
                       <div className="grid grid-cols-2 gap-3">
                         {typeOfBrokerService.map(({ label, value }) => (
                           <button
@@ -266,9 +269,7 @@ const ServiceOnboarding = () => {
                 }}
               />
               {errors.type_of_broker_service && (
-                <p className="text-sm text-red-500">
-                  {errors.type_of_broker_service.message}
-                </p>
+                <FormError message={errors.type_of_broker_service.message} />
               )}
             </div>
           )}
@@ -291,10 +292,10 @@ const ServiceOnboarding = () => {
 
                 return (
                   <div className="flex-1">
-                    <Label className="mb-4 block">
+                    <RequiredLabel className={classLabel}>
                       Markets covered (relevant to broker, sales, &
                       merchandisers)
-                    </Label>
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {marketsCovered.map(({ label, value }) => (
                         <button
@@ -317,16 +318,19 @@ const ServiceOnboarding = () => {
               }}
             />
             {errors.markets_covered && (
-              <p className="text-sm text-red-500">
-                {errors.markets_covered.message}
-              </p>
+              <FormError message={errors.markets_covered.message} />
             )}
           </div>
         )}
 
-        {error && <p className="text-sm text-red-500">{error.message}</p>}
+        {error && <FormError message={error.message} />}
 
-        <Button variant="default" type="submit" size="lg" className="mt-4">
+        <Button
+          variant="default"
+          type="submit"
+          size="lg"
+          className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90"
+        >
           Submit Profile
         </Button>
       </form>

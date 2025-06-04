@@ -18,12 +18,17 @@ import {
   marketsCovered,
   typeOfBrokerService,
 } from "@/constants/filters.js";
-import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
 import { ServiceSchemaWithName } from "@/schemas/service-schema.js";
-
-const classLabel = "mb-1 block";
-const classInput = "input-class";
+import { toast } from "sonner";
+import RequiredLabel from "@/components/required-label.jsx";
+import {
+  classInput,
+  classLabel,
+  classTextArea,
+} from "@/constants/classnames.js";
+import FormError from "@/components/form-error.jsx";
+import NumberInput from "@/components/number-input.jsx";
 
 const EditServicePage = () => {
   const { user, isLoaded } = useUser();
@@ -133,21 +138,23 @@ const EditServicePage = () => {
         await user.update({ firstName, lastName });
       }
 
-      await saveService(
-        {
-          ...data,
-          is_broker: shouldShowBrokerServices,
-          type_of_broker_service: shouldShowBrokerServices
-            ? data.type_of_broker_service || []
-            : [], // ← forcefully empty if broker not selected
-          user_id: user.id,
-        },
-        { user_id: user.id }
-      );
+      if (user && user.id) {
+        await saveService(
+          {
+            ...data,
+            is_broker: shouldShowBrokerServices,
+            type_of_broker_service: shouldShowBrokerServices
+              ? data.type_of_broker_service || []
+              : [], // ← forcefully empty if broker not selected
+            user_id: user.id,
+          },
+          { user_id: user.id }
+        );
+      }
       toast.success("Service profile updated!");
-
       navigate("/services", { replace: true });
     } catch (err) {
+      console.log(err);
       toast.error("Failed to update service profile.");
     }
   };
@@ -187,7 +194,7 @@ const EditServicePage = () => {
         {/* Name fields */}
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <Label className="mb-1 block">First Name</Label>
+            <RequiredLabel className={classLabel}>First Name</RequiredLabel>
             <Input
               className={classInput}
               type="text"
@@ -195,13 +202,11 @@ const EditServicePage = () => {
               {...register("first_name")}
             />
             {errors.first_name && (
-              <p className="text-sm text-red-500">
-                {errors.first_name.message}
-              </p>
+              <FormError message={errors.first_name.message} />
             )}
           </div>
           <div>
-            <Label className="mb-1 block">Last Name</Label>
+            <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
             <Input
               className={classInput}
               type="text"
@@ -209,40 +214,36 @@ const EditServicePage = () => {
               {...register("last_name")}
             />
             {errors.last_name && (
-              <p className="text-sm text-red-500">{errors.last_name.message}</p>
+              <FormError message={errors.last_name.message} />
             )}
           </div>
         </div>
 
         {/* Company Name */}
         <div>
-          <Label className="mb-1 block">Company Name</Label>
+          <RequiredLabel className={classLabel}>Company Name</RequiredLabel>
           <Input
             type="text"
-            className="input-class"
+            className={classInput}
             {...register("company_name")}
             placeholder="Finback Services"
           />
           {errors.company_name && (
-            <p className="text-sm text-red-500">
-              {errors.company_name.message}
-            </p>
+            <FormError message={errors.company_name.message} />
           )}
         </div>
 
         {/* Company Website */}
         <div>
-          <Label className="mb-1 block">Company Website</Label>
+          <Label className={classLabel}>Company Website</Label>
           <Input
             type="url"
-            className="input-class"
+            className={classInput}
             {...register("company_website")}
             placeholder="https://company.com"
           />
           {errors.company_website && (
-            <p className="text-sm text-red-500">
-              {errors.company_website.message}
-            </p>
+            <FormError message={errors.company_website.message} />
           )}
         </div>
 
@@ -266,54 +267,49 @@ const EditServicePage = () => {
           />
 
           {errors.logo && (
-            <p className="text-sm text-red-500">
-              {errors.logo.message.toString()}
-            </p>
+            <FormError message={errors.logo.message.toString()} />
           )}
         </div>
 
         <div>
-          <Label className="mb-1 block">About</Label>
+          <Label className={classLabel}>About</Label>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("customers_covered")}
             placeholder="e.g. Tell us more about your service..."
           />
+          {errors.customers_covered && (
+            <FormError message={errors.customers_covered.message} />
+          )}
         </div>
-        {errors.customers_covered && (
-          <p className="text-sm text-red-500">
-            {errors.customers_covered.message}
-          </p>
-        )}
 
         {/* Num Employees */}
         <div>
-          <Label className="mb-1 block">Number of Employees</Label>
-          <Input
-            type="number"
-            className="input-class"
-            {...register("num_employees")}
+          <RequiredLabel className={classLabel}>
+            Number of Employees
+          </RequiredLabel>
+          <NumberInput
             placeholder="10"
+            className={classInput}
+            {...register("num_employees")}
           />
           {errors.num_employees && (
-            <p className="text-sm text-red-500">
-              {errors.num_employees.message}
-            </p>
+            <FormError message={"Please enter the number of employees"} />
           )}
         </div>
 
         {/* Area of Specialization */}
         <div>
-          <Label className="mb-1 block">Area of Specialization</Label>
+          <RequiredLabel className={classLabel}>
+            Area of Specialization
+          </RequiredLabel>
           <Textarea
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("area_of_specialization")}
             placeholder="e.g. Supply Chain, Packaging"
           />
           {errors.area_of_specialization && (
-            <p className="text-sm text-red-500">
-              {errors.area_of_specialization.message}
-            </p>
+            <FormError message={errors.area_of_specialization.message} />
           )}
         </div>
 
@@ -334,7 +330,9 @@ const EditServicePage = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Category of Service</Label>
+                    <RequiredLabel className={classLabel}>
+                      Category of Service
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {categoryOfService.map(({ label }) => (
                         <button
@@ -357,9 +355,7 @@ const EditServicePage = () => {
               }}
             />
             {errors.category_of_service && (
-              <p className="text-sm text-red-500">
-                {errors.category_of_service.message}
-              </p>
+              <FormError message={errors.category_of_service.message} />
             )}
           </div>
 
@@ -379,9 +375,9 @@ const EditServicePage = () => {
 
                   return (
                     <div>
-                      <Label className="mb-4 block">
+                      <RequiredLabel className={classLabel}>
                         Type of Broker Service
-                      </Label>
+                      </RequiredLabel>
                       <div className="grid grid-cols-2 gap-3">
                         {typeOfBrokerService.map(({ label }) => (
                           <button
@@ -404,9 +400,7 @@ const EditServicePage = () => {
                 }}
               />
               {errors.type_of_broker_service && (
-                <p className="text-sm text-red-500">
-                  {errors.type_of_broker_service.message}
-                </p>
+                <FormError message={errors.type_of_broker_service.message} />
               )}
             </div>
           )}
@@ -428,10 +422,10 @@ const EditServicePage = () => {
 
                 return (
                   <div className="flex-1">
-                    <Label className="mb-4 block">
+                    <RequiredLabel className={classLabel}>
                       Markets covered (relevant to broker, sales, &
                       merchandisers)
-                    </Label>
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {marketsCovered.map(({ label }) => (
                         <button
@@ -454,16 +448,12 @@ const EditServicePage = () => {
               }}
             />
             {errors.markets_covered && (
-              <p className="text-sm text-red-500">
-                {errors.markets_covered.message}
-              </p>
+              <FormError message={errors.markets_covered.message} />
             )}
           </div>
         )}
 
-        {saveError && (
-          <p className="text-sm text-red-500">{saveError.message}</p>
-        )}
+        {saveError && <FormError message={saveError.message} />}
 
         <Button
           variant="default"

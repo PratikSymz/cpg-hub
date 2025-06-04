@@ -6,11 +6,10 @@ import { Textarea } from "@/components/ui/textarea.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BarLoader } from "react-spinners";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getMyBrandProfile, updateBrand } from "@/api/apiBrands.js";
-import { toast } from "sonner";
 import { Loader2Icon, X } from "lucide-react";
 import { syncUserProfile } from "@/api/apiUsers.js";
 import { deleteJob, getSingleJob, updateJob } from "@/api/apiFractionalJobs.js";
@@ -21,7 +20,6 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -29,9 +27,15 @@ import {
 import clsx from "clsx";
 import { BrandSchemaWithName } from "@/schemas/brand-schema.js";
 import { JobSchema } from "@/schemas/job-schema.js";
-
-export const classLabel = "mb-1 block";
-export const classInput = "input-class";
+import RequiredLabel from "@/components/required-label.jsx";
+import FormError from "@/components/form-error.jsx";
+import {
+  classLabel,
+  classInput,
+  classTextArea,
+} from "@/constants/classnames.js";
+import { toast } from "sonner";
+import NumberInput from "@/components/number-input.jsx";
 
 const EditJobPage = () => {
   const { id } = useParams();
@@ -258,7 +262,7 @@ const EditJobPage = () => {
           {/* First and Last name */}
           <div className="grid grid-cols-2 gap-6 my-6">
             <div>
-              <Label className={classLabel}>First Name</Label>
+              <RequiredLabel className={classLabel}>First Name</RequiredLabel>
               <Input
                 className={classInput}
                 type="text"
@@ -267,12 +271,12 @@ const EditJobPage = () => {
                 {...brandForm.register("first_name")}
               />
               {brandErrors.first_name && (
-                <p className="text-red-500">{brandErrors.first_name.message}</p>
+                <FormError message={brandErrors.first_name.message} />
               )}
             </div>
 
             <div>
-              <Label className={classLabel}>Last Name</Label>
+              <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
               <Input
                 className={classInput}
                 type="text"
@@ -281,14 +285,14 @@ const EditJobPage = () => {
                 {...brandForm.register("last_name")}
               />
               {brandErrors.last_name && (
-                <p className="text-red-500">{brandErrors.last_name.message}</p>
+                <FormError message={brandErrors.last_name.message} />
               )}
             </div>
           </div>
 
           {/* Brand Name */}
           <div>
-            <Label className={classLabel}>Brand Name</Label>
+            <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
             <Input
               className={classInput}
               type="text"
@@ -296,21 +300,21 @@ const EditJobPage = () => {
               placeholder="e.g. Slingshot Coffee"
             />
             {brandErrors.brand_name && (
-              <p className="text-red-500">{brandErrors.brand_name.message}</p>
+              <FormError message={brandErrors.brand_name.message} />
             )}
           </div>
 
           <div>
-            <Label className={classLabel}>Brand Description</Label>
+            <RequiredLabel className={classLabel}>
+              Brand Description
+            </RequiredLabel>
             <Textarea
-              className="textarea-class resize block w-full h-24"
+              className={classTextArea}
               {...brandForm.register("brand_desc")}
               placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
             />
             {brandErrors.brand_desc && (
-              <p className="text-sm text-red-500">
-                {brandErrors.brand_desc.message}
-              </p>
+              <FormError message={brandErrors.brand_desc.message} />
             )}
           </div>
 
@@ -324,7 +328,7 @@ const EditJobPage = () => {
               placeholder="https://yourbrand.com"
             />
             {brandErrors.website && (
-              <p className="text-red-500">{brandErrors.website.message}</p>
+              <FormError message={brandErrors.website.message} />
             )}
           </div>
 
@@ -338,7 +342,7 @@ const EditJobPage = () => {
               placeholder="https://linkedin.com/company/your-brand"
             />
             {brandErrors.linkedin_url && (
-              <p className="text-red-500">{brandErrors.linkedin_url.message}</p>
+              <FormError message={brandErrors.linkedin_url.message} />
             )}
           </div>
 
@@ -351,11 +355,14 @@ const EditJobPage = () => {
               {...brandForm.register("brand_hq")}
               placeholder="New York, NY"
             />
+            {brandErrors.brand_hq && (
+              <FormError message={brandErrors.brand_hq.message} />
+            )}
           </div>
 
           {/* Logo */}
           <div>
-            <Label className={classLabel}>Brand Logo</Label>
+            <RequiredLabel className={classLabel}>Brand Logo</RequiredLabel>
             {logoPreview && (
               <div className="mb-4">
                 <img
@@ -373,15 +380,11 @@ const EditJobPage = () => {
             />
 
             {brandErrors.logo && (
-              <p className="text-sm text-red-500">
-                {brandErrors.logo.message.toString()}
-              </p>
+              <FormError message={brandErrors.logo.message.toString()} />
             )}
           </div>
 
-          {saveBrandError && (
-            <p className="text-red-500">{saveBrandError.message}</p>
-          )}
+          {saveBrandError && <FormError message={saveBrandError.message} />}
         </form>
       </div>
 
@@ -394,22 +397,23 @@ const EditJobPage = () => {
 
         <form className="flex flex-col space-y-6">
           {/* Job title */}
+          <RequiredLabel className={classLabel}>Job Title</RequiredLabel>
           <Input
             placeholder="Job Title"
             type="text"
-            className="input-class"
+            className={classInput}
             {...jobForm.register("job_title")}
           />
           {jobErrors.job_title && (
-            <p className="text-sm text-red-500">
-              {jobErrors.job_title.message}
-            </p>
+            <FormError message={jobErrors.job_title.message} />
           )}
 
           <div className="flex flex-row gap-16 justify-around my-6">
             {/* Scope of Work */}
             <div className="flex-1">
-              <Label className="mb-4 block">Scope of Work</Label>
+              <RequiredLabel className={classLabel}>
+                Scope of Work
+              </RequiredLabel>
               <Controller
                 control={jobForm.control}
                 name="scope_of_work"
@@ -434,15 +438,15 @@ const EditJobPage = () => {
                 )}
               />
               {jobErrors.scope_of_work && (
-                <p className="text-sm text-red-500">
-                  {jobErrors.scope_of_work.message}
-                </p>
+                <FormError message={jobErrors.scope_of_work.message} />
               )}
             </div>
 
             {/* Work Location */}
             <div className="flex-1">
-              <Label className="mb-4 block">Work Location</Label>
+              <RequiredLabel className={classLabel}>
+                Work Location
+              </RequiredLabel>
               <Controller
                 control={jobForm.control}
                 name="work_location"
@@ -467,25 +471,24 @@ const EditJobPage = () => {
                 )}
               />
               {jobErrors.work_location && (
-                <p className="text-sm text-red-500">
-                  {jobErrors.work_location.message}
-                </p>
+                <FormError message={jobErrors.work_location.message} />
               )}
             </div>
 
             {/* Estimated hrs/wk */}
             <div className="flex-1">
-              <Label className="mb-4 block">Estimated hrs/week</Label>
-              <Input
+              <RequiredLabel className={classLabel}>
+                Estimated hrs/week
+              </RequiredLabel>
+              <NumberInput
                 placeholder="40"
-                type="text"
-                className="input-class"
+                className={classInput}
                 {...jobForm.register("estimated_hrs_per_wk")}
               />
               {jobErrors.estimated_hrs_per_wk && (
-                <p className="text-sm text-red-500">
-                  {jobErrors.estimated_hrs_per_wk.message}
-                </p>
+                <FormError
+                  message={"Please enter the estimated hours per week"}
+                />
               )}
             </div>
           </div>
@@ -523,9 +526,9 @@ const EditJobPage = () => {
 
                   return (
                     <div>
-                      <Label className="mb-4 block">
+                      <RequiredLabel className={classLabel}>
                         Area of Specialization
-                      </Label>
+                      </RequiredLabel>
                       <div className="grid grid-cols-2 gap-3">
                         {areasOfSpecialization.map(({ label }) => (
                           <button
@@ -580,7 +583,7 @@ const EditJobPage = () => {
                       )}
 
                       {/* Show selected values as tags */}
-                      <div className="flex flex-wrap gap-2 my-4">
+                      <div className="flex flex-wrap gap-2 my-2">
                         {(field.value ?? []).map((val, idx) => (
                           <span
                             key={idx}
@@ -597,15 +600,15 @@ const EditJobPage = () => {
                           </span>
                         ))}
                       </div>
+                      {jobErrors.area_of_specialization && (
+                        <FormError
+                          message={jobErrors.area_of_specialization.message}
+                        />
+                      )}
                     </div>
                   );
                 }}
               />
-              {jobErrors.area_of_specialization && (
-                <p className="text-sm text-red-500">
-                  {jobErrors.area_of_specialization.message}
-                </p>
-              )}
             </div>
 
             {/* Level of Experience */}
@@ -623,7 +626,7 @@ const EditJobPage = () => {
 
                   return (
                     <div>
-                      <Label className="mb-4 block">Level of Experience</Label>
+                      <Label className={classLabel}>Level of Experience</Label>
                       <div className="grid grid-cols-2 gap-3">
                         {levelsOfExperience.map(({ label }) => (
                           <button
@@ -641,30 +644,30 @@ const EditJobPage = () => {
                           </button>
                         ))}
                       </div>
+                      {jobErrors.level_of_experience && (
+                        <FormError
+                          message={jobErrors.level_of_experience.message}
+                        />
+                      )}
                     </div>
                   );
                 }}
               />
-              {jobErrors.level_of_experience && (
-                <p className="text-sm text-red-500">
-                  {jobErrors.level_of_experience.message}
-                </p>
-              )}
             </div>
           </div>
 
           {/* Preferred Experience */}
           <div>
-            <Label className="mb-4 block">Preferred Experience</Label>
+            <RequiredLabel className={classLabel}>
+              Preferred Experience
+            </RequiredLabel>
             <Textarea
               placeholder="Preferred Experience"
-              className="textarea-class resize block w-full h-24"
+              className={classTextArea}
               {...jobForm.register("preferred_experience")}
             />
             {jobErrors.preferred_experience && (
-              <p className="text-sm text-red-500">
-                {jobErrors.preferred_experience.message}
-              </p>
+              <FormError message={jobErrors.preferred_experience.message} />
             )}
           </div>
         </form>

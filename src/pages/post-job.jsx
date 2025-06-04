@@ -5,14 +5,12 @@ import { Input } from "@/components/ui/input.jsx";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.jsx";
-import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { ROLE_BRAND, ROLE_TALENT } from "@/constants/roles.js";
+import { ROLE_BRAND } from "@/constants/roles.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,12 +24,23 @@ import {
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { JobSchema } from "@/schemas/job-schema.js";
+import RequiredLabel from "@/components/required-label.jsx";
+import FormError from "@/components/form-error.jsx";
+import {
+  classLabel,
+  classInput,
+  classTextArea,
+} from "@/constants/classnames.js";
+import { toast } from "sonner";
+import NumberInput from "@/components/number-input.jsx";
 
 const PostJob = () => {
   // Load the current user -> Brand
   const { user, isLoaded } = useUser();
-
   const navigate = useNavigate();
+
+  const [otherSpec, setOtherSpec] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
 
   const {
     register,
@@ -59,12 +68,20 @@ const PostJob = () => {
   } = useFetch(addNewJob);
 
   const onSubmit = async (data) => {
-    await funcCreateJob({
-      ...data,
-      brand_id: user.id,
-      is_open: true,
-    });
-    navigate("/jobs", { replace: true });
+    try {
+      if (user && user.id) {
+        await funcCreateJob({
+          ...data,
+          brand_id: user.id,
+          is_open: true,
+        });
+      }
+      toast.success("Job created successfully!");
+      navigate("/jobs", { replace: true });
+    } catch (err) {
+      console.log(err);
+      toast.error("Error creating job!");
+    }
   };
 
   // // Load the current brand info
@@ -87,12 +104,10 @@ const PostJob = () => {
   //   return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   // }
 
-  if (user && isLoaded && user?.unsafeMetadata?.role !== ROLE_BRAND) {
-    return <Navigate to="/jobs" />;
-  }
+  // if (user && isLoaded && user?.unsafeMetadata?.role !== ROLE_BRAND) {
+  //   return <Navigate to="/jobs" />;
+  // }
 
-  const [otherSpec, setOtherSpec] = useState("");
-  const [showOtherInput, setShowOtherInput] = useState(false);
   const toTitleCase = (str) =>
     str
       .toLowerCase()
@@ -111,20 +126,21 @@ const PostJob = () => {
         className="flex flex-col w-5/6 justify-self-center gap-4 m-6 pb-0"
       >
         {/* Job title */}
-        <Input
-          placeholder="Job Title"
-          type="text"
-          className="input-class"
-          {...register("job_title")}
-        />
-        {errors.job_title && (
-          <p className="text-sm text-red-500">{errors.job_title.message}</p>
-        )}
+        <div>
+          <RequiredLabel className={classLabel}>Job Title</RequiredLabel>
+          <Input
+            placeholder="Job Title"
+            type="text"
+            className={classInput}
+            {...register("job_title")}
+          />
+          {errors.job_title && <FormError message={errors.job_title.message} />}
+        </div>
 
         <div className="flex flex-row gap-16 justify-around my-6">
           {/* Scope of Work */}
           <div className="flex-1">
-            <Label className="mb-4 block">Scope of Work</Label>
+            <RequiredLabel className={classLabel}>Scope of Work</RequiredLabel>
             <Controller
               control={control}
               name="scope_of_work"
@@ -149,15 +165,13 @@ const PostJob = () => {
               )}
             />
             {errors.scope_of_work && (
-              <p className="text-sm text-red-500">
-                {errors.scope_of_work.message}
-              </p>
+              <FormError message={errors.scope_of_work.message} />
             )}
           </div>
 
           {/* Work Location */}
           <div className="flex-1">
-            <Label className="mb-4 block">Work Location</Label>
+            <RequiredLabel className={classLabel}>Work Location</RequiredLabel>
             <Controller
               control={control}
               name="work_location"
@@ -185,25 +199,24 @@ const PostJob = () => {
               )}
             />
             {errors.work_location && (
-              <p className="text-sm text-red-500">
-                {errors.work_location.message}
-              </p>
+              <FormError message={errors.work_location.message} />
             )}
           </div>
 
           {/* Estimated hrs/wk */}
           <div className="flex-1">
-            <Label className="mb-4 block">Estimated hrs/week</Label>
-            <Input
+            <RequiredLabel className={classLabel}>
+              Estimated hrs/week
+            </RequiredLabel>
+            <NumberInput
               placeholder="40"
-              type="text"
-              className="input-class"
+              className={classInput}
               {...register("estimated_hrs_per_wk")}
             />
             {errors.estimated_hrs_per_wk && (
-              <p className="text-sm text-red-500">
-                {errors.estimated_hrs_per_wk.message}
-              </p>
+              <FormError
+                message={"Please enter the estimated hours per week"}
+              />
             )}
           </div>
         </div>
@@ -241,7 +254,9 @@ const PostJob = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Area of Specialization</Label>
+                    <RequiredLabel className={classLabel}>
+                      Area of Specialization
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {areasOfSpecialization.map(({ label }) => (
                         <button
@@ -296,7 +311,7 @@ const PostJob = () => {
                     )}
 
                     {/* Show selected values as tags */}
-                    <div className="flex flex-wrap gap-2 my-4">
+                    <div className="flex flex-wrap gap-2 my-2">
                       {(field.value ?? []).map((val, idx) => (
                         <span
                           key={idx}
@@ -313,15 +328,15 @@ const PostJob = () => {
                         </span>
                       ))}
                     </div>
+                    {errors.area_of_specialization && (
+                      <FormError
+                        message={errors.area_of_specialization.message}
+                      />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.area_of_specialization && (
-              <p className="text-sm text-red-500">
-                {errors.area_of_specialization.message}
-              </p>
-            )}
           </div>
 
           {/* Level of Experience */}
@@ -339,7 +354,9 @@ const PostJob = () => {
 
                 return (
                   <div>
-                    <Label className="mb-4 block">Level of Experience</Label>
+                    <RequiredLabel className={classLabel}>
+                      Level of Experience
+                    </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
                       {levelsOfExperience.map(({ label }) => (
                         <button
@@ -357,68 +374,35 @@ const PostJob = () => {
                         </button>
                       ))}
                     </div>
+                    {errors.level_of_experience && (
+                      <FormError message={errors.level_of_experience.message} />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.level_of_experience && (
-              <p className="text-sm text-red-500">
-                {errors.level_of_experience.message}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Preferred Experience */}
         <div>
-          <Label className="mb-4 block">Preferred Experience</Label>
+          <RequiredLabel className={classLabel}>
+            Preferred Experience
+          </RequiredLabel>
           <Textarea
             placeholder="Preferred Experience"
-            className="textarea-class resize block w-full h-24"
+            className={classTextArea}
             {...register("preferred_experience")}
           />
           {errors.preferred_experience && (
-            <p className="text-sm text-red-500">
-              {errors.preferred_experience.message}
-            </p>
+            <FormError message={errors.preferred_experience.message} />
           )}
         </div>
 
-        {/* <div className="flex gap-4 items-center">
-          <Controller
-            name="company_id"
-            control={control}
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="">
-                  <SelectValue placeholder="Company">
-                    {field.value
-                      ? companies?.find((com) => com.id === Number(field.value))
-                          ?.name
-                      : "Company"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="">
-                  <SelectGroup>
-                    {companies?.map(({ name, id }) => (
-                      <SelectItem className="" key={name} value={id}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <AddCompanyDrawer fetchCompanies={fnCompanies} />
-        </div>
-        {errors.company_id && (
-          <p className="text-red-500">{errors.company_id.message}</p>
-        )} */}
-
         {errorCreateJob?.message && (
-          <p className="text-sm text-red-500">{errorCreateJob?.message}</p>
+          <FormError message={errorCreateJob?.message} />
         )}
+
         {loadingCreateJob && <BarLoader width={"100%"} color="#36d7b7" />}
         <Button
           type="submit"

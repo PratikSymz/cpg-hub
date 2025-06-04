@@ -63,7 +63,7 @@ const LandingPage = () => {
 
   return (
     <main>
-      <section className="w-full py-12">
+      <section className="w-full py-16">
         {/* Heading */}
         {/* <div className="text-center mb-10 bg-cpg-brown/5">
           <h1 className="text-2xl text-cpg-brown font-bold p-5 mb-24">
@@ -72,7 +72,7 @@ const LandingPage = () => {
         </div> */}
 
         {/* Card Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-7 max-w-6xl mx-auto px-4">
           {products.map((product, index) => (
             <Card
               key={index}
@@ -90,7 +90,7 @@ const LandingPage = () => {
                   </span>
                 </div> */}
 
-              <div className="p-0 font-[400] text-neutral-600 text-lg">
+              <div className="p-0 font-[400] text-neutral-600 text-base">
                 {product.description}
               </div>
 
@@ -100,7 +100,7 @@ const LandingPage = () => {
                     asChild
                     size="lg"
                     variant="default"
-                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm px-5 py-2"
+                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
                   >
                     <Link to={product.primaryButton.link}>
                       {product.primaryButton.label}
@@ -111,7 +111,7 @@ const LandingPage = () => {
                   <Button
                     size="lg"
                     variant="default"
-                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-md px-5 py-2"
+                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
                     onClick={() => handleSecondarySubmit(product)}
                     disabled={
                       onboarded &&
