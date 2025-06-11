@@ -12,6 +12,7 @@ import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
 import { getUser } from "@/api/apiUsers.js";
 import clsx from "clsx";
+import BackButton from "@/components/back-button.jsx";
 
 const FractionalJobDetail = () => {
   const { id } = useParams();
@@ -126,31 +127,35 @@ const FractionalJobDetail = () => {
   }
 
   return (
-    <div className="flex flex-col gap-10 mt-10 px-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <img
-            src={job?.brand && logo_url}
-            alt="Profile"
-            className="h-22 w-22 rounded-full border object-cover"
-          />
-          <div>
-            <h1
-              className={clsx(
-                "text-3xl font-bold",
-                website && "hover:underline"
-              )}
-            >
-              {job?.brand &&
-                (website ? (
-                  <Link to={website}>{brand_name}</Link>
-                ) : (
-                  <span>{brand_name}</span>
-                ))}
-            </h1>
-            <div className="flex flex-row gap-4 mt-2">
-              {/* {job?.brand && linkedin_url && (
+    <>
+      <div className="px-6 py-10">
+        <BackButton />
+      </div>
+      <div className="flex flex-col gap-10 mt-10 px-10">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <img
+              src={job?.brand && logo_url}
+              alt="Profile"
+              className="h-22 w-22 rounded-full border object-cover"
+            />
+            <div>
+              <h1
+                className={clsx(
+                  "text-3xl font-bold",
+                  website && "hover:underline"
+                )}
+              >
+                {job?.brand &&
+                  (website ? (
+                    <Link to={website}>{brand_name}</Link>
+                  ) : (
+                    <span>{brand_name}</span>
+                  ))}
+              </h1>
+              <div className="flex flex-row gap-4 mt-2">
+                {/* {job?.brand && linkedin_url && (
                 <Link to={linkedin_url}>
                   <FaLinkedin
                     className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110"
@@ -158,40 +163,42 @@ const FractionalJobDetail = () => {
                   />
                 </Link>
               )} */}
+              </div>
             </div>
           </div>
+
+          {user && brand_id && brand_id === user.id && (
+            <Button
+              className="rounded-full cursor-pointer"
+              variant="outline"
+              size="lg"
+              asChild
+            >
+              <Link to={`/edit-job/${id}`}>Edit Job</Link>
+            </Button>
+          )}
         </div>
 
-        {user && brand_id && brand_id === user.id && (
-          <Button
-            className="rounded-full cursor-pointer"
-            variant="outline"
-            size="lg"
-            asChild
-          >
-            <Link to={`/edit-job/${id}`}>Edit Job</Link>
-          </Button>
+        {/* Section: Summary Info */}
+        {brand_desc && (
+          <div className="bg-muted rounded-md p-4">
+            <Label className="text-xs text-muted-foreground uppercase">
+              About
+            </Label>
+            <p className="text-sm font-medium mt-1">
+              {job?.brand && brand_desc}
+            </p>
+          </div>
         )}
-      </div>
 
-      {/* Section: Summary Info */}
-      {brand_desc && (
-        <div className="bg-muted rounded-md p-4">
-          <Label className="text-xs text-muted-foreground uppercase">
-            About
-          </Label>
-          <p className="text-sm font-medium mt-1">{job?.brand && brand_desc}</p>
-        </div>
-      )}
-
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <div className="bg-muted rounded-md p-4">
-          <Label className="text-xs text-muted-foreground uppercase">
-            Location
-          </Label>
-          <p className="text-sm font-medium mt-1">{brand_hq || "Remote"}</p>
-        </div>
-        {/* <div className="bg-muted rounded-md p-4">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="bg-muted rounded-md p-4">
+            <Label className="text-xs text-muted-foreground uppercase">
+              Location
+            </Label>
+            <p className="text-sm font-medium mt-1">{brand_hq || "Remote"}</p>
+          </div>
+          {/* <div className="bg-muted rounded-md p-4">
           <Label className="text-xs text-muted-foreground uppercase">
             Applicants
           </Label>
@@ -217,91 +224,91 @@ const FractionalJobDetail = () => {
             )}
           </div>
         </div> */}
-      </div>
+        </div>
 
-      {/* Section: Details */}
-      <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
-      <div className="grid sm:grid-cols-2 gap-6">
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Scope of Work
-          </Label>
-          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-            {job && scope_of_work}
-          </span>
+        {/* Section: Details */}
+        <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div>
+            <Label className="text-sm font-semibold block mb-2">
+              Scope of Work
+            </Label>
+            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+              {job && scope_of_work}
+            </span>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold block mb-2">
+              Work Location
+            </Label>
+            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+              {job && work_location}
+            </span>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold block mb-2">
+              Weekly Hours
+            </Label>
+            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+              {job && estimated_hrs_per_wk} hrs/week
+            </span>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold block mb-2">
+              Experience Level
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {job &&
+                level_of_experience.map((level, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                  >
+                    {level}
+                  </span>
+                ))}
+            </div>
+          </div>
         </div>
+
+        {/* Section: Specialization Tags */}
         <div>
           <Label className="text-sm font-semibold block mb-2">
-            Work Location
-          </Label>
-          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-            {job && work_location}
-          </span>
-        </div>
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Weekly Hours
-          </Label>
-          <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-            {job && estimated_hrs_per_wk} hrs/week
-          </span>
-        </div>
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Experience Level
+            Area of Specialization
           </Label>
           <div className="flex flex-wrap gap-2">
-            {job &&
-              level_of_experience.map((level, idx) => (
+            {area_of_specialization &&
+              area_of_specialization.map((area, idx) => (
                 <span
                   key={idx}
                   className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
                 >
-                  {level}
+                  {area}
                 </span>
               ))}
           </div>
         </div>
-      </div>
 
-      {/* Section: Specialization Tags */}
-      <div>
-        <Label className="text-sm font-semibold block mb-2">
-          Area of Specialization
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {area_of_specialization &&
-            area_of_specialization.map((area, idx) => (
-              <span
-                key={idx}
-                className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-              >
-                {area}
-              </span>
-            ))}
+        {/* Section: Preferred Experience */}
+        <div>
+          <Label className="text-sm font-semibold block mb-2">
+            Preferred Experience
+          </Label>
+          <div
+            data-color-mode="light"
+            className="prose prose-sm sm:prose-base bg-white p-4 rounded-lg"
+          >
+            <MDEditor.Markdown
+              className="bg-white"
+              source={job?.preferred_experience}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Section: Preferred Experience */}
-      <div>
-        <Label className="text-sm font-semibold block mb-2">
-          Preferred Experience
-        </Label>
-        <div
-          data-color-mode="light"
-          className="prose prose-sm sm:prose-base bg-white p-4 rounded-lg"
-        >
-          <MDEditor.Markdown
-            className="bg-white"
-            source={job?.preferred_experience}
-          />
-        </div>
-      </div>
+        <div>{connectButton}</div>
 
-      <div>{connectButton}</div>
-
-      {/* Hiring Status Control */}
-      {/* {job?.brand_id === user?.id && (
+        {/* Hiring Status Control */}
+        {/* {job?.brand_id === user?.id && (
         <div>
           <Label className="text-sm font-semibold block mb-2">
             Hiring Status
@@ -328,8 +335,8 @@ const FractionalJobDetail = () => {
         </div>
       )} */}
 
-      {/* Apply or Manage */}
-      {/* {job?.brand_id !== user?.id && (
+        {/* Apply or Manage */}
+        {/* {job?.brand_id !== user?.id && (
         <ApplyJobDrawer
           job={job}
           user={user}
@@ -338,8 +345,8 @@ const FractionalJobDetail = () => {
         />
       )} */}
 
-      {/* Section: Applications (if user owns job) */}
-      {/* {loadingHiringStatus && <BarLoader width="100%" color="#36d7b7" />}
+        {/* Section: Applications (if user owns job) */}
+        {/* {loadingHiringStatus && <BarLoader width="100%" color="#36d7b7" />}
 
       {job?.brand_id === user?.id && job?.applications?.length > 0 && (
         <div className="mt-10">
@@ -351,7 +358,8 @@ const FractionalJobDetail = () => {
           </div>
         </div>
       )} */}
-    </div>
+      </div>
+    </>
   );
 };
 

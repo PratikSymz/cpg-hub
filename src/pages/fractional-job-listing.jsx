@@ -18,6 +18,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import { getJobs } from "@/api/apiFractionalJobs.js";
+import BackButton from "@/components/back-button.jsx";
 
 function FractionalJobListing() {
   // Once user is loaded, fetch job data -> session()
@@ -81,10 +82,9 @@ function FractionalJobListing() {
   }
 
   return (
-    <div className="mt-8">
-      <h1 className="font-extrabold text-5xl sm:text-6xl text-center pb-8">
-        Latest Jobs
-      </h1>
+    <div className="px-6 py-10">
+      <BackButton />
+      <h1 className="text-3xl font-bold mb-8 text-center">Latest Jobs</h1>
 
       {/* Loading bar */}
       {loadingJobs && (

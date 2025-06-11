@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select.jsx";
 import { getServices } from "@/api/apiServices.js";
 import ServiceProviderCard from "@/components/service-provider-card.jsx";
+import BackButton from "@/components/back-button.jsx";
 
 function ServiceProviderListing() {
   // Once user is loaded, fetch job data -> session()
@@ -82,6 +83,7 @@ function ServiceProviderListing() {
 
   return (
     <div className="px-6 py-10">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-8 text-center">
         Browse Service Providers
       </h1>

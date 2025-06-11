@@ -19,6 +19,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import { Input } from "@/components/ui/input.jsx";
+import BackButton from "@/components/back-button.jsx";
 
 const FractionalTalentListing = () => {
   // Once user is loaded, fetch job data -> session()
@@ -93,6 +94,7 @@ const FractionalTalentListing = () => {
 
   return (
     <div className="px-6 py-10">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-8 text-center">
         Browse Fractional Talent
       </h1>
