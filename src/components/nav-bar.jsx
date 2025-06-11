@@ -74,6 +74,36 @@ const NavBar = () => {
             </span>
           )} */}
 
+          <Link to="/jobs">
+            <Button
+              size="default"
+              variant="ghost"
+              className="text-sm font-medium hover:text-cpg-teal"
+            >
+              Jobs
+            </Button>
+          </Link>
+
+          <Link to="/talents">
+            <Button
+              size="default"
+              variant="ghost"
+              className="text-sm font-medium hover:text-cpg-teal"
+            >
+              Talents
+            </Button>
+          </Link>
+
+          <Link to="/services">
+            <Button
+              size="default"
+              variant="ghost"
+              className="text-sm font-medium hover:text-cpg-teal"
+            >
+              Services
+            </Button>
+          </Link>
+
           {/* When signed out */}
           <SignedOut>
             <Button
