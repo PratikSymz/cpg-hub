@@ -80,30 +80,35 @@ export async function getMyServiceProfile(token, { user_id }) {
 export async function addNewService(token, serviceData) {
   const supabase = await supabaseClient(token);
 
+  // Company logo url
+  let company_logo_url = null;
   const file = serviceData.logo?.[0];
+
   const folder = "services";
   const bucket = "company-logo";
-  // A new file was uploaded → upload it
-  const fileName = formatCompanyLogoUrl(serviceData.user_id, file);
+  if (file) {
+    // A new file was uploaded → upload it
+    const fileName = formatCompanyLogoUrl(serviceData.user_id, file);
 
-  // Upload the file
-  const { error: storageError } = await supabase.storage
-    .from(bucket)
-    .upload(`${folder}/${fileName}`, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-  if (storageError) {
-    console.error("Error uploading new Service logo:", storageError);
-    throw new Error("Error uploading Service Company Logo");
+    if (storageError) {
+      console.error("Error uploading new Service logo:", storageError);
+      throw new Error("Error uploading Service Company Logo");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    company_logo_url = publicUrlData?.publicUrl;
   }
-
-  // Get the public URL
-  const { data: publicUrlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(`${folder}/${fileName}`);
-  const logo_url = publicUrlData?.publicUrl;
 
   const { data, error } = await supabase
     .from(table_name)
@@ -111,7 +116,7 @@ export async function addNewService(token, serviceData) {
       {
         company_name: serviceData.company_name,
         company_website: serviceData.company_website,
-        logo_url: logo_url,
+        logo_url: company_logo_url,
         num_employees: serviceData.num_employees,
         area_of_specialization: serviceData.area_of_specialization,
         category_of_service: serviceData.category_of_service,

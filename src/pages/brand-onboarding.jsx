@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { addNewBrand } from "@/api/apiBrands.js";
-import { ROLE_BRAND } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_TALENT } from "@/constants/roles.js";
 import { BrandSchema } from "@/schemas/brand-schema.js";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
@@ -24,18 +24,28 @@ import { toast } from "sonner";
 const BrandOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const submittedRef = useRef(false); // Block duplicate submission
 
   const handleRoleSelection = async (role) => {
-    await user
-      .update({ unsafeMetadata: { role } })
-      .then(() => {
-        toast.success(`Role updated to: ${role}`);
-        console.log(`Role updated to: ${role}`);
-      })
-      .catch((err) => {
-        toast.error("Error updating role");
-        console.error("Error updating role:", err);
-      });
+    const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
+      ? user.unsafeMetadata.roles
+      : [];
+
+    if (existingRoles.includes(role)) {
+      console.log(`Role "${role}" already present`);
+      return;
+    }
+
+    const updatedRoles = [...existingRoles, role];
+
+    try {
+      await user.update({ unsafeMetadata: { roles: updatedRoles } });
+      toast.success(`Role updated to: ${role}`);
+      console.log(`Role updated to: ${role}`);
+    } catch (err) {
+      toast.error("Error updating role");
+      console.error("Error updating role:", err);
+    }
   };
 
   const {
@@ -55,19 +65,28 @@ const BrandOnboarding = () => {
   } = useFetch(addNewBrand);
 
   const onSubmit = async (data) => {
+    if (submittedRef.current) {
+      console.warn("Duplicate submission prevented");
+      return;
+    }
+    submittedRef.current = true;
+
     try {
-      await handleRoleSelection(ROLE_BRAND);
       if (user && user.id) {
         await funcCreateBrand({
           ...data,
           user_id: user.id,
         });
+
+        await handleRoleSelection(ROLE_BRAND);
+
+        toast.success("Profile Created!");
+        navigate("/post-job", { replace: true });
       }
-      toast.success("Profile Created!");
-      navigate("/post-job", { replace: true });
     } catch (err) {
       console.log(err);
       toast.error("Failed to create profile!");
+      submittedRef.current = false; // allow resubmission if needed
     }
   };
 

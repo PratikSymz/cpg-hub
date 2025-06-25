@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -9,29 +9,38 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_SERVICE } from "@/constants/roles.js";
+import { useUser } from "@clerk/clerk-react";
 
-export default function OnboardingPromptDialog({
-  open,
-  setOpen,
-  role,
-  currentRole,
-  isFirstTime,
-}) {
+export default function OnboardingPromptDialog({ open, setOpen, role }) {
+  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
-  const title = isFirstTime
-    ? `You're about to set your profile as a ${role}`
-    : `You're already registered as a ${currentRole}.`;
+  const userRoles = Array.isArray(user?.unsafeMetadata?.roles)
+    ? user.unsafeMetadata.roles
+    : [];
+  const alreadyHasRole = userRoles.includes(role);
 
-  const message = isFirstTime
-    ? ``
-    : `You can't switch roles once you've onboarded. Please continue using the platform as a ${currentRole}.`;
+  const title = alreadyHasRole
+    ? `You're already onboarded as a ${formatRole(role)}`
+    : `You're about to set your profile as a ${formatRole(role)}`;
 
-  const handleRedirect = () => {
+  const message = alreadyHasRole
+    ? role === ROLE_BRAND
+      ? `You're already registered as a brand. Taking you to the job posting page...`
+      : `You've already completed onboarding as a ${formatRole(role)}.`
+    : `This will take you to the onboarding form to complete your ${formatRole(role)} profile.`;
+
+  useEffect(() => {
+    if (open && role === ROLE_BRAND && alreadyHasRole) {
+      navigate("/post-job");
+    }
+  }, [open, role, alreadyHasRole]);
+
+  const handleRedirect = async () => {
     setOpen(false);
+
     if (role === ROLE_BRAND) {
       navigate("/onboarding/brand");
     } else if (role === ROLE_SERVICE) {
@@ -51,16 +60,16 @@ export default function OnboardingPromptDialog({
         </DialogHeader>
         <DialogFooter className="gap-2">
           <Button
-            className=""
+            className="cursor-pointer"
             size="default"
             variant="secondary"
             onClick={() => setOpen(false)}
           >
             Cancel
           </Button>
-          {isFirstTime && (
+          {!alreadyHasRole && (
             <Button
-              className=""
+              className="cursor-pointer"
               size="default"
               variant="default"
               onClick={handleRedirect}
@@ -72,4 +81,12 @@ export default function OnboardingPromptDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function formatRole(role) {
+  if (typeof role !== "string") return "";
+
+  return role
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (str) => str.toUpperCase());
 }

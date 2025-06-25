@@ -56,30 +56,35 @@ export async function getMyBrandProfile(token, { user_id }) {
 export async function addNewBrand(token, brandData) {
   const supabase = await supabaseClient(token);
 
+  // Current brand logo url
+  let company_logo_url = null;
   const file = brandData.logo?.[0];
+
   const folder = "brands";
   const bucket = "company-logo";
-  // A new file was uploaded → upload it
-  const fileName = formatCompanyLogoUrl(brandData.user_id, file);
+  if (file) {
+    // A new file was uploaded → upload it
+    const fileName = formatCompanyLogoUrl(brandData.user_id, file);
 
-  // Upload the file
-  const { error: storageError } = await supabase.storage
-    .from(bucket)
-    .upload(`${folder}/${fileName}`, file, {
-      cacheControl: "3600",
-      upsert: false, // prevent overwriting
-    });
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false, // prevent overwriting
+      });
 
-  if (storageError) {
-    console.error("Error uploading new Brand logo:", storageError);
-    throw new Error("Error uploading new Brand logo");
+    if (storageError) {
+      console.error("Error uploading new Brand logo:", storageError);
+      throw new Error("Error uploading new Brand logo");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    company_logo_url = publicUrlData?.publicUrl;
   }
-
-  // Get the public URL
-  const { data: publicUrlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(`${folder}/${fileName}`);
-  const logo_url = publicUrlData?.publicUrl;
 
   const { data, error } = await supabase
     .from(table_name)
@@ -89,7 +94,7 @@ export async function addNewBrand(token, brandData) {
         website: brandData.website,
         linkedin_url: brandData.linkedin_url,
         brand_hq: brandData.brand_hq,
-        logo_url: logo_url,
+        logo_url: company_logo_url,
         user_id: brandData.user_id,
         brand_desc: brandData.brand_desc,
       },
@@ -108,7 +113,7 @@ export async function addNewBrand(token, brandData) {
 export async function updateBrand(token, brandData, { user_id }) {
   const supabase = await supabaseClient(token);
 
-  // Current company logo url
+  // Current brand logo url
   let company_logo_url = brandData.logo_url;
   const newFile = brandData.logo?.[0];
 

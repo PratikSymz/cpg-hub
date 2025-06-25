@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { SignIn, useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from "@/components/ui/card.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { products } from "@/constants/products.js";
 import { Link, useNavigate } from "react-router-dom";
-import CoincentricCircles from "@/components/CoincentricCircles.jsx";
 import { Lock } from "lucide-react";
 import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
@@ -19,10 +17,11 @@ import { ROLE_BRAND } from "@/constants/roles.js";
 
 const LandingPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
-  const role = user?.unsafeMetadata?.role;
-  const onboarded = role !== undefined;
+  const roles = Array.isArray(user?.unsafeMetadata?.roles)
+    ? user.unsafeMetadata.roles
+    : [];
+  const onboarded = roles.length > 0;
 
-  const [open, setOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const navigate = useNavigate();
 
@@ -33,19 +32,17 @@ const LandingPage = () => {
       return;
     }
 
-    const isFirstTime = !onboarded;
-    const isSameRole = role === product.secondaryButton.role;
-    const isDifferentRole = onboarded && !isSameRole;
+    const targetRole = product.secondaryButton.role;
+    const alreadyHasTargetRole = roles.includes(targetRole);
 
-    if (isFirstTime || isDifferentRole) {
-      setSelectedProduct(product); // show dialog
-    } else if (role === ROLE_BRAND) {
-      // Allow brands to proceed with posting jobs
+    if (targetRole === ROLE_BRAND && alreadyHasTargetRole) {
+      // Brand user clicking "Post Job"
       navigate(product.secondaryButton.link);
-    } else {
-      // Block talents/services from re-onboarding
-      setSelectedProduct(product);
+      return;
     }
+
+    // Show onboarding dialog for non-brands or first-timers
+    setSelectedProduct(product);
   };
 
   const { func: updateUserProfile, data } = useFetch(syncUserProfile);
@@ -73,75 +70,62 @@ const LandingPage = () => {
 
         {/* Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-7 max-w-6xl mx-auto px-4">
-          {products.map((product, index) => (
-            <Card
-              key={index}
-              className="flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
-            >
-              <CardHeader className="gap-2">
-                <CardTitle className="h-64 text-center content-center place-items-center text-cpg-teal font-semibold text-2xl">
-                  {product.title}
-                </CardTitle>
-              </CardHeader>
+          {products.map((product, index) => {
+            const targetRole = product.secondaryButton.role;
+            const alreadyHasTargetRole = roles.includes(targetRole);
 
-              {/* <div className="flex items-center gap-3 text-sm font-bold">
-                  <span className="rounded bg-[#F5D04E] px-2 py-1 shadow-[1px_1px_1px_0_rgba(0,0,0,.2)]">
-                    {"lol"}
-                  </span>
-                </div> */}
+            return (
+              <Card
+                key={index}
+                className="flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
+              >
+                <CardHeader className="gap-2">
+                  <CardTitle className="h-64 text-center content-center place-items-center text-cpg-teal font-semibold text-2xl">
+                    {product.title}
+                  </CardTitle>
+                </CardHeader>
 
-              <div className="p-0 font-[400] text-neutral-600 text-base">
-                {product.description}
-              </div>
-
-              <CardFooter className="flex flex-row px-0 mt-6 gap-4">
-                <div className="flex-1">
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="default"
-                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
-                  >
-                    <Link to={product.primaryButton.link}>
-                      {product.primaryButton.label}
-                    </Link>
-                  </Button>
+                <div className="p-0 font-[400] text-neutral-600 text-base">
+                  {product.description}
                 </div>
-                <div className="flex-1">
-                  <Button
-                    size="lg"
-                    variant="default"
-                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
-                    onClick={() => handleSecondarySubmit(product)}
-                    disabled={
-                      onboarded &&
-                      role !== ROLE_BRAND &&
-                      role === product.secondaryButton.role
-                    }
-                    // disabled={
-                    //   role && product.secondaryButton.role !== role
-                    //     ? true
-                    //     : false
-                    // }
-                  >
-                    {(!onboarded || role !== product.secondaryButton.role) && (
-                      <Lock size={20} />
-                    )}
-                    {product.secondaryButton.label}
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
+
+                <CardFooter className="flex flex-row px-0 mt-6 gap-4">
+                  <div className="flex-1">
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="default"
+                      className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
+                    >
+                      <Link to={product.primaryButton.link}>
+                        {product.primaryButton.label}
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="flex-1">
+                    <Button
+                      size="lg"
+                      variant="default"
+                      className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
+                      onClick={() => handleSecondarySubmit(product)}
+                    >
+                      {(!onboarded || !alreadyHasTargetRole) && (
+                        <Lock size={20} />
+                      )}
+                      {product.secondaryButton.label}
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Dialog */}
         <OnboardingPromptDialog
           open={!!selectedProduct}
           setOpen={() => setSelectedProduct(null)}
-          role={selectedProduct && selectedProduct.secondaryButton.role}
-          currentRole={role}
-          isFirstTime={!onboarded}
+          role={selectedProduct?.secondaryButton.role}
         />
       </section>
     </main>

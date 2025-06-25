@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
@@ -32,6 +31,7 @@ import { toast } from "sonner";
 const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const submittedRef = useRef(false); // Block duplicate submission
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const imageUrl = user?.imageUrl;
@@ -60,10 +60,19 @@ const TalentOnboarding = () => {
   const { func: submitTalentProfile, loading, error } = useFetch(addNewTalent);
 
   const handleRoleSelection = async (role) => {
+    const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
+      ? user.unsafeMetadata.roles
+      : [];
+
+    if (existingRoles.includes(role)) {
+      console.log(`Role "${role}" already present`);
+      return;
+    }
+
+    const updatedRoles = [...existingRoles, role];
+
     try {
-      if (user) {
-        await user.update({ unsafeMetadata: { role } });
-      }
+      await user.update({ unsafeMetadata: { roles: updatedRoles } });
       toast.success(`Role updated to: ${role}`);
       console.log(`Role updated to: ${role}`);
     } catch (err) {
@@ -73,20 +82,28 @@ const TalentOnboarding = () => {
   };
 
   const onSubmit = async (data) => {
-    try {
-      await handleRoleSelection(ROLE_TALENT);
+    if (submittedRef.current) {
+      console.warn("Duplicate submission prevented");
+      return;
+    }
+    submittedRef.current = true;
 
+    try {
       if (user && user.id) {
         await submitTalentProfile({
           ...data,
           user_id: user.id,
         });
+
+        await handleRoleSelection(ROLE_TALENT);
+
+        toast.success("Profile Created!");
+        navigate("/talents", { replace: true });
       }
-      toast.success("Profile Created!");
-      navigate("/talents");
     } catch (err) {
       console.log(err);
       toast.error("Failed to create profile!");
+      submittedRef.current = false; // allow resubmission if needed
     }
   };
 

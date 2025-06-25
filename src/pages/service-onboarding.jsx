@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -32,18 +32,28 @@ import NumberInput from "@/components/number-input.jsx";
 const ServiceOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const submittedRef = useRef(false); // Block duplicate submission
 
   const handleRoleSelection = async (role) => {
-    await user
-      .update({ unsafeMetadata: { role } })
-      .then(() => {
-        toast.success(`Role updated to: ${role}`);
-        console.log(`Role updated to: ${role}`);
-      })
-      .catch((err) => {
-        toast.error("Error updating role");
-        console.error("Error updating role:", err);
-      });
+    const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
+      ? user.unsafeMetadata.roles
+      : [];
+
+    if (existingRoles.includes(role)) {
+      console.log(`Role "${role}" already present`);
+      return;
+    }
+
+    const updatedRoles = [...existingRoles, role];
+
+    try {
+      await user.update({ unsafeMetadata: { roles: updatedRoles } });
+      toast.success(`Role updated to: ${role}`);
+      console.log(`Role updated to: ${role}`);
+    } catch (err) {
+      toast.error("Error updating role");
+      console.error("Error updating role:", err);
+    }
   };
 
   const {
@@ -65,21 +75,29 @@ const ServiceOnboarding = () => {
   const { func: submitBrokerProfile, loading, error } = useFetch(addNewService);
 
   const onSubmit = async (data) => {
-    try {
-      await handleRoleSelection(ROLE_SERVICE);
+    if (submittedRef.current) {
+      console.warn("Duplicate submission prevented");
+      return;
+    }
+    submittedRef.current = true;
 
+    try {
       if (user && user.id) {
         await submitBrokerProfile({
           is_broker: shouldShowBrokerServices,
           user_id: user.id,
           ...data,
         });
+
+        await handleRoleSelection(ROLE_SERVICE);
+
+        toast.success("Profile Created!");
+        navigate("/services", { replace: true });
       }
-      toast.success("Profile Created!");
-      navigate("/services", { replace: true });
     } catch (err) {
       console.log(err);
       toast.error("Failed to create profile!");
+      submittedRef.current = false; // allow resubmission if needed
     }
   };
 
@@ -323,7 +341,7 @@ const ServiceOnboarding = () => {
           </div>
         )}
 
-        {error && <FormError message={error.message} />}
+        {error && <FormError message={error.message} /> && console.log(error)}
 
         <Button
           variant="default"
