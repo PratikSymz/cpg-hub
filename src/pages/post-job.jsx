@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { addNewJob } from "@/api/apiFractionalJobs.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
+import { Label } from "@/components/ui/label.jsx";
 import {
   Select,
   SelectContent,
@@ -135,6 +136,20 @@ const PostJob = () => {
             {...register("job_title")}
           />
           {errors.job_title && <FormError message={errors.job_title.message} />}
+        </div>
+
+        {/* Job Description upload */}
+        <div>
+          <Label className={classLabel}>Upload Job Description</Label>
+          <Input
+            className={classInput}
+            type="file"
+            accept=".pdf"
+            {...register("job_description")}
+          />
+          {errors.job_description && (
+            <FormError message={errors.job_description.message.toString()} />
+          )}
         </div>
 
         <div className="flex flex-row gap-16 justify-around my-6">

@@ -38,19 +38,6 @@ export async function getMyJobs(
     )
     .eq("brand_id", brand_id);
 
-  // if (area_specialization) {
-  //   query = query.contains("area_of_specialization", [area_specialization]);
-  // }
-
-  // if (level_exp) {
-  //   query = query.contains("level_of_experience", [level_exp]);
-  // }
-
-  // if (search_query) {
-  //   const safeQuery = search_query.replace(/[%_]/g, "\\$&");
-  //   query = query.ilike("job_title", `%${safeQuery}%`);
-  // }
-
   const { data, error } = await query;
 
   if (error) {
@@ -87,9 +74,49 @@ export async function getSingleJob(token, { job_id }) {
 export async function addNewJob(token, jobData) {
   const supabase = await supabaseClient(token);
 
+  // Current job description pdf url
+  let job_desc_url = null;
+  const file = jobData.job_description?.[0];
+
+  const bucket = "job-descriptions";
+  if (file) {
+    // A new file was uploaded → upload it
+    const fileName = formatJobDescriptionUrl(jobData.user_id, file);
+
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false, // prevent overwriting
+      });
+
+    if (storageError) {
+      console.error("Error uploading new job description:", storageError);
+      throw new Error("Error uploading new job description");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${fileName}`);
+    job_desc_url = publicUrlData?.publicUrl;
+  }
+
   const { data, error } = await supabase
     .from("job_listings")
-    .insert([jobData])
+    .insert([
+      {
+        preferred_experience: jobData.preferred_experience,
+        level_of_experience: jobData.level_of_experience,
+        work_location: jobData.work_location,
+        scope_of_work: jobData.scope_of_work,
+        job_title: jobData.job_title,
+        job_description: job_desc_url,
+        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk,
+        area_of_specialization: jobData.area_of_specialization,
+      },
+    ])
     .select();
 
   if (error) {
@@ -104,9 +131,49 @@ export async function addNewJob(token, jobData) {
 export async function updateJob(token, { jobData, job_id }) {
   const supabase = await supabaseClient(token);
 
+  // Current job description pdf url
+  let job_desc_url = jobData.job_description;
+  const file = jobData.job_description?.[0];
+
+  const bucket = "job-descriptions";
+  if (file) {
+    // A new file was uploaded → upload it
+    const fileName = formatJobDescriptionUrl(jobData.user_id, file);
+
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false, // prevent overwriting
+      });
+
+    if (storageError) {
+      console.error("Error uploading new job description:", storageError);
+      throw new Error("Error uploading new job description");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${fileName}`);
+    job_desc_url = publicUrlData?.publicUrl;
+  }
+
   const { data, error } = await supabase
     .from(table_name)
-    .update([jobData])
+    .update([
+      {
+        preferred_experience: jobData.preferred_experience,
+        level_of_experience: jobData.level_of_experience,
+        work_location: jobData.work_location,
+        scope_of_work: jobData.scope_of_work,
+        job_title: jobData.job_title,
+        job_description: job_desc_url,
+        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk,
+        area_of_specialization: jobData.area_of_specialization,
+      },
+    ])
     .eq("id", job_id)
     .select();
 
@@ -202,3 +269,12 @@ export async function updateHiringStatus(token, { is_open, job_id }) {
 
   return data;
 }
+
+const formatJobDescriptionUrl = (user_id, file) => {
+  const random = Math.floor(Math.random() * 90000);
+  // Get a safe file extension
+  const extension = file.name.split(".").pop().toLowerCase();
+  // Generate a clean file name
+  const fileName = `job-${random}-${user_id}.${extension}`;
+  return fileName;
+};

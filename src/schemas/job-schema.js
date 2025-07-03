@@ -12,6 +12,17 @@ export const JobSchema = z.object({
     message: "Select a scope of work",
   }),
   job_title: z.string().min(1, { message: "Title is required" }),
+  job_description: z
+    .any()
+    .optional()
+    .refine(
+      (file) =>
+        !file?.[0] || // allow empty (optional)
+        ["application/pdf"].includes(file[0]?.type),
+      {
+        message: "Only PDF files are allowed",
+      }
+    ),
   estimated_hrs_per_wk: z.preprocess(
     (a) => {
       if (typeof a === "string") return parseInt(a, 10);

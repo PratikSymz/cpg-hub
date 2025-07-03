@@ -6,7 +6,12 @@ import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleJob } from "@/api/apiFractionalJobs.js";
 import { Label } from "@radix-ui/react-label";
-import { FaGlobe, FaLinkedin } from "react-icons/fa";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
@@ -131,7 +136,7 @@ const FractionalJobDetail = () => {
       <div className="px-6 py-10">
         <BackButton />
       </div>
-      <div className="flex flex-col gap-10 mt-10 px-10">
+      <div className="flex flex-col gap-10 px-6 pb-16 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -179,133 +184,153 @@ const FractionalJobDetail = () => {
           )}
         </div>
 
-        {/* Section: Summary Info */}
-        {brand_desc && (
-          <div className="bg-muted rounded-md p-4">
-            <Label className="text-xs text-muted-foreground uppercase">
-              About
-            </Label>
-            <p className="text-sm font-medium mt-1">
-              {job?.brand && brand_desc}
-            </p>
-          </div>
-        )}
+        {/* Horizontal divider */}
+        <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
 
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <div className="bg-muted rounded-md p-4">
-            <Label className="text-xs text-muted-foreground uppercase">
-              Location
-            </Label>
-            <p className="text-sm font-medium mt-1">{brand_hq || "Remote"}</p>
-          </div>
-          {/* <div className="bg-muted rounded-md p-4">
-          <Label className="text-xs text-muted-foreground uppercase">
-            Applicants
-          </Label>
-          <p className="text-sm font-medium mt-1">
-            {job?.applications?.length} total
-          </p>
-        </div>
-        <div className="bg-muted rounded-md p-4">
-          <Label className="text-xs text-muted-foreground uppercase">
-            Status
-          </Label>
-          <div className="mt-1 flex items-center gap-2">
-            {job && is_open ? (
-              <>
-                <DoorOpen className="w-4 h-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Open</span>
-              </>
-            ) : (
-              <>
-                <DoorClosed className="w-4 h-4 text-red-500" />
-                <span className="text-sm font-medium text-red-600">Closed</span>
-              </>
-            )}
-          </div>
-        </div> */}
-        </div>
+        {/* Profile Summary tabs */}
+        <div className="flex flex-col gap-2 text-sm">
+          <Tabs defaultValue="about" className="w-full">
+            <TabsList className="flex justify-center gap-4 mb-8 bg-transparent">
+              <TabsTrigger
+                value="about"
+                className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
+              >
+                About
+              </TabsTrigger>
 
-        {/* Section: Details */}
-        <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Scope of Work
-            </Label>
-            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-              {job && scope_of_work}
-            </span>
-          </div>
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Work Location
-            </Label>
-            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-              {job && work_location}
-            </span>
-          </div>
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Weekly Hours
-            </Label>
-            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-              {job && estimated_hrs_per_wk} hrs/week
-            </span>
-          </div>
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Experience Level
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {job &&
-                level_of_experience.map((level, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-                  >
-                    {level}
-                  </span>
-                ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Section: Specialization Tags */}
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Area of Specialization
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {area_of_specialization &&
-              area_of_specialization.map((area, idx) => (
-                <span
-                  key={idx}
-                  className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+              {job?.job_description && (
+                <TabsTrigger
+                  value="job_description"
+                  className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
                 >
-                  {area}
-                </span>
-              ))}
-          </div>
-        </div>
+                  Description
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-        {/* Section: Preferred Experience */}
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Preferred Experience
-          </Label>
-          <div
-            data-color-mode="light"
-            className="prose prose-sm sm:prose-base bg-white p-4 rounded-lg"
-          >
-            <MDEditor.Markdown
-              className="bg-white"
-              source={job?.preferred_experience}
-            />
-          </div>
-        </div>
+            {/* Tab Contents */}
+            <TabsContent className={"ms-4"} value="about">
+              <div className="flex flex-col gap-10 mt-4">
+                {/* Section: Summary Info */}
+                {brand_desc && (
+                  <div className="bg-muted rounded-md p-4">
+                    <p className="text-sm font-medium mt-1">
+                      {job?.brand && brand_desc}
+                    </p>
+                  </div>
+                )}
 
-        <div>{connectButton}</div>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="bg-muted rounded-md p-4">
+                    <Label className="text-xs text-muted-foreground uppercase">
+                      Location
+                    </Label>
+                    <p className="text-sm font-medium mt-1">
+                      {brand_hq || "Remote"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Section: Details */}
+                <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-semibold block mb-2">
+                      Scope of Work
+                    </Label>
+                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+                      {job && scope_of_work}
+                    </span>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold block mb-2">
+                      Work Location
+                    </Label>
+                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+                      {job && work_location}
+                    </span>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold block mb-2">
+                      Weekly Hours
+                    </Label>
+                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
+                      {job && estimated_hrs_per_wk} hrs/week
+                    </span>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold block mb-2">
+                      Experience Level
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {job &&
+                        level_of_experience.map((level, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                          >
+                            {level}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Specialization Tags */}
+                <div>
+                  <Label className="text-sm font-semibold block mb-2">
+                    Area of Specialization
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {area_of_specialization &&
+                      area_of_specialization.map((area, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                        >
+                          {area}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Section: Preferred Experience */}
+                <div>
+                  <Label className="text-sm font-semibold block mb-2">
+                    Preferred Experience
+                  </Label>
+                  <div
+                    data-color-mode="light"
+                    className="prose prose-sm sm:prose-base bg-white p-4 rounded-lg"
+                  >
+                    <MDEditor.Markdown
+                      className="bg-white"
+                      source={job?.preferred_experience}
+                    />
+                  </div>
+                </div>
+
+                <div>{connectButton}</div>
+              </div>
+            </TabsContent>
+
+            {job?.job_description && (
+              <TabsContent className={"ms-6"} value="resume">
+                {job?.job_description ? (
+                  <iframe
+                    src={job?.job_description}
+                    title="Resume"
+                    width="100%"
+                    height="800px"
+                    className="rounded-lg border"
+                  />
+                ) : (
+                  <p className="text-gray-600">No job description uploaded.</p>
+                )}
+              </TabsContent>
+            )}
+          </Tabs>
+        </div>
 
         {/* Hiring Status Control */}
         {/* {job?.brand_id === user?.id && (

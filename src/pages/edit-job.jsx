@@ -408,6 +408,31 @@ const EditJobPage = () => {
             <FormError message={jobErrors.job_title.message} />
           )}
 
+          {/* Job Description upload */}
+          <div>
+            <Label className={classLabel}>Job Description</Label>
+            {jobData?.job_description && (
+              <a
+                href={jobData?.job_description}
+                target="_blank"
+                className="underline text-sm font-medium text-cpg-teal mb-4 block"
+              >
+                View current description
+              </a>
+            )}
+            <Input
+              className={classInput}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              {...jobForm.register("job_description")}
+            />
+            {jobErrors.job_description && (
+              <FormError
+                message={jobErrors.job_description.message.toString()}
+              />
+            )}
+          </div>
+
           <div className="flex flex-row gap-16 justify-around my-6">
             {/* Scope of Work */}
             <div className="flex-1">
