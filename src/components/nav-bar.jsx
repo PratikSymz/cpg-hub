@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   SignIn,
@@ -10,17 +9,17 @@ import {
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-
+import { BriefcaseBusiness, PenBox, X, Menu } from "lucide-react";
 import { Button } from "./ui/button.jsx";
-import { BriefcaseBusiness, Edit, Heart, PenBox, X } from "lucide-react";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [search, setSearch] = useSearchParams();
   const { user, isLoaded } = useUser();
 
-  const [authMode, setAuthMode] = useState("sign-in"); // or "sign-up"
+  const [authMode, setAuthMode] = useState("sign-in");
 
   useEffect(() => {
     if (search.get("sign-in")) {
@@ -35,45 +34,37 @@ const NavBar = () => {
     }
   };
 
-  if (!isLoaded) return null; // or loading spinner
-
   const role = user?.unsafeMetadata?.role;
+
   const getGreeting = () => {
     if (!user) return null;
-
     const name = user.firstName;
     const roleLabel =
       typeof role === "string"
         ? `(${role.charAt(0).toUpperCase() + role.slice(1)})`
         : "";
-
     return name ? `Hi, ${name} ${roleLabel}` : null;
   };
 
   return (
-    <header className="px-6 py-4 border-0">
-      <nav className="p-8 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
-          <Link to={"/"}>
+    <header className="w-full px-4 py-8 shadow-none">
+      <nav className="flex items-center justify-between max-w-7xl mx-auto">
+        {/* Logo and Tagline */}
+        <div className="flex items-center gap-4">
+          <Link to="/">
             <img
-              src={"/cpg_favicon.png"}
+              src="/cpg_favicon.png"
               alt="CPG Hub Logo"
-              className="h-26 w-auto"
+              className="h-24 w-auto"
             />
           </Link>
-          <p className="text-xl font-medium text-[#613f1b]">
+          <p className="hidden lg:block text-sm md:text-base font-medium text-[#613f1b]">
             The spot for CPG brands, fractional talent, and services to connect.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* 🔧 Show greeting if signed in */}
-          {/* {user && (
-            <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
-              {getGreeting()}
-            </span>
-          )} */}
-
+        {/* Desktop Nav */}
+        <div className="hidden sm:flex items-center gap-4">
           <Link to="/jobs">
             <Button
               size="default"
@@ -83,7 +74,6 @@ const NavBar = () => {
               Jobs
             </Button>
           </Link>
-
           <Link to="/talents">
             <Button
               size="default"
@@ -93,7 +83,6 @@ const NavBar = () => {
               Talents
             </Button>
           </Link>
-
           <Link to="/services">
             <Button
               size="default"
@@ -104,11 +93,10 @@ const NavBar = () => {
             </Button>
           </Link>
 
-          {/* When signed out */}
           <SignedOut>
             <Button
-              variant="default"
               size="default"
+              variant="default"
               className="bg-cpg-teal text-white hover:bg-cpg-teal/90"
               onClick={() => setShowSignIn(true)}
             >
@@ -116,116 +104,130 @@ const NavBar = () => {
             </Button>
           </SignedOut>
 
-          {/* When signed in */}
           <SignedIn>
-            {role && role === ROLE_BRAND && (
+            {role === ROLE_BRAND && (
+              <Link to="/post-job">
+                <Button
+                  size="default"
+                  variant="default"
+                  className="bg-cpg-teal text-white hover:bg-cpg-teal/90"
+                >
+                  <PenBox size={20} className="mr-2" />
+                  Post a Job
+                </Button>
+              </Link>
+            )}
+            <UserButton
+              showName={false}
+              appearance={{
+                elements: {
+                  userButtonTrigger: "w-10 h-10",
+                  userButtonAvatarBox: "w-10 h-10",
+                  userButtonAvatarImage: "w-10 h-10",
+                },
+              }}
+            />
+          </SignedIn>
+        </div>
+
+        {/* Mobile Nav Toggle */}
+        <div className="sm:hidden">
+          <Button
+            className=""
+            size="default"
+            variant="ghost"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
+          </Button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu */}
+      {showMobileMenu && (
+        <div className="sm:hidden mt-4 px-4 space-y-4">
+          <Link to="/jobs">
+            <Button
+              variant="ghost"
+              size="default"
+              className="w-full justify-start"
+            >
+              Jobs
+            </Button>
+          </Link>
+          <Link to="/talents">
+            <Button
+              variant="ghost"
+              size="default"
+              className="w-full justify-start"
+            >
+              Talents
+            </Button>
+          </Link>
+          <Link to="/services">
+            <Button
+              variant="ghost"
+              size="default"
+              className="w-full justify-start"
+            >
+              Services
+            </Button>
+          </Link>
+
+          <SignedOut>
+            <Button
+              size="default"
+              variant="default"
+              className="w-full mt-4 bg-cpg-teal text-white hover:bg-cpg-teal/90"
+              onClick={() => {
+                setShowSignIn(true);
+                setShowMobileMenu(false);
+              }}
+            >
+              Login
+            </Button>
+          </SignedOut>
+
+          <SignedIn>
+            {role === ROLE_BRAND && (
               <Link to="/post-job">
                 <Button
                   variant="default"
                   size="default"
-                  className="bg-cpg-teal text-white hover:bg-cpg-teal/90"
+                  className="w-full bg-cpg-teal text-white hover:bg-cpg-teal/90"
                 >
-                  <PenBox size={20} /> Post a Job
+                  <PenBox size={20} className="mr-2" />
+                  Post a Job
                 </Button>
               </Link>
             )}
-
-            <UserButton
-              showName={true}
-              appearance={{
-                elements: {
-                  userButtonTrigger: "w-16 h-16", // outer clickable wrapper
-                  userButtonAvatarBox: "w-16 h-16", // avatar container
-                  userButtonAvatarImage: "w-16 h-16", // actual image
-                },
-                layout: {
-                  shimmer: false,
-                },
-              }}
-            >
-              <UserButton.MenuItems>
-                {role === ROLE_BRAND && (
-                  <UserButton.Link
-                    label="My Jobs"
-                    labelIcon={<BriefcaseBusiness size={15} />}
-                    href="/my-jobs"
-                  />
-                )}
-                <UserButton.Action label="manageAccount" />
-              </UserButton.MenuItems>
-            </UserButton>
           </SignedIn>
         </div>
-      </nav>
+      )}
 
+      {/* Sign-In Modal */}
       {showSignIn && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
           onClick={handleOverlayClick}
         >
           <div
-            className="relative bg-transparent p-10 rounded-xl shadow-none"
+            className="relative bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
-              className="absolute top-1 right-1 text-white hover:text-gray-200 text-lg font-bold cursor-pointer"
+              className="absolute top-3 right-3 text-gray-700 hover:text-black"
               onClick={() => {
                 setShowSignIn(false);
                 setSearch({});
               }}
-              aria-label="Close sign-in"
             >
-              <X className="w-5 h-5" />
+              <X size={20} />
             </button>
             {authMode === "sign-in" ? (
-              <div className="">
-                <SignIn
-                  forceRedirectUrl="/"
-                  appearance={{
-                    elements: {
-                      card: "shadow-none border-none p-0",
-                      headerTitle: "text-xl font-semibold",
-                      formFieldInput: "border rounded px-3 py-2 w-full",
-                      socialButtonsBlockButton:
-                        "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
-                    },
-                  }}
-                />
-                {/* <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
-                  Don't have an account?{" "}
-                  <button
-                    className="text-cpg-teal underline cursor-pointer"
-                    onClick={() => setAuthMode("sign-up")}
-                  >
-                    Sign up
-                  </button>
-                </div> */}
-              </div>
+              <SignIn forceRedirectUrl="/" />
             ) : (
-              <div className="">
-                <SignUp
-                  forceRedirectUrl="/"
-                  appearance={{
-                    elements: {
-                      card: "shadow-none border-none p-0",
-                      headerTitle: "text-xl font-semibold",
-                      formFieldInput: "border rounded px-3 py-2 w-full",
-                      socialButtonsBlockButton:
-                        "w-full border rounded px-4 py-2 my-2 text-sm font-medium",
-                    },
-                  }}
-                />
-                {/* <div className="mt-4 border-t pt-4 text-sm text-center text-gray-600">
-                  Already have an account?{" "}
-                  <button
-                    className="text-cpg-teal underline cursor-pointer"
-                    onClick={() => setAuthMode("sign-in")}
-                  >
-                    Sign in
-                  </button>
-                </div> */}
-              </div>
+              <SignUp forceRedirectUrl="/" />
             )}
           </div>
         </div>

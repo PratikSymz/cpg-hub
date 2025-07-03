@@ -1,3 +1,4 @@
+// landing.jsx
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import {
@@ -27,7 +28,6 @@ const LandingPage = () => {
 
   const handleSecondarySubmit = (product) => {
     if (!isSignedIn) {
-      // Not signed in — redirect to sign-up first
       window.location.href = "https://accounts.mycpghub.com/sign-up";
       return;
     }
@@ -36,16 +36,14 @@ const LandingPage = () => {
     const alreadyHasTargetRole = roles.includes(targetRole);
 
     if (targetRole === ROLE_BRAND && alreadyHasTargetRole) {
-      // Brand user clicking "Post Job"
       navigate(product.secondaryButton.link);
       return;
     }
 
-    // Show onboarding dialog for non-brands or first-timers
     setSelectedProduct(product);
   };
 
-  const { func: updateUserProfile, data } = useFetch(syncUserProfile);
+  const { func: updateUserProfile } = useFetch(syncUserProfile);
 
   useEffect(() => {
     if (isSignedIn && isLoaded && user) {
@@ -60,16 +58,14 @@ const LandingPage = () => {
 
   return (
     <main>
-      <section className="w-full py-16">
-        {/* Heading */}
-        {/* <div className="text-center mb-10 bg-cpg-brown/5">
-          <h1 className="text-2xl text-cpg-brown font-bold p-5 mb-24">
+      <section className="w-full py-10 px-4">
+        <div className="text-center mb-10 bg-cpg-brown/5 rounded-lg">
+          <h1 className="text-xl sm:text-2xl md:text-3xl text-cpg-brown font-bold py-6">
             Welcome to your professional CPG Community
           </h1>
-        </div> */}
+        </div>
 
-        {/* Card Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-7 max-w-6xl mx-auto px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center max-w-6xl mx-auto">
           {products.map((product, index) => {
             const targetRole = product.secondaryButton.role;
             const alreadyHasTargetRole = roles.includes(targetRole);
@@ -77,20 +73,20 @@ const LandingPage = () => {
             return (
               <Card
                 key={index}
-                className="flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
+                className="w-full max-w-xs flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
               >
                 <CardHeader className="gap-2">
-                  <CardTitle className="h-64 text-center content-center place-items-center text-cpg-teal font-semibold text-2xl">
+                  <CardTitle className="h-40 sm:h-52 md:h-64 text-center grid place-items-center text-cpg-teal font-semibold text-xl sm:text-2xl">
                     {product.title}
                   </CardTitle>
                 </CardHeader>
 
-                <div className="p-0 font-[400] text-neutral-600 text-base">
+                <div className="p-0 font-[400] text-neutral-600 text-sm sm:text-base">
                   {product.description}
                 </div>
 
-                <CardFooter className="flex flex-row px-0 mt-6 gap-4">
-                  <div className="flex-1">
+                <CardFooter className="flex flex-col sm:flex-row px-0 mt-6 gap-3 w-full">
+                  <div className="w-full">
                     <Button
                       asChild
                       size="lg"
@@ -102,7 +98,7 @@ const LandingPage = () => {
                       </Link>
                     </Button>
                   </div>
-                  <div className="flex-1">
+                  <div className="w-full">
                     <Button
                       size="lg"
                       variant="default"
@@ -110,7 +106,7 @@ const LandingPage = () => {
                       onClick={() => handleSecondarySubmit(product)}
                     >
                       {(!onboarded || !alreadyHasTargetRole) && (
-                        <Lock size={20} />
+                        <Lock size={20} className="inline-block mr-2" />
                       )}
                       {product.secondaryButton.label}
                     </Button>
@@ -121,7 +117,6 @@ const LandingPage = () => {
           })}
         </div>
 
-        {/* Dialog */}
         <OnboardingPromptDialog
           open={!!selectedProduct}
           setOpen={() => setSelectedProduct(null)}
