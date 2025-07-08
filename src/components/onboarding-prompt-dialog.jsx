@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
@@ -38,9 +37,8 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
     }
   }, [open, role, alreadyHasRole]);
 
-  const handleRedirect = async () => {
+  const handleRedirect = () => {
     setOpen(false);
-
     if (role === ROLE_BRAND) {
       navigate("/onboarding/brand");
     } else if (role === ROLE_SERVICE) {
@@ -52,27 +50,31 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild></DialogTrigger>
-      <DialogContent className="">
-        <DialogHeader className="">
-          <DialogTitle className="">{title}</DialogTitle>
-          <DialogDescription className="">{message}</DialogDescription>
+      <DialogContent className="px-6 sm:px-8 py-6">
+        <DialogHeader>
+          <DialogTitle className="text-lg sm:text-xl font-semibold">
+            {title}
+          </DialogTitle>
+          <DialogDescription className="text-sm sm:text-base text-muted-foreground">
+            {message}
+          </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2">
+
+        <DialogFooter className="mt-4 flex flex-wrap justify-end gap-2">
           <Button
-            className="cursor-pointer"
-            size="default"
             variant="secondary"
+            size="default"
             onClick={() => setOpen(false)}
+            className="cursor-pointer"
           >
             Cancel
           </Button>
           {!alreadyHasRole && (
             <Button
-              className="cursor-pointer"
-              size="default"
               variant="default"
+              size="default"
               onClick={handleRedirect}
+              className="cursor-pointer"
             >
               Continue
             </Button>
@@ -85,7 +87,6 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
 
 function formatRole(role) {
   if (typeof role !== "string") return "";
-
   return role
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/^./, (str) => str.toUpperCase());
