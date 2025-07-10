@@ -80,7 +80,7 @@ const NavBar = () => {
               variant="ghost"
               className="text-sm font-medium hover:text-cpg-teal"
             >
-              Talents
+              Talent
             </Button>
           </Link>
           <Link to="/services">

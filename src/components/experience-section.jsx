@@ -114,7 +114,7 @@ const TalentExperienceSection = ({ user_id, showEdit = false }) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Brand I've Worked With</h2>
+        <h2 className="text-xl font-semibold">Brands I've Worked With</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           {showEdit && (
             <DialogTrigger asChild>
