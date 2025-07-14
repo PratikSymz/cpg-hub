@@ -108,34 +108,32 @@ const ServiceProviderDetail = () => {
       <div className="px-6 py-10">
         <BackButton />
       </div>
-      <div className="flex flex-col gap-10 px-6 pb-16 max-w-5xl mx-auto">
+      <div className="w-full px-6 sm:px-6 py-10 max-w-5xl mx-auto flex flex-col gap-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 w-full">
           <div className="flex flex-row items-center gap-4">
             <img
               src={logo_url}
               alt={`${company_name} logo`}
-              className="h-22 w-22 rounded-full border object-cover"
+              className="h-24 w-24 rounded-full border object-cover"
             />
             <div className="flex flex-col">
-              <h1
-                className={clsx(
-                  "text-3xl font-bold",
-                  company_website && "hover:underline"
-                )}
-              >
+              <h1 className="text-3xl font-bold hover:underline">
                 {company_website ? (
-                  <Link to={company_website}>{company_name}</Link>
+                  <a href={company_website} target="_blank" rel="noreferrer">
+                    {company_name}
+                  </a>
                 ) : (
-                  <span>{company_name}</span>
+                  company_name
                 )}
               </h1>
+              <p className="text-muted-foreground">{user_info?.email}</p>
             </div>
           </div>
 
-          {user_info && user && user_info.user_id === user.id && (
+          {user_info?.user_id === user?.id && (
             <Button
-              className="rounded-full cursor-pointer"
+              className="rounded-full cursor-pointer w-full sm:w-auto"
               variant="outline"
               size="lg"
               asChild
@@ -145,82 +143,60 @@ const ServiceProviderDetail = () => {
           )}
         </div>
 
-        {/* Section: Summary Info */}
+        {/* Description */}
         {customers_covered && (
-          <div className="bg-muted rounded-md p-4">
-            <Label className="text-xs text-muted-foreground uppercase">
-              About
-            </Label>
-            <p className="text-sm font-medium mt-1">{customers_covered}</p>
+          <div>
+            <h2 className="text-xl font-semibold mb-2">About</h2>
+            <p className="text-muted-foreground whitespace-pre-line">
+              {customers_covered}
+            </p>
           </div>
         )}
 
-        {/* Section: Details */}
-        <div className="grid sm:grid-cols-2 gap-6">
+        {/* Category Tags */}
+        {category_of_service?.length > 0 && (
           <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Employees
-            </Label>
-            <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-              {num_employees ?? "N/A"}
-            </span>
-          </div>
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Specialization
-            </Label>
-            <p className="text-sm font-base mt-1">{area_of_specialization}</p>
-          </div>
-        </div>
-
-        {/* Section: Categories of Service */}
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Categories of Service
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {category_of_service &&
-              category_of_service.map((category, idx) => (
+            <h2 className="text-xl font-semibold mb-2">
+              Categories of Service
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {category_of_service.map((category, i) => (
                 <span
-                  key={idx}
+                  key={i}
                   className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
                 >
                   {category}
                 </span>
               ))}
-          </div>
-        </div>
-
-        {/* Section: Types of Broker Services */}
-        {is_broker && (
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Broker Services offerred
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {type_of_broker_service &&
-                type_of_broker_service.map((service, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-                  >
-                    {service}
-                  </span>
-                ))}
             </div>
           </div>
         )}
 
-        {/* Section: Markets Covered */}
-        {markets_covered && (
+        {/* Broker Services */}
+        {is_broker && type_of_broker_service?.length > 0 && (
           <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Markets Covered
-            </Label>
+            <h2 className="text-xl font-semibold mb-2">Broker Services</h2>
             <div className="flex flex-wrap gap-2">
-              {markets_covered.map((market, idx) => (
+              {type_of_broker_service.map((tag, i) => (
                 <span
-                  key={idx}
+                  key={i}
+                  className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Markets Covered */}
+        {markets_covered?.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Markets Covered</h2>
+            <div className="flex flex-wrap gap-2">
+              {markets_covered.map((market, i) => (
+                <span
+                  key={i}
                   className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
                 >
                   {market}
@@ -229,8 +205,6 @@ const ServiceProviderDetail = () => {
             </div>
           </div>
         )}
-
-        <div>{connectButton}</div>
       </div>
     </>
   );

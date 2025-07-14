@@ -161,7 +161,7 @@ const NavBar = () => {
               size="default"
               className="w-full justify-start"
             >
-              Talents
+              Talent
             </Button>
           </Link>
           <Link to="/services">

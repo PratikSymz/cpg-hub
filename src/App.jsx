@@ -5,22 +5,22 @@ import "./App.css";
 import AppLayout from "./layouts/app-layout.jsx";
 import LandingPage from "./pages/landing.jsx";
 import Onboarding from "./pages/onboarding.jsx";
-import FractionalJobListing from "./pages/fractional-job-listing.jsx";
+import FractionalJobListing from "./pages/jobs/fractional-job-listing.jsx";
 import FractionalJobDetail from "./pages/fractional-job-detail.jsx";
 import PostJob from "./pages/post-job.jsx";
 import SavedJobs from "./pages/saved-jobs.jsx";
 import MyJobs from "./pages/my-jobs.jsx";
-import ServiceProviderListing from "./pages/service-provider-listing.jsx";
-import BrandOnboarding from "./pages/brand-onboarding.jsx";
-import ServiceOnboarding from "./pages/service-onboarding.jsx";
-import ServiceProviderDetail from "./pages/service-provider-detail.jsx";
-import FractionalTalentListing from "./pages/fractional-talent-listing.jsx";
-import FractionalTalentDetail from "./pages/fractional-talent-detail.jsx";
-import TalentOnboarding from "./pages/talent-onboarding.jsx";
+import ServiceProviderListing from "./pages/service/service-provider-listing.jsx";
+import BrandOnboarding from "./pages/brand/brand-onboarding.jsx";
+import ServiceOnboarding from "./pages/service/service-onboarding.jsx";
+import ServiceProviderDetail from "./pages/service/service-provider-detail.jsx";
+import FractionalTalentListing from "./pages/talent/fractional-talent-listing.jsx";
+import FractionalTalentDetail from "./pages/talent/fractional-talent-detail.jsx";
+import TalentOnboarding from "./pages/talent/talent-onboarding.jsx";
 import ProtectedRoute from "./components/protected-route.jsx";
-import TalentEditProfile from "./pages/edit-fractional-talent.jsx";
+import TalentEditProfile from "./pages/talent/edit-fractional-talent.jsx";
 import EditJobPage from "./pages/edit-job.jsx";
-import EditServicePage from "./pages/edit-service.jsx";
+import EditServicePage from "./pages/service/edit-service.jsx";
 import FeedbackForm from "./pages/feedback-form.jsx";
 
 const router = createBrowserRouter([
@@ -108,7 +108,7 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <RouterProvider router={router} />;
+      <RouterProvider router={router} />
     </ThemeProvider>
   );
 }

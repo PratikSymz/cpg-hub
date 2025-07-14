@@ -138,8 +138,8 @@ const FractionalJobDetail = () => {
       </div>
       <div className="flex flex-col gap-10 px-6 pb-16 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 w-full">
+          <div className="flex items-center sm:items-start gap-4">
             <img
               src={job?.brand && logo_url}
               alt="Profile"

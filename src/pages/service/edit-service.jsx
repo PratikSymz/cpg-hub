@@ -1,24 +1,25 @@
-import React, { useRef } from "react";
+// EditServicePage.jsx
+import React, { useEffect, useRef, useState } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import useFetch from "@/hooks/use-fetch.jsx";
+import { getMyServiceProfile, updateService } from "@/api/apiServices.js";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
-import { useWatch } from "react-hook-form";
 import { BarLoader } from "react-spinners";
-import useFetch from "@/hooks/use-fetch.jsx";
-import { addNewService } from "@/api/apiServices.js";
+import clsx from "clsx";
 import {
   categoryOfService,
   marketsCovered,
   typeOfBrokerService,
 } from "@/constants/filters.js";
-import clsx from "clsx";
-import { ROLE_SERVICE } from "@/constants/roles.js";
-import { ServiceSchema } from "@/schemas/service-schema.js";
+import { Loader2Icon } from "lucide-react";
+import { ServiceSchemaWithName } from "@/schemas/service-schema.js";
 import { toast } from "sonner";
 import RequiredLabel from "@/components/required-label.jsx";
 import {
@@ -29,75 +30,132 @@ import {
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
 
-const ServiceOnboarding = () => {
+const EditServicePage = () => {
   const { user, isLoaded } = useUser();
+  const fileInputRef = useRef(null);
+  const [profileLoad, showProfileLoad] = useState(false);
+  const [logoPreview, setLogoPreview] = useState("");
   const navigate = useNavigate();
-  const submittedRef = useRef(false); // Block duplicate submission
-
-  const handleRoleSelection = async (role) => {
-    const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
-      ? user.unsafeMetadata.roles
-      : [];
-
-    if (existingRoles.includes(role)) {
-      console.log(`Role "${role}" already present`);
-      return;
-    }
-
-    const updatedRoles = [...existingRoles, role];
-
-    try {
-      await user.update({ unsafeMetadata: { roles: updatedRoles } });
-      toast.success(`Role updated to: ${role}`);
-      console.log(`Role updated to: ${role}`);
-    } catch (err) {
-      toast.error("Error updating role");
-      console.error("Error updating role:", err);
-    }
-  };
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
+      first_name: "",
+      last_name: "",
+      company_name: "",
+      company_website: "",
+      logo: undefined,
+      num_employees: "",
+      area_of_specialization: "",
       category_of_service: [],
       type_of_broker_service: [],
       markets_covered: [],
+      customers_covered: "",
     },
-    resolver: zodResolver(ServiceSchema),
+    resolver: zodResolver(ServiceSchemaWithName),
   });
-  const selectedCategories =
-    useWatch({ control, name: "category_of_service" }) ?? [];
 
-  const { func: submitBrokerProfile, loading, error } = useFetch(addNewService);
+  const {
+    data: serviceData,
+    loading,
+    func: fetchService,
+  } = useFetch(getMyServiceProfile);
+  const {
+    func: saveService,
+    loading: saving,
+    error: saveError,
+  } = useFetch(updateService);
+
+  const selectedCategories = useWatch({ control, name: "category_of_service" });
+  const shouldShowBrokerServices = selectedCategories.includes("Broker");
+  const shouldShowMarketsCovered = selectedCategories?.some((val) =>
+    ["Broker", "Sales", "Merchandising"].includes(val)
+  );
+
+  useEffect(() => {
+    if (isLoaded && user && user?.id) {
+      fetchService({ user_id: user.id });
+    }
+  }, [isLoaded, user]);
+
+  useEffect(() => {
+    if (serviceData) {
+      setValue("first_name", user.firstName || "");
+      setValue("last_name", user.lastName || "");
+      setValue("company_name", serviceData.company_name || "");
+      setValue("company_website", serviceData.company_website || "");
+      setValue(
+        "area_of_specialization",
+        serviceData.area_of_specialization || ""
+      );
+      setValue("category_of_service", serviceData.category_of_service || []);
+      setValue("markets_covered", serviceData.markets_covered || []);
+      setValue(
+        "type_of_broker_service",
+        serviceData.type_of_broker_service || []
+      );
+      setValue("customers_covered", serviceData.customers_covered || "");
+      setValue("num_employees", serviceData.num_employees ?? ""); // use ?? for 0
+      if (serviceData.logo_url) setLogoPreview(serviceData.logo_url);
+    }
+  }, [serviceData]);
+
+  useEffect(() => {
+    if (!shouldShowBrokerServices) {
+      setValue("type_of_broker_service", []);
+    }
+    if (!shouldShowMarketsCovered) {
+      setValue("markets_covered", []);
+    }
+  }, [shouldShowBrokerServices, shouldShowMarketsCovered]);
+
+  const handleProfilePictureClick = () => fileInputRef.current.click();
+
+  const handleProfilePictureChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      showProfileLoad(true);
+      await user.setProfileImage({ file });
+      toast.success("Profile picture updated!");
+      showProfileLoad(false);
+    } catch (err) {
+      toast.error("Failed to update profile picture.");
+    }
+  };
 
   const onSubmit = async (data) => {
-    if (submittedRef.current) {
-      console.warn("Duplicate submission prevented");
-      return;
-    }
-    submittedRef.current = true;
+    const firstName = data.first_name;
+    const lastName = data.last_name;
 
     try {
-      if (user && user.id) {
-        await submitBrokerProfile({
-          is_broker: shouldShowBrokerServices,
-          user_id: user.id,
-          ...data,
-        });
-
-        await handleRoleSelection(ROLE_SERVICE);
-
-        toast.success("Profile Created!");
-        navigate("/services", { replace: true });
+      if (firstName !== user?.firstName || lastName !== user?.lastName) {
+        await user.update({ firstName, lastName });
       }
+
+      if (user && user.id) {
+        await saveService(
+          {
+            ...data,
+            is_broker: shouldShowBrokerServices,
+            type_of_broker_service: shouldShowBrokerServices
+              ? data.type_of_broker_service || []
+              : [], // ← forcefully empty if broker not selected
+            user_id: user.id,
+          },
+          { user_id: user.id }
+        );
+      }
+      toast.success("Service profile updated!");
+      navigate("/services", { replace: true });
     } catch (err) {
       console.log(err);
-      toast.error("Failed to create profile!");
-      submittedRef.current = false; // allow resubmission if needed
+      toast.error("Failed to update service profile.");
     }
   };
 
@@ -105,22 +163,63 @@ const ServiceOnboarding = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
-  // Define what triggers the next field
-  const shouldShowBrokerServices = selectedCategories.includes("Broker");
-  const shouldShowMarketsCovered = selectedCategories.some((val) =>
-    ["Broker", "Sales", "Merchandising"].includes(val)
-  );
-
   return (
-    <div>
-      <h1 className="text-4xl font-bold text-center mb-10">
-        Service Provider Onboarding
-      </h1>
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <h1 className="text-4xl font-bold mb-6">Edit Service Profile</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        {/* Profile Picture */}
+        <div className="flex gap-6 items-center my-4">
+          <img
+            src={user.imageUrl}
+            alt="Profile"
+            className="h-24 w-24 rounded-full border object-cover cursor-pointer"
+            onClick={handleProfilePictureClick}
+          />
+          {profileLoad && <Loader2Icon className="animate-spin h-6 w-6" />}
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 w-5/6 mx-auto"
-      >
+          <div>
+            <p className="font-semibold">
+              {user.primaryEmailAddress.emailAddress}
+            </p>
+            <p className="text-sm text-gray-500">(Click image to update)</p>
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleProfilePictureChange}
+            className="hidden"
+          />
+        </div>
+
+        {/* Name fields */}
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <RequiredLabel className={classLabel}>First Name</RequiredLabel>
+            <Input
+              className={classInput}
+              type="text"
+              placeholder="First name"
+              {...register("first_name")}
+            />
+            {errors.first_name && (
+              <FormError message={errors.first_name.message} />
+            )}
+          </div>
+          <div>
+            <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
+            <Input
+              className={classInput}
+              type="text"
+              placeholder="Last name"
+              {...register("last_name")}
+            />
+            {errors.last_name && (
+              <FormError message={errors.last_name.message} />
+            )}
+          </div>
+        </div>
+
+        {/* Company Name */}
         <div>
           <RequiredLabel className={classLabel}>Company Name</RequiredLabel>
           <Input
@@ -134,10 +233,11 @@ const ServiceOnboarding = () => {
           )}
         </div>
 
+        {/* Company Website */}
         <div>
           <Label className={classLabel}>Company Website</Label>
           <Input
-            type="text"
+            type="url"
             className={classInput}
             {...register("company_website")}
             placeholder="https://company.com"
@@ -147,21 +247,32 @@ const ServiceOnboarding = () => {
           )}
         </div>
 
+        {/* Company Logo */}
         <div>
           <Label className={classLabel}>Company Logo</Label>
+          {logoPreview && (
+            <div className="mb-4">
+              <img
+                src={logoPreview}
+                alt="Current Logo"
+                className="h-24 w-24 aspect-3/2 object-contain rounded border scale-100"
+              />
+            </div>
+          )}
           <Input
+            className={classInput}
             type="file"
             accept="image/*"
-            className="file:text-gray-500"
             {...register("logo")}
           />
+
           {errors.logo && (
             <FormError message={errors.logo.message.toString()} />
           )}
         </div>
 
         <div>
-          <RequiredLabel className={classLabel}>About Service</RequiredLabel>
+          <Label className={classLabel}>About</Label>
           <Textarea
             className={classTextArea}
             {...register("customers_covered")}
@@ -172,6 +283,7 @@ const ServiceOnboarding = () => {
           )}
         </div>
 
+        {/* Num Employees */}
         <div>
           <RequiredLabel className={classLabel}>
             Number of Employees
@@ -186,6 +298,7 @@ const ServiceOnboarding = () => {
           )}
         </div>
 
+        {/* Area of Specialization */}
         <div>
           <RequiredLabel className={classLabel}>
             Area of Specialization
@@ -201,15 +314,15 @@ const ServiceOnboarding = () => {
         </div>
 
         {/* Category of Service and Type of Broker Service */}
-        <div className="flex flex-row gap-24 justify-around my-6">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-24 justify-around my-6">
+          {/* Category of Service */}
           <div className="flex-1">
             <Controller
               name="category_of_service"
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
-                  const selected = field.value.includes(value);
-                  const updated = selected
+                  const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
                   field.onChange(updated);
@@ -221,7 +334,7 @@ const ServiceOnboarding = () => {
                       Category of Service
                     </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
-                      {categoryOfService.map(({ label, value }) => (
+                      {categoryOfService.map(({ label }) => (
                         <button
                           key={label}
                           type="button"
@@ -229,7 +342,7 @@ const ServiceOnboarding = () => {
                           className={clsx(
                             "rounded-md px-4 py-2 text-sm font-medium border",
                             field.value.includes(label)
-                              ? "bg-teal-600 text-white border-transparent"
+                              ? "bg-cpg-teal text-white border-transparent"
                               : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                           )}
                         >
@@ -246,15 +359,15 @@ const ServiceOnboarding = () => {
             )}
           </div>
 
+          {/* Type of Broker Service */}
           {shouldShowBrokerServices && (
             <div className="flex-1">
               <Controller
                 name="type_of_broker_service"
                 control={control}
-                render={({ field, formState }) => {
+                render={({ field }) => {
                   const toggleValue = (value) => {
-                    const selected = field.value.includes(value);
-                    const updated = selected
+                    const updated = field.value.includes(value)
                       ? field.value.filter((v) => v !== value)
                       : [...field.value, value];
                     field.onChange(updated);
@@ -266,7 +379,7 @@ const ServiceOnboarding = () => {
                         Type of Broker Service
                       </RequiredLabel>
                       <div className="grid grid-cols-2 gap-3">
-                        {typeOfBrokerService.map(({ label, value }) => (
+                        {typeOfBrokerService.map(({ label }) => (
                           <button
                             key={label}
                             type="button"
@@ -299,10 +412,9 @@ const ServiceOnboarding = () => {
             <Controller
               name="markets_covered"
               control={control}
-              render={({ field, formState }) => {
+              render={({ field }) => {
                 const toggleValue = (value) => {
-                  const selected = field.value.includes(value);
-                  const updated = selected
+                  const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
                   field.onChange(updated);
@@ -315,7 +427,7 @@ const ServiceOnboarding = () => {
                       merchandisers)
                     </RequiredLabel>
                     <div className="grid grid-cols-2 gap-3">
-                      {marketsCovered.map(({ label, value }) => (
+                      {marketsCovered.map(({ label }) => (
                         <button
                           key={label}
                           type="button"
@@ -341,19 +453,20 @@ const ServiceOnboarding = () => {
           </div>
         )}
 
-        {error && <FormError message={error.message} /> && console.log(error)}
+        {saveError && <FormError message={saveError.message} />}
 
         <Button
           variant="default"
           type="submit"
           size="lg"
           className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90"
+          disabled={saving}
         >
-          Submit Profile
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </form>
     </div>
   );
 };
 
-export default ServiceOnboarding;
+export default EditServicePage;

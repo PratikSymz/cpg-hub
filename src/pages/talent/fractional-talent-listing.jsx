@@ -27,7 +27,7 @@ const FractionalTalentListing = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaSpec, setAreaSpec] = useState("");
   const [levelExp, setLevelExp] = useState("");
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(true);
 
   const {
     func: funcTalents,
