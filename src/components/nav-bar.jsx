@@ -53,9 +53,9 @@ const NavBar = () => {
         <div className="flex items-center gap-4">
           <Link to="/">
             <img
-              src="/cpg_favicon.png"
+              src="/og-image.png"
               alt="CPG Hub Logo"
-              className="h-24 w-auto"
+              className="h-36 w-auto"
             />
           </Link>
           <p className="hidden lg:block text-sm md:text-base font-medium text-[#613f1b]">
