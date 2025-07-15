@@ -47,13 +47,13 @@ const NavBar = () => {
   };
 
   return (
-    <header className="w-full px-4 py-8 shadow-none">
+    <header className="w-full px-6 py-8 shadow-none">
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo and Tagline */}
         <div className="flex items-center gap-4">
           <Link to="/">
             <img
-              src="/og-image.png"
+              src="/og-image_transparent.png"
               alt="CPG Hub Logo"
               className="h-36 w-auto"
             />
