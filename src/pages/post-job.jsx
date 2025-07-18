@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { addNewJob } from "@/api/apiFractionalJobs.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
@@ -11,12 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { ROLE_BRAND } from "@/constants/roles.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 import {
   areasOfSpecialization,
@@ -124,7 +123,7 @@ const PostJob = () => {
       </h1>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col w-5/6 justify-self-center gap-4 m-6 pb-0"
+        className="flex flex-col justify-self-center gap-4"
       >
         {/* Job title */}
         <div>
@@ -152,7 +151,7 @@ const PostJob = () => {
           )}
         </div>
 
-        <div className="flex flex-row gap-16 justify-around my-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 justify-around my-6">
           {/* Scope of Work */}
           <div className="flex-1">
             <RequiredLabel className={classLabel}>Scope of Work</RequiredLabel>
@@ -237,7 +236,7 @@ const PostJob = () => {
         </div>
 
         {/* Area of Spec and Level of Exp */}
-        <div className="flex flex-col lg:flex-row gap-20 my-6">
+        <div className="flex flex-col lg:flex-row gap-8 my-8">
           {/* Area of Specialization */}
           <div className="flex-1">
             <Controller

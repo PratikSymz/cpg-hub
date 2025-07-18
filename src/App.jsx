@@ -19,7 +19,7 @@ import FractionalTalentDetail from "./pages/talent/fractional-talent-detail.jsx"
 import TalentOnboarding from "./pages/talent/talent-onboarding.jsx";
 import ProtectedRoute from "./components/protected-route.jsx";
 import TalentEditProfile from "./pages/talent/edit-fractional-talent.jsx";
-import EditJobPage from "./pages/edit-job.jsx";
+import EditJobPage from "./pages/jobs/edit-job.jsx";
 import EditServicePage from "./pages/service/edit-service.jsx";
 import FeedbackForm from "./pages/feedback-form.jsx";
 

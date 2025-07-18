@@ -433,7 +433,7 @@ const EditJobPage = () => {
             )}
           </div>
 
-          <div className="flex flex-row gap-16 justify-around my-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 justify-around my-6">
             {/* Scope of Work */}
             <div className="flex-1">
               <RequiredLabel className={classLabel}>
@@ -519,7 +519,7 @@ const EditJobPage = () => {
           </div>
 
           {/* Area of Spec and Level of Exp */}
-          <div className="flex flex-col lg:flex-row gap-20 my-6">
+          <div className="flex flex-col lg:flex-row gap-8 my-8">
             {/* Area of Specialization */}
             <div className="flex-1">
               <Controller
