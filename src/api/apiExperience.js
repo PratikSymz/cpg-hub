@@ -23,11 +23,13 @@ export async function getAllExperiences(token, { user_id }) {
 export async function addNewExperience(token, experienceData, { user_id }) {
   const supabase = await supabaseClient(token);
 
-  const file = experienceData.brand_logo?.[0];
+  // Brand logo url (experience)
   let brand_logo_url = null;
+  const file = experienceData.brand_logo?.[0];
+
+  const folder = "talent";
+  const bucket = "brands-experience";
   if (file) {
-    const folder = "talent";
-    const bucket = "brands-experience";
     // A new file was uploaded → upload it
     const fileName = formatBrandLogoUrl(user_id, file);
 
@@ -79,11 +81,12 @@ export async function updateExperience(
 ) {
   const supabase = await supabaseClient(token);
 
-  const folder = "talent";
-  const bucket = "brands-experience";
+  // Brand logo url (experience)
   let brand_logo_url = experienceData.brand_logo;
   const newFile = experienceData.brand_logo?.[0];
 
+  const folder = "talent";
+  const bucket = "brands-experience";
   if (newFile) {
     // A new file was uploaded → upload it
     const fileName = formatBrandLogoUrl(user_id, newFile);

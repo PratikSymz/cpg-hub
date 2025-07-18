@@ -93,6 +93,7 @@ const ServiceOnboarding = () => {
         await handleRoleSelection(ROLE_SERVICE);
 
         toast.success("Profile Created!");
+        console.log(data);
         navigate("/services", { replace: true });
         window.location.reload();
       }

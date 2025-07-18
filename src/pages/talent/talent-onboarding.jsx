@@ -96,7 +96,6 @@ const TalentOnboarding = () => {
         });
 
         await handleRoleSelection(ROLE_TALENT);
-
         toast.success("Profile Created!");
         navigate("/talents", { replace: true });
       }

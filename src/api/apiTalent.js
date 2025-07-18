@@ -77,28 +77,32 @@ export async function getMyTalentProfile(token, { user_id }) {
 export async function addNewTalent(token, talentData) {
   const supabase = await supabaseClient(token);
 
+  // Resume url
+  let resume_url = null;
+  const file = talentData.resume?.[0];
+
   const folder = "talent";
   const bucket = "resumes";
-  const file = talentData.resume?.[0];
-  // Generate a clean file name
-  const fileName = formatResumeUrl(talentData.user_id, file);
+  if (file) {
+    // Generate a clean file name
+    const fileName = formatResumeUrl(talentData.user_id, file);
 
-  // Upload the file
-  const { error: storageError } = await supabase.storage
-    .from(bucket)
-    .upload(`${folder}/${fileName}`, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-  if (storageError) throw new Error("Error uploading resume");
+    if (storageError) throw new Error("Error uploading resume");
 
-  // Get the public URL
-  const { data: publicUrlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(`${folder}/${fileName}`);
-  const resume_url = publicUrlData?.publicUrl;
-
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    resume_url = publicUrlData?.publicUrl;
+  }
   const { data, error } = await supabase
     .from(table_name)
     .insert([
@@ -126,12 +130,12 @@ export async function addNewTalent(token, talentData) {
 export async function updateTalent(token, talentData, { user_id }) {
   const supabase = await supabaseClient(token);
 
-  const folder = "talent";
-  const bucket = "resumes";
-
+  // Resume url
   let resume_url = talentData.resume_url;
   const newFile = talentData.resume?.[0];
 
+  const folder = "talent";
+  const bucket = "resumes";
   if (newFile) {
     // A new file was uploaded → upload it
     const fileName = formatResumeUrl(user_id, newFile);
