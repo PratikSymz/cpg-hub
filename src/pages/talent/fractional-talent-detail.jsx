@@ -23,6 +23,7 @@ import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 import TalentExperienceSection from "@/components/experience-section.jsx";
 import clsx from "clsx";
 import BackButton from "@/components/back-button.jsx";
+import ShowLoginDialog from "@/components/show-login-dialog.jsx";
 
 const tabs = [
   {
@@ -44,7 +45,7 @@ const tabs = [
 
 const FractionalTalentDetail = () => {
   const { id } = useParams();
-  const { isLoaded, user } = useUser();
+  const { isLoaded, user, isSignedIn } = useUser();
   const role = user?.unsafeMetadata?.role;
   const navigate = useNavigate();
 
@@ -52,6 +53,7 @@ const FractionalTalentDetail = () => {
   const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
   const [activeEndorsement, setActiveEndorsement] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   // Load talent
   const {
@@ -174,8 +176,23 @@ const FractionalTalentDetail = () => {
   });
 
   const connectButton =
-    user_info && user && user_info.user_id !== user.id ? (
+    user_info && user_info.user_id !== user?.id ? (
       <div className="flex flex-col text-sm mt-10">
+        <Button
+          className={"bg-cpg-brown hover:bg-cpg-brown/90"}
+          variant="default"
+          size="lg"
+          onClick={() => {
+            if (!isSignedIn || !user) {
+              setShowLoginDialog(true);
+            } else {
+              setConnectDialogOpen(true);
+            }
+          }}
+        >
+          Connect
+        </Button>
+
         <ConnectEmailDialog
           open={connectDialogOpen}
           setOpen={setConnectDialogOpen}
@@ -183,10 +200,9 @@ const FractionalTalentDetail = () => {
           senderUser={user}
           onSend={handleEmailSend}
         />
+        <ShowLoginDialog open={showLoginDialog} setOpen={setShowLoginDialog} />
       </div>
-    ) : (
-      <></>
-    );
+    ) : null;
 
   if (loadingTalent || !talent) {
     return <BarLoader width="100%" color="#36d7b7" />;

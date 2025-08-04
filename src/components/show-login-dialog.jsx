@@ -9,51 +9,32 @@ import {
 } from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
+import { useNavigate } from "react-router-dom";
 
 const defaultClass = "";
 
-const ConnectEmailDialog = ({
-  open,
-  setOpen,
-  targetUser,
-  senderUser,
-  onSend,
-}) => {
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
+const ShowLoginDialog = ({ open, setOpen }) => {
+  const navigate = useNavigate();
 
   const handleSend = async () => {
-    setSending(true);
-    await onSend(message);
-    setSending(false);
+    window.location.href = "https://accounts.mycpghub.com/sign-up";
     setOpen(false);
-    setMessage("");
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-      </DialogTrigger>
+      <DialogTrigger asChild></DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className={defaultClass}>
-          <DialogTitle className={defaultClass}>
-            Send a Message to {targetUser?.email}
-          </DialogTitle>
+          <DialogTitle className={defaultClass}>Sign in Required</DialogTitle>
         </DialogHeader>
-        <Textarea
-          rows={5}
-          placeholder={`Hi ${targetUser?.email}, I'd love to connect!`}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="mt-4"
-        />
+        <p>You need to be signed in to connect with talent.</p>
         <DialogFooter className="mt-4">
           <Button
             className={defaultClass}
             variant="ghost"
             size="default"
             onClick={() => setOpen(false)}
-            disabled={sending}
           >
             Cancel
           </Button>
@@ -62,9 +43,8 @@ const ConnectEmailDialog = ({
             variant="default"
             size="default"
             onClick={handleSend}
-            disabled={sending || !message.trim()}
           >
-            {sending ? "Sending..." : "Send"}
+            Sign In
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -72,4 +52,4 @@ const ConnectEmailDialog = ({
   );
 };
 
-export default ConnectEmailDialog;
+export default ShowLoginDialog;
