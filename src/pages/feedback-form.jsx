@@ -105,6 +105,7 @@ const FeedbackForm = () => {
           size="lg"
           disabled={sending || !message.trim() || !email.trim() || !name.trim()}
           className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
+          data-umami-event="Feedback Submission"
         >
           {sending ? "Sending..." : "Submit"}
         </Button>

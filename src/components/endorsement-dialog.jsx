@@ -48,6 +48,7 @@ const EndorsementDialog = ({ open, setOpen, onSend }) => {
             size="default"
             onClick={handleSubmit}
             className="bg-cpg-teal hover:bg-cpg-teal/90 cursor-pointer"
+            data-umami-event="Adding Endorsement"
           >
             Submit
           </Button>

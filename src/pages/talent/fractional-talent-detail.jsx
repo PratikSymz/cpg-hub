@@ -199,6 +199,7 @@ const FractionalTalentDetail = () => {
           targetUser={user_info}
           senderUser={user}
           onSend={handleEmailSend}
+          data-umami-event="Talent Connection"
         />
         <ShowLoginDialog open={showLoginDialog} setOpen={setShowLoginDialog} />
       </div>
