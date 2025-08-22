@@ -16,7 +16,7 @@ import {
 import clsx from "clsx";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
-import { Loader2Icon, X } from "lucide-react";
+import { ArrowLeft, Loader2Icon, X } from "lucide-react";
 import { syncUserProfile } from "@/api/apiUsers.js";
 import TalentExperienceSection from "@/components/experience-section.jsx";
 import { TalentSchemaWithName } from "@/schemas/talent-schema.js";
@@ -28,6 +28,7 @@ import {
   classTextArea,
 } from "@/constants/classnames.js";
 import FormError from "@/components/form-error.jsx";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 
 const EditTalentPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -39,8 +40,9 @@ const EditTalentPage = () => {
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
+    mode: "onChange", // enables tracking dirty fields
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -79,6 +81,9 @@ const EditTalentPage = () => {
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
   const [profileLoad, showProfileLoad] = useState(false);
+
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
 
   // Prefill form
   useEffect(() => {
@@ -174,14 +179,52 @@ const EditTalentPage = () => {
     }
   };
 
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
+
   if (loading || !isLoaded) {
     return <BarLoader width={"100%"} color="#36d7b7" />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold mb-6">Edit Profile</h1>
+      <div className="px-6">
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
 
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-6 w-5/6 mx-auto"

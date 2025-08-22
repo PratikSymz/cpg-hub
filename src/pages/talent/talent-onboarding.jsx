@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -15,7 +15,7 @@ import {
   levelsOfExperience,
 } from "@/constants/filters.js";
 import clsx from "clsx";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
 import { TalentSchema } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
@@ -27,6 +27,7 @@ import {
   classTextArea,
 } from "@/constants/classnames.js";
 import { toast } from "sonner";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 
 const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -41,12 +42,16 @@ const TalentOnboarding = () => {
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
 
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
+
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
+    mode: "onChange", // enables tracking dirty fields
     defaultValues: {
       level_of_experience: [],
       industry_experience: "",
@@ -56,6 +61,28 @@ const TalentOnboarding = () => {
     },
     resolver: zodResolver(TalentSchema),
   });
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
 
   const { func: submitTalentProfile, loading, error } = useFetch(addNewTalent);
 
@@ -120,6 +147,23 @@ const TalentOnboarding = () => {
 
   return (
     <div className="flex flex-col gap-10 mt-10">
+      <div className="px-6">
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
+
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-4">

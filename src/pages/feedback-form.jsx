@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label.jsx";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
+import ShowLoginDialog from "@/components/show-login-dialog.jsx";
 
 const FeedbackForm = () => {
-  const { user, isLoaded } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const [name, setName] = useState(user?.fullName || "");
   const [email, setEmail] = useState(
     user?.primaryEmailAddress?.emailAddress || ""
@@ -27,6 +28,12 @@ const FeedbackForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("Please fill out all fields.");
+      return;
+    }
+
     setSending(true);
 
     try {
@@ -103,7 +110,7 @@ const FeedbackForm = () => {
           type="submit"
           variant="default"
           size="lg"
-          disabled={sending || !message.trim() || !email.trim() || !name.trim()}
+          // disabled={sending || !message.trim() || !email.trim() || !name.trim()}
           className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
           data-umami-event="Feedback Submission"
         >

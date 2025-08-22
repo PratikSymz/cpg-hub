@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -20,11 +20,16 @@ import {
   classTextArea,
 } from "@/constants/classnames.js";
 import { toast } from "sonner";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import { ArrowLeft } from "lucide-react";
 
 const BrandOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const submittedRef = useRef(false); // Block duplicate submission
+
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
 
   const handleRoleSelection = async (role) => {
     const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
@@ -51,12 +56,34 @@ const BrandOnboarding = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     setValue,
     watch,
   } = useForm({
     resolver: zodResolver(BrandSchema),
   });
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
 
   const {
     loading: loadingBrandCreate,
@@ -96,6 +123,23 @@ const BrandOnboarding = () => {
 
   return (
     <div>
+      <div className="px-6">
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
+
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
         Brand Onboarding
       </h1>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -28,11 +28,16 @@ import {
 } from "@/constants/classnames.js";
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import { ArrowLeft } from "lucide-react";
 
 const ServiceOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const submittedRef = useRef(false); // Block duplicate submission
+
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
 
   const handleRoleSelection = async (role) => {
     const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
@@ -60,7 +65,7 @@ const ServiceOnboarding = () => {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     defaultValues: {
       area_of_specialization: "",
@@ -70,6 +75,29 @@ const ServiceOnboarding = () => {
     },
     resolver: zodResolver(ServiceSchema),
   });
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
+
   const selectedCategories =
     useWatch({ control, name: "category_of_service" }) ?? [];
 
@@ -120,6 +148,23 @@ const ServiceOnboarding = () => {
 
   return (
     <div>
+      <div className="px-6">
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
+
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       <h1 className="text-2xl lg:text-4xl font-bold text-center mb-10">
         Service Provider Onboarding
       </h1>

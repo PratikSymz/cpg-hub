@@ -1,11 +1,16 @@
 import CoincentricCircles from "@/components/CoincentricCircles.jsx";
 import NavBar from "@/components/nav-bar.jsx";
-import React from "react";
-import { Link, Outlet } from "react-router-dom";
-import { Button } from "@/components/ui/button.jsx";
+import React, { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
+import { useUser } from "@clerk/clerk-react";
+import ShowLoginDialog from "@/components/show-login-dialog.jsx";
 
 const AppLayout = () => {
+  const navigate = useNavigate();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
   return (
     <div>
       <Toaster position="bottom-left" richColors />
@@ -23,17 +28,24 @@ const AppLayout = () => {
           Feedback
         </h2>
         <p className="text-sm sm:text-base text-gray-700 my-2 leading-relaxed">
-          Welcome to the beta version of CPG HUB! Thank you for being here.
-          Please{" "}
-          <Link
-            to="/feedback"
-            className="text-cpg-brown underline underline-offset-4 hover:text-cpg-teal transition"
+          Welcome to the <span className="font-semibold">beta version</span> of
+          CPG HUB! Thank you for being here. Please{" "}
+          <button
+            onClick={() => {
+              if (!isSignedIn || !user) {
+                setShowLoginDialog(true);
+              } else {
+                navigate("/feedback");
+              }
+            }}
+            className="text-cpg-brown underline underline-offset-4 hover:text-cpg-brown/90 transition-colors cursor-pointer"
           >
             click here
-          </Link>{" "}
-          to send any feedback on how we can improve the user experience and
+          </button>{" "}
+          to share your feedback on how we can improve the user experience and
           make this an even better tool for our CPG community.
         </p>
+        <ShowLoginDialog open={showLoginDialog} setOpen={setShowLoginDialog} />
       </footer>
     </div>
   );

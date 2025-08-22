@@ -17,7 +17,11 @@ import ConnectDialog from "@/components/endorsement-dialog.jsx";
 import { FaGlobe, FaLinkedin } from "react-icons/fa";
 import ComposeEmailDialog from "@/components/connect-email-dialog.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
-import { getAllEndorsements, updateEndorsement } from "@/api/apiConnections.js";
+import {
+  getAllEndorsements,
+  createEndorsement,
+  updateEndorsement,
+} from "@/api/apiConnections.js";
 import EndorsementDialog from "@/components/endorsement-dialog.jsx";
 import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 import TalentExperienceSection from "@/components/experience-section.jsx";
@@ -50,7 +54,11 @@ const FractionalTalentDetail = () => {
   const navigate = useNavigate();
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+
   const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
+  const [endorseTargetId, setEndorseTargetId] = useState(null);
+  // ^ who we’re endorsing: either the profile owner OR a specific endorser (for endorse‑back)
+
   const [activeEndorsement, setActiveEndorsement] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -92,9 +100,9 @@ const FractionalTalentDetail = () => {
     error: errorEndorsements,
   } = useFetch(getAllEndorsements);
 
-  // Update endorsement message
-  const { func: funcUpdateEndorsement, loading: loadingUpdateEndorsement } =
-    useFetch(updateEndorsement);
+  // Create endorsement message
+  const { func: funcCreateEndorsement, loading: loadingUpdateEndorsement } =
+    useFetch(createEndorsement);
 
   useEffect(() => {
     // Load endorsements for this talent
@@ -149,7 +157,7 @@ const FractionalTalentDetail = () => {
   const handleEndorsementSubmit = async (message) => {
     if (!isLoaded || !user?.id || !user_info?.user_id) return;
     try {
-      await funcUpdateEndorsement(message, {
+      await funcCreateEndorsement(message, {
         endorser_id: user.id,
         target_id: user_info.user_id,
       });
@@ -363,7 +371,7 @@ const FractionalTalentDetail = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Endorsements</h2>
-                {user_info?.user_id !== user?.id && !hasEndorsed && (
+                {isSignedIn && user_info?.user_id !== user?.id && !hasEndorsed && (
                   <EndorsementDialog
                     open={endorseDialogOpen}
                     setOpen={setEndorseDialogOpen}
@@ -383,44 +391,76 @@ const FractionalTalentDetail = () => {
               )}
 
               <ul className="space-y-4">
-                {sortedEndorsements?.map((endorsement) => (
-                  <li
-                    key={endorsement.id}
-                    className="border rounded-lg p-4 bg-white shadow-sm flex flex-col sm:flex-row justify-between gap-4"
-                  >
-                    {/* Profile + Message */}
-                    <div className="flex gap-4">
-                      <img
-                        src={endorsement.endorser?.profile_picture_url}
-                        alt={endorsement.endorser?.full_name}
-                        className="w-14 h-14 rounded-full object-cover border"
-                      />
-                      <div>
-                        <p className="font-semibold">
-                          {endorsement.endorser?.full_name}
-                        </p>
-                        <p className="text-gray-700 mt-1">
-                          {endorsement.message}
-                        </p>
-                      </div>
-                    </div>
+                {sortedEndorsements?.map((endorsement) => {
+                  const endorserId = endorsement.endorser?.user_id; // who endorsed the owner
+                  const endorsedBack = endorsements.some(
+                    // Has the current user already endorsed this endorser? (reciprocal)
+                    (rev) =>
+                      rev.from_user_id === user?.id &&
+                      rev.to_user_id === endorserId
+                  );
 
-                    {/* Edit button */}
-                    {endorsement.endorser?.user_id === user?.id && (
-                      <Button
-                        className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 w-full sm:w-auto"
-                        variant="outline"
-                        size="lg"
-                        onClick={() => {
-                          setActiveEndorsement(endorsement);
-                          setEditDialogOpen(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                  </li>
-                ))}
+                  return (
+                    <li
+                      key={endorsement.id}
+                      className="border rounded-lg p-4 bg-white shadow-sm flex flex-col sm:flex-row justify-between gap-4"
+                    >
+                      {/* Profile + Message */}
+                      <div className="flex gap-4">
+                        <img
+                          src={endorsement.endorser?.profile_picture_url}
+                          alt={endorsement.endorser?.full_name}
+                          className="w-14 h-14 rounded-full object-cover border"
+                        />
+                        <div>
+                          <p className="font-semibold">
+                            {endorsement.endorser?.full_name}
+                          </p>
+                          <p className="text-gray-700 mt-1">
+                            {endorsement.message}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-center self-center gap-4">
+                        {/* Edit my own endorsement on the owner */}
+                        {isSignedIn && endorserId === user?.id && (
+                          <Button
+                            className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
+                            variant="outline"
+                            size="lg"
+                            onClick={() => {
+                              setActiveEndorsement(endorsement);
+                              setEndorseTargetId(user_info.user_id); // editing endorsement TO the owner
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        )}
+
+                        {/* Endorse back the endorser (reciprocal) */}
+                        {isSignedIn && !endorsedBack && endorserId !== user?.id && (
+                          <Button
+                            className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
+                            variant="outline"
+                            size="lg"
+                            onClick={() => {
+                              if (!isSignedIn || !user) {
+                                setShowLoginDialog(true);
+                                return;
+                              }
+                              setEndorseTargetId(endorserId); // <-- target is the original endorser
+                              setEndorseDialogOpen(true);
+                              // optionally track target
+                            }}
+                          >
+                            Endorse back
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
                 {activeEndorsement && (
                   <EndorsementEditDialog
                     open={editDialogOpen}

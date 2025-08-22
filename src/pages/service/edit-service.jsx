@@ -29,6 +29,8 @@ import {
 } from "@/constants/classnames.js";
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import { ArrowLeft } from "lucide-react";
 
 const EditServicePage = () => {
   const { user, isLoaded } = useUser();
@@ -37,12 +39,15 @@ const EditServicePage = () => {
   const [logoPreview, setLogoPreview] = useState("");
   const navigate = useNavigate();
 
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
+
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     defaultValues: {
       first_name: "",
@@ -59,6 +64,28 @@ const EditServicePage = () => {
     },
     resolver: zodResolver(ServiceSchemaWithName),
   });
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
 
   const {
     data: serviceData,
@@ -164,7 +191,24 @@ const EditServicePage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <div>
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
+
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       <h1 className="text-4xl font-bold mb-6">Edit Service Profile</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         {/* Profile Picture */}

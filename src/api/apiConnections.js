@@ -37,6 +37,24 @@ export async function getAllEndorsements(token, { user_id }) {
   return data;
 }
 
+export async function createEndorsement(
+  token,
+  message,
+  { endorser_id, target_id }
+) {
+  const supabase = await supabaseClient(token);
+  const { data, error } = await supabase
+    .from("endorsements")
+    .insert([
+      { from_user_id: endorser_id, to_user_id: target_id, message: message },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 // Create/Update an endorsement
 export async function updateEndorsement(
   token,
@@ -62,6 +80,18 @@ export async function updateEndorsement(
   }
 
   return data;
+}
+
+export async function hasEndorsed(token, { from_user_id, to_user_id }) {
+  const supabase = await supabaseClient(token);
+  const { count, error } = await supabase
+    .from(table_name)
+    .select("*", { count: "exact", head: true })
+    .eq("from_user_id", from_user_id)
+    .eq("to_user_id", to_user_id);
+
+  if (error) throw error;
+  return (count ?? 0) > 0;
 }
 
 export async function deleteEndorsement(token, { endorser_id }) {

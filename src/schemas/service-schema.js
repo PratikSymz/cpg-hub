@@ -11,7 +11,7 @@ export const ServiceSchema = z
         if (!trimmed) return "";
         return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
       })
-      .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
+      .refine((xval) => !val || WEBSITE_SCHEMA.test(val), {
         message: "Must be a valid URL",
       })
       .optional(),

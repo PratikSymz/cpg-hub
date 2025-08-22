@@ -27,13 +27,13 @@ const SavedJobs = () => {
   }
 
   return (
-    <div>
-      <h1 className="gradient-title font-extrabold text-6xl sm:text-7xl text-center pb-8">
+    <div className="w-full px-4 sm:px-6 py-10 max-w-6xl mx-auto flex flex-col gap-10">
+      <h1 className="gradient-title font-extrabold text-5xl lg:text-6xl text-center pb-8">
         Saved Jobs
       </h1>
 
       {loadingSavedJobs === false && (
-        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {savedJobs?.length ? (
             savedJobs?.map((saved) => {
               // console.log(saved);

@@ -36,12 +36,17 @@ import {
 } from "@/constants/classnames.js";
 import { toast } from "sonner";
 import NumberInput from "@/components/number-input.jsx";
+import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import { ArrowLeft } from "lucide-react";
 
 const EditJobPage = () => {
   const { id } = useParams();
   const { user, isLoaded, isSignedIn } = useUser();
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  const [showDialog, setShowDialog] = useState(false);
+  const [navTarget, setNavTarget] = useState(null);
 
   if (!user) {
     navigate("/");
@@ -73,6 +78,29 @@ const EditJobPage = () => {
     },
     resolver: zodResolver(JobSchema),
   });
+
+  const handleBackClick = () => {
+    if (brandForm.formState.isDirty || jobForm.formState.isDirty) {
+      setShowDialog(true);
+      setNavTarget(-1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShowDialog(false);
+    if (navTarget !== null) {
+      navigate(navTarget);
+      setNavTarget(null);
+    }
+  };
+
+  const handleStay = () => {
+    setShowDialog(false);
+    setNavTarget(null);
+  };
+
   const jobErrors = jobForm.formState.errors;
 
   const {
@@ -226,6 +254,23 @@ const EditJobPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div>
+        <Button
+          className=""
+          onClick={handleBackClick}
+          variant="ghost"
+          size="default"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hover:underline">Back</span>
+        </Button>
+
+        <DiscardChangesGuard
+          show={showDialog}
+          onDiscard={handleDiscard}
+          onStay={handleStay}
+        />
+      </div>
       <h1 className="text-4xl font-bold mb-6">Edit Brand and Job</h1>
 
       {/* --- BRAND DETAILS --- */}

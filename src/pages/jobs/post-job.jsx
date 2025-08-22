@@ -117,8 +117,8 @@ const PostJob = () => {
       .join(" ");
 
   return (
-    <div>
-      <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
+    <div className="px-4 sm:px-6 py-10 max-w-3xl mx-auto">
+      <h1 className="gradient-title font-extrabold text-4xl sm:text-6xl text-center pb-8">
         Post a Job
       </h1>
       <form
