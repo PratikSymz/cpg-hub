@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -19,6 +19,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { ROLE_TALENT } from "@/constants/roles.js";
 import { TalentSchema } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
+import { toTitleCase } from "@/utils/common-functions.js";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import {
@@ -132,14 +133,6 @@ const TalentOnboarding = () => {
       submittedRef.current = false; // allow resubmission if needed
     }
   };
-
-  const toTitleCase = (str) =>
-    str
-      .toLowerCase()
-      .split(" ")
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
 
   if (!isLoaded || loading) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;

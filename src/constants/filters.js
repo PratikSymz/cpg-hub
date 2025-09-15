@@ -1,5 +1,3 @@
-import { late } from "zod";
-
 export const areasOfSpecialization = [
   { label: "Sales", value: "sales" },
   { label: "Marketing", value: "marketing" },
@@ -25,8 +23,11 @@ export const categoryOfService = [
   { label: "Admin", value: "admin" },
   { label: "E-commerce", value: "e_comm" },
   { label: "Co-Manufacturing", value: "co_man" },
+  { label: "Packaging", value: "packaging" },
+  { label: "Mailers", value: "mailers" },
+  { label: "Displays & Merchandising Assets", value: "displays" },
   { label: "Trade Spend", value: "trade_spend" },
-  { label: "Data and insights", value: "data_ins" },
+  { label: "Data & Insights", value: "data_ins" },
   { label: "Digital/Social", value: "digital" },
   { label: "Recruiting", value: "recruiting" },
   { label: "Supply Chain", value: "supply_chain" },

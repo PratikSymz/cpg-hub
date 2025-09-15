@@ -18,8 +18,10 @@ import {
   marketsCovered,
   typeOfBrokerService,
 } from "@/constants/filters.js";
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, X } from "lucide-react";
 import { ServiceSchemaWithName } from "@/schemas/service-schema.js";
+import { OTHER_SCHEMA } from "@/constants/schemas.js";
+import { toTitleCase } from "@/utils/common-functions.js";
 import { toast } from "sonner";
 import RequiredLabel from "@/components/required-label.jsx";
 import {
@@ -38,6 +40,10 @@ const EditServicePage = () => {
   const [profileLoad, showProfileLoad] = useState(false);
   const [logoPreview, setLogoPreview] = useState("");
   const navigate = useNavigate();
+
+  const [otherCat, setOtherCat] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherCatError, setOtherCatError] = useState("");
 
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
@@ -366,9 +372,20 @@ const EditServicePage = () => {
               control={control}
               render={({ field }) => {
                 const toggleValue = (value) => {
+                  if (value === "Other") {
+                    setShowOtherInput((prev) => !prev);
+                    return;
+                  }
+
                   const updated = field.value.includes(value)
                     ? field.value.filter((v) => v !== value)
                     : [...field.value, value];
+
+                  field.onChange(updated);
+                };
+
+                const removeValue = (value) => {
+                  const updated = field.value.filter((v) => v !== value);
                   field.onChange(updated);
                 };
 
@@ -394,13 +411,93 @@ const EditServicePage = () => {
                         </button>
                       ))}
                     </div>
+
+                    {/* Other input box */}
+                    {showOtherInput && (
+                      <>
+                        <div className="flex gap-2 items-center my-4">
+                          <Input
+                            type="text"
+                            placeholder="Enter your specialization"
+                            value={otherCat}
+                            onChange={(e) => setOtherCat(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            className=""
+                            variant="default"
+                            size="lg"
+                            type="button"
+                            onClick={() => {
+                              const trimmed = toTitleCase(otherCat.trim());
+                              // Check: valid string, not a duplicate (case-insensitive)
+                              const isDuplicate = field.value.some(
+                                (val) =>
+                                  val.toLowerCase() === trimmed.toLowerCase()
+                              );
+                              // Min 3 letters, no special chars
+                              const isValid = OTHER_SCHEMA.test(trimmed);
+
+                              if (!trimmed) {
+                                setOtherCatError(
+                                  "Service category cannot be empty."
+                                );
+                                return;
+                              }
+                              if (isDuplicate) {
+                                setOtherCatError(
+                                  "This category has already been added."
+                                );
+                                return;
+                              }
+                              if (!isValid) {
+                                setOtherCatError(
+                                  "Must be at least 3 characters and contain only letters, numbers, spaces.\n Allowed symbols: /, -, &, +, :, ., and ()"
+                                );
+                                return;
+                              }
+
+                              if (trimmed && !isDuplicate && isValid) {
+                                field.onChange([...field.value, trimmed]);
+                                setOtherCat("");
+                                setOtherCatError("");
+                              }
+                            }}
+                          >
+                            Add
+                          </Button>
+                          {otherCatError && (
+                            <FormError message={otherCatError} />
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Show selected values as tags */}
+                    <div className="flex flex-wrap gap-2 my-2">
+                      {(field.value ?? []).map((val, idx) => (
+                        <span
+                          key={idx}
+                          className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"
+                        >
+                          {val}
+                          <button
+                            type="button"
+                            onClick={() => removeValue(val)}
+                            className="ml-2 text-teal-800 hover:text-red-500"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    {errors.category_of_service && (
+                      <FormError message={errors.category_of_service.message} />
+                    )}
                   </div>
                 );
               }}
             />
-            {errors.category_of_service && (
-              <FormError message={errors.category_of_service.message} />
-            )}
           </div>
 
           {/* Type of Broker Service */}
