@@ -28,8 +28,7 @@ const AppLayout = () => {
           Feedback
         </h2>
         <p className="text-sm sm:text-base text-gray-700 my-2 leading-relaxed">
-          Welcome to the <span className="font-semibold">beta version</span> of
-          CPG HUB! Thank you for being here. Please{" "}
+          Welcome to CPG HUB! Thank you for being here. Please{" "}
           <button
             onClick={() => {
               if (!isSignedIn || !user) {

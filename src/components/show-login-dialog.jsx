@@ -28,7 +28,7 @@ const ShowLoginDialog = ({ open, setOpen }) => {
         <DialogHeader className={defaultClass}>
           <DialogTitle className={defaultClass}>Sign in Required</DialogTitle>
         </DialogHeader>
-        <p>You need to be signed in to connect with talent.</p>
+        <p>You need to be signed in to provide feedback.</p>
         <DialogFooter className="mt-4">
           <Button
             className={defaultClass}
