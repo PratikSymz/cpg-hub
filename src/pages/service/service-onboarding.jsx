@@ -73,6 +73,7 @@ const ServiceOnboarding = () => {
     control,
     formState: { errors, isDirty },
   } = useForm({
+    mode: "onChange", // enables tracking dirty fields
     defaultValues: {
       area_of_specialization: "",
       category_of_service: [],
@@ -125,11 +126,10 @@ const ServiceOnboarding = () => {
         });
 
         await handleRoleSelection(ROLE_SERVICE);
-
         toast.success("Profile Created!");
         console.log(data);
         navigate("/services", { replace: true });
-        window.location.reload();
+        // window.location.reload();
       }
     } catch (err) {
       console.log(err);
