@@ -4,7 +4,7 @@ export const config = { runtime: "edge" };
 const API = "https://api.clerk.com/v1";
 const API_VERSION = "2025-04-10";
 
-// 👇 allow localhost during dev + your production site
+// 👇 Allow dev & prod origins (edit to your domains)
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
   "https://cpg-hub.vercel.app",
@@ -30,6 +30,19 @@ const H = (secret: string) => ({
 });
 
 type Role = "talent" | "service" | "brand";
+type BucketName =
+  | "total"
+  | "none"
+  | "talentOnly"
+  | "serviceOnly"
+  | "brandOnly"
+  | "talentService"
+  | "talentBrand"
+  | "brandService"
+  | "allThree"
+  | "anyTalent"
+  | "anyService"
+  | "anyBrand";
 
 function normalizeRoles(obj: any): Role[] {
   const arr =
@@ -43,7 +56,7 @@ function normalizeRoles(obj: any): Role[] {
     .filter((r) => r === "talent" || r === "service" || r === "brand");
 }
 
-// Offset pagination (Edge-friendly)
+// Offset pagination over Clerk users (Edge-friendly)
 async function listAllUsers(secret: string, cap = 50000) {
   const pageSize = 1000;
   let offset = 0;
@@ -67,6 +80,15 @@ async function listAllUsers(secret: string, cap = 50000) {
   return all;
 }
 
+function toSummaryUser(u: any) {
+  return {
+    id: u.id,
+    email: u.email_addresses?.[0]?.email_address ?? "",
+    createdAt: u.created_at ?? u.createdAt,
+    name: [u.first_name, u.last_name].filter(Boolean).join(" ") || null,
+  };
+}
+
 export default async function handler(req: Request) {
   const origin = req.headers.get("Origin");
   const baseHeaders = corsHeaders(origin);
@@ -85,8 +107,22 @@ export default async function handler(req: Request) {
   }
 
   try {
+    const url = new URL(req.url);
+    const bucketParam = (url.searchParams.get("bucket") || "").trim() as
+      | BucketName
+      | "";
+    const limit = Math.max(
+      1,
+      Math.min(1000, Number(url.searchParams.get("limit") || "50"))
+    );
+    const offset = Math.max(0, Number(url.searchParams.get("offset") || "0"));
+    const q = (url.searchParams.get("q") || "").toLowerCase(); // optional search
+
+    const listing = !!bucketParam;
+
     const users = await listAllUsers(secret);
 
+    // Counters
     let total = 0,
       none = 0;
     let talentOnly = 0,
@@ -100,6 +136,19 @@ export default async function handler(req: Request) {
       anyService = 0,
       anyBrand = 0;
 
+    const bucketMembers: any[] = [];
+
+    function maybeCollect(bucket: BucketName, u: any) {
+      if (!listing) return;
+      if (bucketParam !== bucket) return;
+      const s = toSummaryUser(u);
+      if (q) {
+        const hay = `${s.email} ${s.name || ""}`.toLowerCase();
+        if (!hay.includes(q)) return;
+      }
+      bucketMembers.push(s);
+    }
+
     for (const u of users) {
       total++;
       const roles = new Set(normalizeRoles(u));
@@ -111,24 +160,103 @@ export default async function handler(req: Request) {
       if (hasS) anyService++;
       if (hasB) anyBrand++;
 
-      const count = roles.size;
-      if (count === 0) {
+      const size = roles.size;
+
+      if (size === 0) {
         none++;
+        maybeCollect("none", u);
         continue;
       }
-      if (count === 1) {
-        if (hasT) talentOnly++;
-        else if (hasS) serviceOnly++;
-        else if (hasB) brandOnly++;
+
+      if (size === 1) {
+        if (hasT) {
+          talentOnly++;
+          maybeCollect("talentOnly", u);
+        } else if (hasS) {
+          serviceOnly++;
+          maybeCollect("serviceOnly", u);
+        } else if (hasB) {
+          brandOnly++;
+          maybeCollect("brandOnly", u);
+        }
+        // also collect into "any*" buckets
+        if (hasT) maybeCollect("anyTalent", u);
+        if (hasS) maybeCollect("anyService", u);
+        if (hasB) maybeCollect("anyBrand", u);
         continue;
       }
-      if (count === 2) {
-        if (hasT && hasS) talentService++;
-        else if (hasT && hasB) talentBrand++;
-        else if (hasB && hasS) brandService++;
+
+      if (size === 2) {
+        if (hasT && hasS) {
+          talentService++;
+          maybeCollect("talentService", u);
+        } else if (hasT && hasB) {
+          talentBrand++;
+          maybeCollect("talentBrand", u);
+        } else if (hasB && hasS) {
+          brandService++;
+          maybeCollect("brandService", u);
+        }
+        // any*
+        if (hasT) maybeCollect("anyTalent", u);
+        if (hasS) maybeCollect("anyService", u);
+        if (hasB) maybeCollect("anyBrand", u);
         continue;
       }
-      if (count >= 3) allThree++;
+
+      if (size >= 3) {
+        allThree++;
+        maybeCollect("allThree", u);
+        // any*
+        if (hasT) maybeCollect("anyTalent", u);
+        if (hasS) maybeCollect("anyService", u);
+        if (hasB) maybeCollect("anyBrand", u);
+      }
+    }
+
+    if (listing) {
+      const totalInBucket =
+        bucketParam === "total"
+          ? total
+          : bucketParam === "none"
+            ? none
+            : bucketParam === "talentOnly"
+              ? talentOnly
+              : bucketParam === "serviceOnly"
+                ? serviceOnly
+                : bucketParam === "brandOnly"
+                  ? brandOnly
+                  : bucketParam === "talentService"
+                    ? talentService
+                    : bucketParam === "talentBrand"
+                      ? talentBrand
+                      : bucketParam === "brandService"
+                        ? brandService
+                        : bucketParam === "allThree"
+                          ? allThree
+                          : bucketParam === "anyTalent"
+                            ? anyTalent
+                            : bucketParam === "anyService"
+                              ? anyService
+                              : bucketParam === "anyBrand"
+                                ? anyBrand
+                                : 0;
+
+      // newest first
+      bucketMembers.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const page = bucketMembers.slice(offset, offset + limit);
+
+      return new Response(
+        JSON.stringify({
+          bucket: bucketParam,
+          total: totalInBucket,
+          limit,
+          offset,
+          count: page.length,
+          users: page,
+        }),
+        { headers: baseHeaders }
+      );
     }
 
     const payload = {
@@ -138,9 +266,7 @@ export default async function handler(req: Request) {
       any: { anyTalent, anyService, anyBrand },
     };
 
-    return new Response(JSON.stringify(payload), {
-      headers: baseHeaders,
-    });
+    return new Response(JSON.stringify(payload), { headers: baseHeaders });
   } catch (e: any) {
     return new Response(
       JSON.stringify({ error: e?.message || "Internal error" }),
