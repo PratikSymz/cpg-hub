@@ -214,33 +214,62 @@ export default async function handler(req: Request) {
       }
     }
 
+    // If listing, paginate the chosen bucket
     if (listing) {
+      // special case: total = all users
+      if (bucketParam === "total") {
+        // map all users to the light shape
+        let all = users.map(toSummaryUser);
+
+        // optional search
+        if (q) {
+          const ql = q.toLowerCase();
+          all = all.filter((u) =>
+            `${u.email} ${u.name ?? ""}`.toLowerCase().includes(ql)
+          );
+        }
+
+        // newest first
+        all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const page = all.slice(offset, offset + limit);
+
+        return new Response(
+          JSON.stringify({
+            bucket: "total",
+            total: all.length,
+            limit,
+            offset,
+            count: page.length,
+            users: page,
+          }),
+          { headers: baseHeaders }
+        );
+      }
+
       const totalInBucket =
-        bucketParam === "total"
-          ? total
-          : bucketParam === "none"
-            ? none
-            : bucketParam === "talentOnly"
-              ? talentOnly
-              : bucketParam === "serviceOnly"
-                ? serviceOnly
-                : bucketParam === "brandOnly"
-                  ? brandOnly
-                  : bucketParam === "talentService"
-                    ? talentService
-                    : bucketParam === "talentBrand"
-                      ? talentBrand
-                      : bucketParam === "brandService"
-                        ? brandService
-                        : bucketParam === "allThree"
-                          ? allThree
-                          : bucketParam === "anyTalent"
-                            ? anyTalent
-                            : bucketParam === "anyService"
-                              ? anyService
-                              : bucketParam === "anyBrand"
-                                ? anyBrand
-                                : 0;
+        bucketParam === "none"
+          ? none
+          : bucketParam === "talentOnly"
+            ? talentOnly
+            : bucketParam === "serviceOnly"
+              ? serviceOnly
+              : bucketParam === "brandOnly"
+                ? brandOnly
+                : bucketParam === "talentService"
+                  ? talentService
+                  : bucketParam === "talentBrand"
+                    ? talentBrand
+                    : bucketParam === "brandService"
+                      ? brandService
+                      : bucketParam === "allThree"
+                        ? allThree
+                        : bucketParam === "anyTalent"
+                          ? anyTalent
+                          : bucketParam === "anyService"
+                            ? anyService
+                            : bucketParam === "anyBrand"
+                              ? anyBrand
+                              : 0;
 
       // newest first
       bucketMembers.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
