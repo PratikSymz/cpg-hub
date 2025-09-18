@@ -4,6 +4,26 @@ export const config = { runtime: "edge" };
 const API = "https://api.clerk.com/v1";
 const API_VERSION = "2025-04-10";
 
+// 👇 allow localhost during dev + your production site
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:5173",
+  "https://cpg-hub.vercel.app",
+]);
+
+function corsHeaders(origin: string | null) {
+  const allow =
+    origin && ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : "https://cpg-hub.vercel.app";
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    Vary: "Origin",
+    "Content-Type": "application/json",
+  };
+}
+
 const H = (secret: string) => ({
   Authorization: `Bearer ${secret}`,
   "Clerk-API-Version": API_VERSION,
