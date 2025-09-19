@@ -27,10 +27,8 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
     link.click();
   };
 
-  const { 
-    loading: loadingHiringStatus, 
-    func: fnHiringStatus 
-  } = useFetch(updateApplicationStatus,
+  const { loading: loadingHiringStatus, func: fnHiringStatus } = useFetch(
+    updateApplicationStatus,
     {
       job_id: application.job_id,
     }
@@ -86,10 +84,18 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
               <SelectValue placeholder="Application Status" />
             </SelectTrigger>
             <SelectContent className="">
-              <SelectItem className="" value="applied">Applied</SelectItem>
-              <SelectItem className="" value="interviewing">Interviewing</SelectItem>
-              <SelectItem className="" value="hired">Hired</SelectItem>
-              <SelectItem className="" value="rejected">Rejected</SelectItem>
+              <SelectItem className="" value="applied">
+                Applied
+              </SelectItem>
+              <SelectItem className="" value="interviewing">
+                Interviewing
+              </SelectItem>
+              <SelectItem className="" value="hired">
+                Hired
+              </SelectItem>
+              <SelectItem className="" value="rejected">
+                Rejected
+              </SelectItem>
             </SelectContent>
           </Select>
         )}

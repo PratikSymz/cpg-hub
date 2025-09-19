@@ -55,6 +55,7 @@ const EditServicePage = () => {
     setValue,
     formState: { errors, isDirty },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       first_name: "",
       last_name: "",

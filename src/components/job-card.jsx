@@ -29,7 +29,7 @@ const JobCard = ({
 
   // Brand info
   const { brand_name, website, linkedin_url, brand_hq, logo_url, user_id } =
-    job && job?.brand || {};
+    (job && job?.brand) || {};
 
   // Saving jobs
   const {

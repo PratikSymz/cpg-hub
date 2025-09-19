@@ -371,13 +371,15 @@ const FractionalTalentDetail = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Endorsements</h2>
-                {isSignedIn && user_info?.user_id !== user?.id && !hasEndorsed && (
-                  <EndorsementDialog
-                    open={endorseDialogOpen}
-                    setOpen={setEndorseDialogOpen}
-                    onSend={handleEndorsementSubmit}
-                  />
-                )}
+                {isSignedIn &&
+                  user_info?.user_id !== user?.id &&
+                  !hasEndorsed && (
+                    <EndorsementDialog
+                      open={endorseDialogOpen}
+                      setOpen={setEndorseDialogOpen}
+                      onSend={handleEndorsementSubmit}
+                    />
+                  )}
               </div>
 
               {loadingEndorsements && (
@@ -439,24 +441,26 @@ const FractionalTalentDetail = () => {
                         )}
 
                         {/* Endorse back the endorser (reciprocal) */}
-                        {isSignedIn && !endorsedBack && endorserId !== user?.id && (
-                          <Button
-                            className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
-                            variant="outline"
-                            size="lg"
-                            onClick={() => {
-                              if (!isSignedIn || !user) {
-                                setShowLoginDialog(true);
-                                return;
-                              }
-                              setEndorseTargetId(endorserId); // <-- target is the original endorser
-                              setEndorseDialogOpen(true);
-                              // optionally track target
-                            }}
-                          >
-                            Endorse back
-                          </Button>
-                        )}
+                        {isSignedIn &&
+                          !endorsedBack &&
+                          endorserId !== user?.id && (
+                            <Button
+                              className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
+                              variant="outline"
+                              size="lg"
+                              onClick={() => {
+                                if (!isSignedIn || !user) {
+                                  setShowLoginDialog(true);
+                                  return;
+                                }
+                                setEndorseTargetId(endorserId); // <-- target is the original endorser
+                                setEndorseDialogOpen(true);
+                                // optionally track target
+                              }}
+                            >
+                              Endorse back
+                            </Button>
+                          )}
                       </div>
                     </li>
                   );

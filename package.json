@@ -21,7 +21,7 @@
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-radio-group": "^1.2.3",
     "@radix-ui/react-select": "^2.1.6",
-    "@radix-ui/react-slot": "^1.2.0",
+    "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.8",
     "@supabase/supabase-js": "^2.49.1",
     "@tailwindcss/vite": "^4.0.14",
@@ -29,7 +29,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "country-state-city": "^3.2.1",
+    "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.5.2",
+    "express": "^5.1.0",
     "htmr": "^1.0.2",
     "init": "^0.1.2",
     "lucide-react": "^0.482.0",
@@ -39,12 +41,13 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "6.26",
     "react-spinners": "^0.15.0",
+    "recharts": "^3.2.1",
     "resend": "^4.4.1",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

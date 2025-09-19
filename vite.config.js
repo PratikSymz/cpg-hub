@@ -12,4 +12,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/analytics": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+        // optional: if your backend route is exactly /analytics/*, no rewrite needed
+        // rewrite: (path) => path,
+      },
+    },
+  },
 });

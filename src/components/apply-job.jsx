@@ -76,7 +76,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     <Drawer open={applied ? false : undefined}>
       <DrawerTrigger asChild>
         <Button
-        className=""
+          className=""
           size="lg"
           variant={job?.isOpen && !applied ? "blue" : "destructive"}
           disabled={!job?.isOpen || applied}
@@ -89,7 +89,9 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
           <DrawerTitle className="">
             Apply for {job?.title} at {job?.company?.name}
           </DrawerTitle>
-          <DrawerDescription className="">Please Fill the form below</DrawerDescription>
+          <DrawerDescription className="">
+            Please Fill the form below
+          </DrawerDescription>
         </DrawerHeader>
 
         <form
@@ -120,18 +122,36 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             name="education"
             control={control}
             render={({ field }) => (
-              <RadioGroup className="" onValueChange={field.onChange} {...field}>
+              <RadioGroup
+                className=""
+                onValueChange={field.onChange}
+                {...field}
+              >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem className="" value="Intermediate" id="intermediate" />
-                  <Label className="" htmlFor="intermediate">Intermediate</Label>
+                  <RadioGroupItem
+                    className=""
+                    value="Intermediate"
+                    id="intermediate"
+                  />
+                  <Label className="" htmlFor="intermediate">
+                    Intermediate
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem className="" value="Graduate" id="graduate" />
-                  <Label className="" htmlFor="graduate">Graduate</Label>
+                  <Label className="" htmlFor="graduate">
+                    Graduate
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem className="" value="Post Graduate" id="post-graduate" />
-                  <Label className="" htmlFor="post-graduate">Post Graduate</Label>
+                  <RadioGroupItem
+                    className=""
+                    value="Post Graduate"
+                    id="post-graduate"
+                  />
+                  <Label className="" htmlFor="post-graduate">
+                    Post Graduate
+                  </Label>
                 </div>
               </RadioGroup>
             )}
@@ -159,7 +179,9 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
 
         <DrawerFooter className="">
           <DrawerClose asChild>
-            <Button className="" size="default" variant="outline">Cancel</Button>
+            <Button className="" size="default" variant="outline">
+              Cancel
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

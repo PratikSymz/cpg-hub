@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   SignIn,
   SignUp,
@@ -18,7 +18,6 @@ const NavBar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [search, setSearch] = useSearchParams();
   const { user, isLoaded } = useUser();
-
   const [authMode, setAuthMode] = useState("sign-in");
 
   useEffect(() => {
@@ -117,6 +116,20 @@ const NavBar = () => {
                 </Button>
               </Link>
             )}
+            {user &&
+              (user.id === "user_2xhWB9MbqX5LvYBi2U9yo4UV9Fi" ||
+                user.id === "user_2xhVcPb80nvI4T03q4w1IZZq65g" ||
+                user.id === "user_2xjEiqsXt9y1R8BiNG8wTxZdQNE") && (
+                <Link to="/user-analytics">
+                  <Button
+                    size="default"
+                    variant="ghost"
+                    className="text-sm font-bold hover:text-cpg-teal"
+                  >
+                    Analytics
+                  </Button>
+                </Link>
+              )}
             <UserButton
               showName={false}
               appearance={{

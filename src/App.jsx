@@ -21,6 +21,7 @@ import TalentEditProfile from "./pages/talent/edit-fractional-talent.jsx";
 import EditJobPage from "./pages/jobs/edit-job.jsx";
 import EditServicePage from "./pages/service/edit-service.jsx";
 import FeedbackForm from "./pages/feedback-form.jsx";
+import RolesDashboard from "./pages/analytics/roles-dashboard.jsx";
 
 const router = createBrowserRouter([
   {
@@ -93,6 +94,10 @@ const router = createBrowserRouter([
       {
         path: "/feedback",
         element: <FeedbackForm />,
+      },
+      {
+        path: "/user-analytics",
+        element: <RolesDashboard />,
       },
     ],
   },
