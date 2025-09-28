@@ -58,7 +58,7 @@ function normalizeRoles(obj: any): Role[] {
 
 // Offset pagination over Clerk users (Edge-friendly)
 async function listAllUsers(secret: string, cap = 50000) {
-  const pageSize = 1000;
+  const pageSize = 500;
   let offset = 0;
   const all: any[] = [];
 
