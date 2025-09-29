@@ -26,12 +26,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 // CPG Hub palette
 const CPG_BROWN = "#6b3a2d";
 const CPG_TEAL = "#1db7a6";
 const defaultClass = "";
+const DETAIL_ROUTE_PREFIX = "/users";
 
 // If you want to always hit prod API in dev, set VITE_API_BASE in .env.local
 const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -471,14 +472,14 @@ export default function RolesDashboard() {
                       {new Date(u.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <Button
+                  {/* <Button
                     asChild
                     variant="secondary"
                     size="sm"
                     className="shrink-0"
                   >
-                    <a href={`/users/${u.id}`}>View</a>
-                  </Button>
+                    <Link to={`${DETAIL_ROUTE_PREFIX}/${u.id}`}>View</Link>{" "}
+                  </Button> */}
                 </div>
               ))}
 
