@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
+import { Progress } from "@/components/ui/progress.jsx";
+import { Loader2 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -37,14 +39,22 @@ const API_BASE = import.meta.env.VITE_API_BASE || "";
 function StatClickable({ label, value, onClick }) {
   return (
     <Card
-      className="rounded-2xl cursor-pointer hover:shadow-md transition"
+      className="rounded-2xl cursor-pointer hover:shadow-md transition select-none active:scale-[0.99]"
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick?.()}
+      aria-label={`${label}: ${value}`}
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm text-gray-500">{label}</CardTitle>
+        <CardTitle className="text-xs sm:text-sm text-gray-500 line-clamp-1">
+          {label}
+        </CardTitle>
       </CardHeader>
       <CardContent className={defaultClass}>
-        <div className="text-3xl font-semibold text-gray-900">{value}</div>
+        <div className="text-2xl sm:text-3xl font-semibold text-gray-900">
+          {value}
+        </div>
       </CardContent>
     </Card>
   );
@@ -54,10 +64,14 @@ function Stat({ label, value }) {
   return (
     <Card className="rounded-2xl">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm text-gray-500">{label}</CardTitle>
+        <CardTitle className="text-xs sm:text-sm text-gray-500 line-clamp-1">
+          {label}
+        </CardTitle>
       </CardHeader>
       <CardContent className={defaultClass}>
-        <div className="text-3xl font-semibold text-gray-900">{value}</div>
+        <div className="text-2xl sm:text-3xl font-semibold text-gray-900">
+          {value}
+        </div>
       </CardContent>
     </Card>
   );
@@ -66,43 +80,96 @@ function Stat({ label, value }) {
 function useRoleList() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(null); // null = unknown yet
   const [offset, setOffset] = useState(0);
   const [bucket, setBucket] = useState(null);
   const [q, setQ] = useState("");
+  const [progress, setProgress] = useState(null); // null = indeterminate
 
-  async function load(b, nextOffset = 0, query = q) {
-    setLoading(true);
-    const params = new URLSearchParams({
-      bucket: b,
-      limit: "50",
-      offset: String(nextOffset),
-    });
-    if (query) params.set("q", query);
-    const res = await fetch(
-      `${API_BASE}/api/analytics/roles?${params.toString()}`
-    );
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Roles list ${res.status}: ${text.slice(0, 200)}`);
-    }
-    const json = await res.json();
-    setBucket(b);
-    setTotal(json.total);
-    setOffset(json.offset + json.count);
-    setRows(nextOffset === 0 ? json.users : [...rows, ...json.users]);
-    setLoading(false);
-  }
+  // keep a ref to AbortController so we can cancel previous loads
+  const controllerRef = React.useRef(null);
 
   function reset() {
+    if (controllerRef.current) controllerRef.current.abort();
+    controllerRef.current = null;
     setRows([]);
-    setTotal(0);
+    setTotal(null);
     setOffset(0);
     setBucket(null);
     setQ("");
+    setProgress(null);
   }
 
-  return { loading, rows, total, offset, bucket, q, setQ, load, reset };
+  async function load(b, nextOffset = 0, query = q) {
+    if (controllerRef.current) controllerRef.current.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    setLoading(true);
+    if (nextOffset === 0) {
+      setProgress(null);
+      setTotal(null);
+      setRows([]);
+      setOffset(0);
+    }
+
+    try {
+      const params = new URLSearchParams({
+        bucket: b,
+        limit: "50",
+        offset: String(nextOffset),
+      });
+      if (query) params.set("q", query);
+
+      const res = await fetch(
+        `${API_BASE}/api/analytics/roles?${params.toString()}`,
+        {
+          signal: controller.signal,
+        }
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Roles list ${res.status}: ${text.slice(0, 200)}`);
+      }
+      const json = await res.json();
+
+      setBucket(b);
+      if (total === null) setTotal(json.total ?? 0);
+
+      setRows(
+        nextOffset === 0 ? json.users : (prev) => [...prev, ...json.users]
+      );
+      const newOffset = json.offset + json.count;
+      setOffset(newOffset);
+
+      if (json.total && json.total > 0) {
+        const pct = Math.min(100, Math.round((newOffset / json.total) * 100));
+        setProgress(pct);
+      } else {
+        setProgress(null);
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") {
+        console.error(e);
+        throw e;
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return {
+    loading,
+    rows,
+    total,
+    offset,
+    bucket,
+    q,
+    setQ,
+    load,
+    reset,
+    progress,
+  };
 }
 
 export default function RolesDashboard() {
@@ -135,28 +202,29 @@ export default function RolesDashboard() {
 
   async function openList(bucket, niceTitle) {
     setTitle(niceTitle);
-    await list.load(bucket, 0);
     setOpen(true);
+    list.reset();
+    list.load(bucket, 0).catch(() => {});
   }
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6 grid gap-4">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 grid gap-4">
+        <Skeleton className="h-7 w-48 sm:h-8 sm:w-64" />
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-28" />
+            <Skeleton key={i} className="h-24 sm:h-28" />
           ))}
         </div>
-        <Skeleton className="h-80" />
-        <Skeleton className="h-64" />
+        <Skeleton className="h-64 sm:h-80" />
+        <Skeleton className="h-52 sm:h-64" />
       </div>
     );
   }
 
   if (err) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <h1 className="text-2xl font-semibold text-red-600">Error</h1>
         <p className="text-sm text-gray-600 mt-2">{err}</p>
       </div>
@@ -177,17 +245,17 @@ export default function RolesDashboard() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
+      <div className="flex items-start sm:items-center gap-2 sm:gap-3">
         <h1
-          className="text-3xl font-extrabold tracking-tight"
+          className="text-2xl sm:text-3xl font-extrabold tracking-tight"
           style={{ color: CPG_BROWN }}
         >
           Roles Overview
         </h1>
         <Badge
           variant="default"
-          className="ml-auto"
+          className="ml-auto text-xs sm:text-sm"
           style={{ backgroundColor: `${CPG_TEAL}22`, color: CPG_TEAL }}
         >
           Updated now
@@ -195,7 +263,7 @@ export default function RolesDashboard() {
       </div>
 
       {/* Totals */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <StatClickable
           label="Total People"
           value={total}
@@ -224,11 +292,11 @@ export default function RolesDashboard() {
       </div>
 
       {/* Singles & Combos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-700">
-              Singles (click to view)
+              Singles (tap to view)
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
@@ -258,7 +326,7 @@ export default function RolesDashboard() {
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-700">
-              Combos (click to view)
+              Combos (tap to view)
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
@@ -292,16 +360,25 @@ export default function RolesDashboard() {
           <CardTitle className="text-sm text-gray-700">Distribution</CardTitle>
         </CardHeader>
         <CardContent className={defaultClass}>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="key" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill={CPG_TEAL} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Horizontal scroll on small screens to prevent cramped labels */}
+          <div className="h-56 sm:h-72 overflow-x-auto">
+            <div className="min-w-[640px] h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ left: 8, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="key"
+                    tick={{ fontSize: 10 }}
+                    angle={-20}
+                    height={40}
+                    interval={0}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill={CPG_TEAL} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -314,69 +391,113 @@ export default function RolesDashboard() {
           if (!v) list.reset();
         }}
       >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader className={defaultClass}>
-            <DialogTitle className={defaultClass}>
-              {title}
-              {list.total ? ` — ${list.total}` : ""}
-            </DialogTitle>
+        {/* Make the whole sheet scrollable on small/"sm" and up */}
+        <DialogContent className="sm:max-w-2xl w-[95vw] sm:w-auto p-0 max-h-[90vh] sm:max-h-[90vh] flex flex-col overflow-y-auto">
+          {/* Sticky header with its own padding so it doesn't overlap */}
+          <DialogHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b">
+            <div className="px-4 py-3 sm:px-6 sm:py-4">
+              <DialogTitle className="text-base sm:text-lg font-semibold">
+                {title}
+                {typeof list.total === "number" ? ` — ${list.total}` : ""}
+              </DialogTitle>
+            </div>
           </DialogHeader>
 
-          {/* Search */}
-          <div className="flex gap-2 mt-2">
-            <input
-              className="border rounded-md px-3 py-2 w-full"
-              placeholder="Search email or name…"
-              value={list.q}
-              onChange={(e) => list.setQ(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                list.load(list.bucket, 0, e.currentTarget.value)
-              }
-            />
-            <Button
-              className=""
-              variant="default"
-              size="lg"
-              onClick={() => list.load(list.bucket, 0, list.q)}
-              disabled={list.loading}
-            >
-              Search
-            </Button>
-          </div>
-
-          <div className="mt-3 space-y-2 max-h-[60vh] overflow-auto">
-            {list.rows.map((u) => (
-              <div
-                key={u.id}
-                className="flex items-center justify-between border rounded-lg p-3"
-              >
-                <div>
-                  <div className="text-sm font-medium">{u.email || u.id}</div>
-                  <div className="text-xs text-gray-500">
-                    {u.name ? `${u.name} • ` : ""}Created{" "}
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </div>
+          {/* Body becomes a flex column; inner list gets the scroll */}
+          <div className="px-4 py-3 sm:px-6 sm:py-4 flex flex-col gap-3 min-h-0">
+            {/* Progress bar */}
+            <div>
+              {list.progress === null ? (
+                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
+                  <div className="h-full w-1/3 animate-[indeterminate_1.2s_ease_infinite] rounded bg-gray-400" />
                 </div>
-                {/* <Button asChild variant="secondary" size="sm">
-                  <a href={`/users/${u.id}`}>View</a>
-                </Button> */}
+              ) : (
+                <Progress className={defaultClass} value={list.progress} />
+              )}
+            </div>
+
+            {/* Small spinner when loading more */}
+            {list.loading && list.rows.length > 0 && (
+              <div className="self-end text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
               </div>
-            ))}
-            {list.offset < list.total && (
+            )}
+
+            {/* Search */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                className="border rounded-md px-3 py-2 w-full"
+                placeholder="Search email or name…"
+                value={list.q}
+                onChange={(e) => list.setQ(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  list.load(list.bucket, 0, e.currentTarget.value)
+                }
+              />
               <Button
-                className=""
                 variant="default"
-                size="default"
-                onClick={() => list.load(list.bucket, list.offset, list.q)}
+                size="lg"
+                onClick={() => list.load(list.bucket, 0, list.q)}
                 disabled={list.loading}
+                className="w-full sm:w-auto"
               >
-                {list.loading ? "Loading..." : "Load more"}
+                Search
               </Button>
-            )}
-            {!list.loading && list.rows.length === 0 && (
-              <div className="text-sm text-gray-500">No users found.</div>
-            )}
+            </div>
+
+            {/* Results: take remaining height and scroll */}
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pr-1">
+              {list.loading &&
+                list.rows.length === 0 &&
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="border rounded-lg p-3">
+                    <div className="h-4 w-40 bg-gray-200 rounded mb-2 animate-pulse" />
+                    <div className="h-3 w-64 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ))}
+
+              {list.rows.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between gap-3 border rounded-lg p-3 sm:p-4"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {u.email || u.id}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {u.name ? `${u.name} • ` : ""}Created{" "}
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Button
+                    asChild
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    <a href={`/users/${u.id}`}>View</a>
+                  </Button>
+                </div>
+              ))}
+
+              {list.offset < (list.total ?? Infinity) && (
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={() => list.load(list.bucket, list.offset, list.q)}
+                  disabled={list.loading}
+                  className="w-full"
+                >
+                  {list.loading ? "Loading..." : "Load more"}
+                </Button>
+              )}
+
+              {!list.loading && list.rows.length === 0 && (
+                <div className="text-sm text-gray-500">No users found.</div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
