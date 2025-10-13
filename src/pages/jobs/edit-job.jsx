@@ -78,6 +78,7 @@ const EditJobPage = () => {
     },
     resolver: zodResolver(JobSchema),
   });
+  const jobErrors = jobForm.formState.errors;
 
   const handleBackClick = () => {
     if (brandForm.formState.isDirty || jobForm.formState.isDirty) {
@@ -101,27 +102,40 @@ const EditJobPage = () => {
     setNavTarget(null);
   };
 
-  const jobErrors = jobForm.formState.errors;
-
   const {
     loading,
     data: brandData,
     func: fetchBrand,
   } = useFetch(getMyBrandProfile);
+
   const {
     loading: savingBrand,
     error: saveBrandError,
     func: saveBrand,
   } = useFetch(updateBrand);
-  const { data: jobData, func: fetchJob } = useFetch(getSingleJob);
+
+  const {
+    loading: removingBrand,
+    error: removeBrandError,
+    func: removeBrand,
+  } = useFetch(updateBrand);
+
+  const { loadingJob, data: jobData, func: fetchJob } = useFetch(getSingleJob);
+
   const {
     loading: savingJob,
     error: saveJobError,
     func: saveJob,
   } = useFetch(updateJob);
+
+  const {
+    loading: removingJob,
+    error: removeJobError,
+    func: removeJob,
+  } = useFetch(deleteJob);
+
   // Update User Profile
   const { func: updateUserProfile } = useFetch(syncUserProfile);
-  const { loading: deleteLoading, func: jobDelete } = useFetch(deleteJob);
 
   const [logoPreview, setLogoPreview] = useState("");
   const [otherSpec, setOtherSpec] = useState("");
@@ -237,14 +251,32 @@ const EditJobPage = () => {
     })();
   };
 
-  const handleDelete = async () => {
+  const handleDeleteJob = async () => {
     try {
-      await jobDelete({ job_id: id });
+      await removeJob({ job_id: id });
       toast.success("Job successfully deleted!");
-      navigate("/jobs");
+      navigate("/jobs", { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete job!");
+    }
+  };
+
+  const handleDeleteBrand = async () => {
+    if (!user?.id) return;
+
+    const ok = window.confirm(
+      "Are you sure you want to delete your brand profile?"
+    );
+    if (!ok) return;
+
+    try {
+      const deleted = await removeBrand({ user_id: user.id });
+      toast.success("Brand Profile deleted.");
+      navigate("/jobs", { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete your brand profile.");
     }
   };
 
@@ -430,6 +462,17 @@ const EditJobPage = () => {
           </div>
 
           {saveBrandError && <FormError message={saveBrandError.message} />}
+          {removeBrandError && <FormError message={removeBrandError.message} />}
+
+          <Button
+            variant="default"
+            size="lg"
+            onClick={handleDeleteBrand}
+            className="w-full bg-red-600"
+          >
+            {removingBrand ? "Deleting..." : "Delete Brand"}
+            {removingBrand && <Loader2Icon className="animate-spin h-6 w-6" />}
+          </Button>
         </form>
       </div>
 
@@ -757,10 +800,11 @@ const EditJobPage = () => {
       <Button
         variant="default"
         size="lg"
-        onClick={handleDelete}
+        onClick={handleDeleteJob}
         className="w-full bg-red-600"
       >
-        Delete Job
+        {removingJob ? "Deleting job..." : "Delete Job"}
+        {removingJob && <Loader2Icon className="animate-spin h-6 w-6" />}
       </Button>
     </div>
   );

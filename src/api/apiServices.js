@@ -197,6 +197,24 @@ export async function updateService(token, serviceData, { user_id }) {
   return data;
 }
 
+// Delete Service
+export async function deleteService(token, { user_id }) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("user_id", user_id)
+    .select();
+
+  if (error) {
+    console.error("Error deleting service:", error);
+    return data;
+  }
+
+  return data;
+}
+
 const formatCompanyLogoUrl = (user_id, file) => {
   const random = Math.floor(Math.random() * 90000);
   // Get a safe file extension

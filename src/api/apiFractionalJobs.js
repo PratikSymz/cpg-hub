@@ -1,6 +1,7 @@
 import supabaseClient from "@/utils/supabase.js";
 
 const table_name = "job_listings";
+
 export async function getJobs(
   token,
   { area_specialization, level_exp, search_query }

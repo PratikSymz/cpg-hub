@@ -160,7 +160,7 @@ export async function updateTalent(token, talentData, { user_id }) {
   }
 
   const { data, error } = await supabase
-    .from("talent_profiles") // replace with your table_name
+    .from(table_name)
     .update({
       level_of_experience: talentData.level_of_experience,
       industry_experience: talentData.industry_experience,
@@ -191,7 +191,7 @@ export async function deleteTalent(token, { user_id }) {
     .select();
 
   if (error) {
-    console.error("Error deleting talent:", error);
+    console.error("Error Deleting Talent:", error);
     return data;
   }
 

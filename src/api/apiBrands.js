@@ -1,4 +1,4 @@
-import supabaseClient, { supabaseUrl } from "@/utils/supabase.js";
+import supabaseClient from "@/utils/supabase.js";
 
 const table_name = "brand_profiles";
 
@@ -158,6 +158,24 @@ export async function updateBrand(token, brandData, { user_id }) {
   if (error) {
     console.error("Error Updating Brand information:", error);
     throw new Error("Error Updating Brand information:", error);
+  }
+
+  return data;
+}
+
+// Delete Brand
+export async function deleteBrand(token, { user_id }) {
+  const supabase = await supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("user_id", user_id)
+    .select();
+
+  if (error) {
+    console.error("Error deleting Brand:", error);
+    return data;
   }
 
   return data;

@@ -4,9 +4,12 @@ import { useUser } from "@clerk/clerk-react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { getMyServiceProfile, updateService } from "@/api/apiServices.js";
+import {
+  deleteService,
+  getMyServiceProfile,
+  updateService,
+} from "@/api/apiServices.js";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
@@ -99,11 +102,18 @@ const EditServicePage = () => {
     loading,
     func: fetchService,
   } = useFetch(getMyServiceProfile);
+
   const {
     func: saveService,
-    loading: saving,
+    loading: savingService,
     error: saveError,
   } = useFetch(updateService);
+
+  const {
+    func: removeService,
+    loading: removingService,
+    error: removeError,
+  } = useFetch(deleteService);
 
   const selectedCategories = useWatch({ control, name: "category_of_service" });
   const shouldShowBrokerServices = selectedCategories.includes("Broker");
@@ -160,6 +170,22 @@ const EditServicePage = () => {
       showProfileLoad(false);
     } catch (err) {
       toast.error("Failed to update profile picture.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user?.id) return;
+
+    const ok = window.confirm("Are you sure you want to delete your profile?");
+    if (!ok) return;
+
+    try {
+      const deleted = await removeService({ user_id: user.id });
+      toast.success("Profile deleted.");
+      navigate("/services", { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete your profile.");
     }
   };
 
@@ -596,15 +622,28 @@ const EditServicePage = () => {
         )}
 
         {saveError && <FormError message={saveError.message} />}
+        {removeError && <p className="text-red-500">{removeError.message}</p>}
 
         <Button
           variant="default"
           type="submit"
           size="lg"
           className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90"
-          disabled={saving}
+          disabled={savingService || removingService}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {savingService ? "Saving..." : "Save Changes"}
+        </Button>
+
+        <Button
+          variant="default"
+          type="button"
+          size="lg"
+          className="bg-red-600 hover:bg-red-700 cursor-pointer"
+          disabled={removingService}
+          onClick={handleDelete}
+        >
+          {removingService ? "Deleting..." : "Delete Profile"}
+          {removingService && <Loader2Icon className="animate-spin h-6 w-6" />}
         </Button>
       </form>
     </div>

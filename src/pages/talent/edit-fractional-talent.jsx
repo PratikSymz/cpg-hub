@@ -2,7 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { getMyTalentProfile, updateTalent } from "@/api/apiTalent.js";
+import {
+  deleteTalent,
+  getMyTalentProfile,
+  updateTalent,
+} from "@/api/apiTalent.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
@@ -67,12 +71,18 @@ const EditTalentPage = () => {
     error: saveError,
   } = useFetch(updateTalent);
 
+  const {
+    func: removeTalent,
+    loading: removingTalent,
+    error: removeError,
+  } = useFetch(deleteTalent);
+
   // Load talent profile
   useEffect(() => {
     if (isLoaded && isSignedIn && user?.id) {
       fetchTalent({ user_id: user.id });
     }
-  }, [isLoaded]);
+  }, [isLoaded, isSignedIn]);
 
   // Update User Profile
   const { func: updateUserProfile } = useFetch(syncUserProfile);
@@ -121,6 +131,22 @@ const EditTalentPage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to update profile picture.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user?.id) return;
+
+    const ok = window.confirm("Are you sure you want to delete your profile?");
+    if (!ok) return;
+
+    try {
+      const deleted = await removeTalent({ user_id: user.id });
+      toast.success("Profile deleted.");
+      navigate("/talents", { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete your profile.");
     }
   };
 
@@ -542,6 +568,7 @@ const EditTalentPage = () => {
         </div>
 
         {saveError && <p className="text-red-500">{saveError.message}</p>}
+        {removeError && <p className="text-red-500">{removeError.message}</p>}
 
         {/* <button
           className="w-full bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer p-4"
@@ -555,10 +582,21 @@ const EditTalentPage = () => {
           type="submit"
           size="lg"
           className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
-          disabled={savingTalent}
+          disabled={savingTalent || removingTalent}
         >
           {savingTalent ? "Saving..." : "Save Changes"}
           {savingTalent && <Loader2Icon className="animate-spin h-6 w-6" />}
+        </Button>
+        <Button
+          variant="default"
+          type="button"
+          size="lg"
+          className="bg-red-600 hover:bg-red-700 cursor-pointer"
+          disabled={removingTalent}
+          onClick={handleDelete}
+        >
+          {removingTalent ? "Deleting..." : "Delete Profile"}
+          {removingTalent && <Loader2Icon className="animate-spin h-6 w-6" />}
         </Button>
       </form>
     </div>
