@@ -522,7 +522,7 @@ const EditTalentPage = () => {
           <Label className={classLabel}>LinkedIn URL</Label>
           <Input
             className={classInput}
-            type="url"
+            type="text"
             placeholder="LinkedIn URL"
             {...register("linkedin_url")}
           />
@@ -535,7 +535,7 @@ const EditTalentPage = () => {
           <Label className={classLabel}>Website URL</Label>
           <Input
             className={classInput}
-            type="url"
+            type="text"
             placeholder="Website URL"
             {...register("portfolio_url")}
           />
