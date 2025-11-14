@@ -400,7 +400,7 @@ const EditJobPage = () => {
             <Label className={classLabel}>Website</Label>
             <Input
               className={classInput}
-              type="url"
+              type="text"
               {...brandForm.register("website")}
               placeholder="https://yourbrand.com"
             />
@@ -414,7 +414,7 @@ const EditJobPage = () => {
             <Label className={classLabel}>LinkedIn URL</Label>
             <Input
               className={classInput}
-              type="url"
+              type="text"
               {...brandForm.register("linkedin_url")}
               placeholder="https://linkedin.com/company/your-brand"
             />

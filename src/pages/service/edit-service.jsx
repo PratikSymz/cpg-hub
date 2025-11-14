@@ -314,7 +314,7 @@ const EditServicePage = () => {
         <div>
           <Label className={classLabel}>Company Website</Label>
           <Input
-            type="url"
+            type="text"
             className={classInput}
             {...register("company_website")}
             placeholder="https://company.com"
