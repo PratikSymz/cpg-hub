@@ -119,16 +119,20 @@ const ServiceOnboarding = () => {
 
     try {
       if (user && user.id) {
-        await submitBrokerProfile({
+        const result = await submitBrokerProfile({
           is_broker: shouldShowBrokerServices,
           user_id: user.id,
           ...data,
         });
 
+        // Check if useFetch detected an error
+        if (result.error) {
+          throw new Error(error.message || "Failed to create profile");
+        }
+
         await handleRoleSelection(ROLE_SERVICE);
-        toast.success("Profile Created!");
-        console.log(data);
         navigate("/services", { replace: true });
+        toast.success("Profile Created!");
         // window.location.reload();
       }
     } catch (err) {

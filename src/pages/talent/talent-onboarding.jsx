@@ -118,14 +118,19 @@ const TalentOnboarding = () => {
 
     try {
       if (user && user.id) {
-        await submitTalentProfile({
+        const result = await submitTalentProfile({
           ...data,
           user_id: user.id,
         });
 
+        // Check if useFetch detected an error
+        if (result.error) {
+          throw new Error(error.message || "Failed to create profile");
+        }
+
         await handleRoleSelection(ROLE_TALENT);
-        toast.success("Profile Created!");
         navigate("/talents", { replace: true });
+        toast.success("Profile Created!");
       }
     } catch (err) {
       console.log(err);

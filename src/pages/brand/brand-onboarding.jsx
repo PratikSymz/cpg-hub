@@ -100,15 +100,21 @@ const BrandOnboarding = () => {
 
     try {
       if (user && user.id) {
-        await funcCreateBrand({
+        const result = await funcCreateBrand({
           ...data,
           user_id: user.id,
         });
 
-        await handleRoleSelection(ROLE_BRAND);
+        // Check if useFetch detected an error
+        if (result.error) {
+          throw new Error(
+            errorBrandCreate.message || "Failed to create profile"
+          );
+        }
 
-        toast.success("Profile Created!");
+        await handleRoleSelection(ROLE_BRAND);
         navigate("/post-job", { replace: true });
+        toast.success("Profile Created!");
       }
     } catch (err) {
       console.log(err);
