@@ -139,7 +139,44 @@ const NavBar = () => {
                   userButtonAvatarImage: "w-10 h-10",
                 },
               }}
-            />
+            >
+              {/* Add custom menu items based on role */}
+              <UserButton.MenuItems>
+                {role === ROLE_BRAND && (
+                  <UserButton.Link
+                    label="View Brand Profile"
+                    labelIcon={<BriefcaseBusiness size={16} />}
+                    href="/profile/brand"
+                  />
+                )}
+                {role === ROLE_TALENT && (
+                  <UserButton.Link
+                    label="View Talent Profile"
+                    labelIcon={<BriefcaseBusiness size={16} />}
+                    href="/talents/:id"
+                  />
+                )}
+                {role === ROLE_SERVICE && (
+                  <UserButton.Link
+                    label="View Service Profile"
+                    labelIcon={<BriefcaseBusiness size={16} />}
+                    href="/profile/service"
+                  />
+                )}
+
+                {/* Move Analytics to dropdown */}
+                {user &&
+                  (user.id === "user_2xhWB9MbqX5LvYBi2U9yo4UV9Fi" ||
+                    user.id === "user_2xhVcPb80nvI4T03q4w1IZZq65g" ||
+                    user.id === "user_2xjEiqsXt9y1R8BiNG8wTxZdQNE") && (
+                    <UserButton.Link
+                      label="Analytics"
+                      labelIcon={<BriefcaseBusiness size={16} />}
+                      href="/user-analytics"
+                    />
+                  )}
+              </UserButton.MenuItems>
+            </UserButton>
           </SignedIn>
         </div>
 

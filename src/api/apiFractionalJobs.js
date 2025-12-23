@@ -6,7 +6,7 @@ export async function getJobs(
   token,
   { area_specialization, level_exp, search_query }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   let query = supabase.from(table_name).select(
     `*, 
@@ -28,7 +28,7 @@ export async function getMyJobs(
   token,
   { area_specialization, level_exp, search_query, brand_id }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   let query = supabase
     .from(table_name)
@@ -51,7 +51,7 @@ export async function getMyJobs(
 
 // Read single job
 export async function getSingleJob(token, { job_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   let query = supabase
     .from(table_name)
     .select(
@@ -73,7 +73,7 @@ export async function getSingleJob(token, { job_id }) {
 
 // Post job
 export async function addNewJob(token, jobData) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Current job description pdf url
   let job_desc_url = null;
@@ -130,7 +130,7 @@ export async function addNewJob(token, jobData) {
 
 // Update job
 export async function updateJob(token, { jobData, job_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Current job description pdf url
   let job_desc_url = jobData.job_description;
@@ -188,7 +188,7 @@ export async function updateJob(token, { jobData, job_id }) {
 
 // Delete job
 export async function deleteJob(token, { job_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error: deleteError } = await supabase
     .from(table_name)
@@ -206,7 +206,7 @@ export async function deleteJob(token, { job_id }) {
 
 // Read Saved Jobs
 export async function getSavedJobs(token) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase.from("saved_jobs").select(
     `*, 
       job: job_listings(*, brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url))`
@@ -222,7 +222,7 @@ export async function getSavedJobs(token) {
 
 // - Add / Remove Saved Job
 export async function saveJob(token, { alreadySaved }, saveData) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   if (alreadySaved) {
     // If the job is already saved, remove it
@@ -255,7 +255,7 @@ export async function saveJob(token, { alreadySaved }, saveData) {
 
 // - Job isOpen toggle - (recruiter_id = auth.uid())
 export async function updateHiringStatus(token, { is_open, job_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from("job_listings")
     .update({ is_open })

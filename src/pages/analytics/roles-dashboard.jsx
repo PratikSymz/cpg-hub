@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Progress } from "@/components/ui/progress.jsx";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, ExternalLink } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -27,6 +27,11 @@ import {
 } from "recharts";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Label } from "@/components/ui/label.jsx";
+import { Textarea } from "@/components/ui/textarea.jsx";
+import { Input } from "@/components/ui/input.jsx";
+import { classInput, classLabel } from "@/constants/classnames.js";
 
 // CPG Hub palette
 const CPG_BROWN = "#6b3a2d";
@@ -173,12 +178,237 @@ function useRoleList() {
   };
 }
 
+// Newsletter Dialog Component
+function NewsletterDialog({ open, onOpenChange }) {
+  const { user } = useUser();
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loadingEmails, setLoadingEmails] = useState(false);
+  const [allEmails, setAllEmails] = useState([]);
+
+  // Load all user emails when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadAllEmails();
+    }
+  }, [open]);
+
+  async function loadAllEmails() {
+    setLoadingEmails(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/analytics/roles?bucket=total&limit=1000`
+      );
+      if (!res.ok) throw new Error("Failed to load users");
+      const json = await res.json();
+
+      // Extract emails, filter out empty ones
+      const emails = json.users
+        .map((u) => u.email)
+        .filter((e) => e && e.includes("@"));
+
+      setAllEmails(emails);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load user emails");
+    } finally {
+      setLoadingEmails(false);
+    }
+  }
+
+  function handleMailto() {
+    if (allEmails.length === 0) {
+      toast.error("No user emails available");
+      return;
+    }
+
+    // Create mailto link with BCC
+    // Note: Some email clients have character limits, so this may not work with many emails
+    const bccEmails = allEmails.join(",");
+    const mailtoLink = `mailto:?bcc=${encodeURIComponent(bccEmails)}${subject ? `&subject=${encodeURIComponent(subject)}` : ""}${message ? `&body=${encodeURIComponent(message)}` : ""}`;
+
+    // Check if URL might be too long
+    if (mailtoLink.length > 2000) {
+      toast.error(
+        "Too many emails for mailto link. Please use the Send option instead or export the email list."
+      );
+      return;
+    }
+
+    window.location.href = mailtoLink;
+    toast.success("Opening your email client...");
+  }
+
+  async function handleSend() {
+    if (!subject.trim() || !message.trim()) {
+      toast.error("Please fill out subject and message");
+      return;
+    }
+
+    if (allEmails.length === 0) {
+      toast.error("No users to send to");
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      // TODO: Replace with your actual email sending endpoint
+      const res = await fetch(
+        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-blast-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: user?.primaryEmailAddress?.emailAddress || "",
+            subject,
+            message,
+            recipients: allEmails,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Blast email failed:", text);
+        throw new Error("Failed to send blast email");
+      }
+
+      toast.success(`Newsletter sent to ${allEmails.length} users!`);
+      setSubject("");
+      setMessage("");
+      onOpenChange(false);
+    } catch (err) {
+      toast.error("Could not send newsletter. Please try mailto option.");
+      console.error(err);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function copyEmailList() {
+    if (allEmails.length === 0) {
+      toast.error("No emails to copy");
+      return;
+    }
+    navigator.clipboard.writeText(allEmails.join(", "));
+    toast.success(`Copied ${allEmails.length} email addresses to clipboard`);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Send Newsletter
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {loadingEmails ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <span className="ml-2 text-sm text-gray-500">
+                Loading user emails...
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                <span>
+                  <strong>{allEmails.length}</strong> users will receive this
+                  newsletter
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyEmailList}
+                  className="h-8"
+                >
+                  Copy Emails
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label className={classLabel}>Subject</Label>
+                <Input
+                  className={classInput}
+                  type="text"
+                  placeholder="Newsletter subject..."
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={sending}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  placeholder="Your newsletter message..."
+                  rows={8}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  disabled={sending}
+                  className="resize-y"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  variant="default"
+                  onClick={handleSend}
+                  disabled={sending || !subject.trim() || !message.trim()}
+                  className="flex-1 bg-cpg-brown hover:bg-cpg-brown/90"
+                  size="lg"
+                >
+                  {sending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send via Platform
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleMailto}
+                  variant="outline"
+                  disabled={sending || loadingEmails}
+                  className="flex-1"
+                  size="lg"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open in Email Client
+                </Button>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center">
+                "Send via Platform" will send through your backend service.
+                <br />
+                "Open in Email Client" will open your default email app with all
+                users in BCC.
+              </p>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function RolesDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
   const list = useRoleList();
   const { isSignedIn } = useUser();
   const navigate = useNavigate();
@@ -247,20 +477,33 @@ export default function RolesDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
-      <div className="flex items-start sm:items-center gap-2 sm:gap-3">
-        <h1
-          className="text-2xl sm:text-3xl font-extrabold tracking-tight"
-          style={{ color: CPG_BROWN }}
-        >
-          Roles Overview
-        </h1>
-        <Badge
+      {/* Header with Newsletter Button */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+          <h1
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+            style={{ color: CPG_BROWN }}
+          >
+            Roles Overview
+          </h1>
+          <Badge
+            variant="default"
+            className="ml-auto text-xs sm:text-sm"
+            style={{ backgroundColor: `${CPG_TEAL}22`, color: CPG_TEAL }}
+          >
+            Updated now
+          </Badge>
+        </div>
+
+        <Button
           variant="default"
-          className="ml-auto text-xs sm:text-sm"
-          style={{ backgroundColor: `${CPG_TEAL}22`, color: CPG_TEAL }}
+          onClick={() => setNewsletterOpen(true)}
+          className="bg-cpg-brown hover:bg-cpg-brown/90"
+          size="lg"
         >
-          Updated now
-        </Badge>
+          <Mail className="mr-2 h-4 w-4" />
+          Send Email
+        </Button>
       </div>
 
       {/* Totals */}
@@ -383,6 +626,12 @@ export default function RolesDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Newsletter Dialog */}
+      <NewsletterDialog
+        open={newsletterOpen}
+        onOpenChange={setNewsletterOpen}
+      />
 
       {/* List dialog */}
       <Dialog

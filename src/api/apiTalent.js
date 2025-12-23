@@ -35,7 +35,7 @@ export async function getAllTalent(
 
 // Fetch single Talent
 export async function getTalent(token, { talent_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
@@ -54,8 +54,28 @@ export async function getTalent(token, { talent_id }) {
 }
 
 // Fetch my profile
-export async function getMyTalentProfile(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+export async function getMyTalentProfile(token, { id }) {
+  const supabase = supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .select(
+      `*, 
+      user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
+    )
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching my profile ${id}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
+// Fetch my profile using user_id
+export async function getMyTalentProfileUserId(token, { user_id }) {
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
@@ -75,7 +95,7 @@ export async function getMyTalentProfile(token, { user_id }) {
 
 // Add Talent
 export async function addNewTalent(token, talentData) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Resume url
   let resume_url = null;
@@ -128,7 +148,7 @@ export async function addNewTalent(token, talentData) {
 
 // Update Talent Info
 export async function updateTalent(token, talentData, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Resume url
   let resume_url = talentData.resume_url;
@@ -182,7 +202,7 @@ export async function updateTalent(token, talentData, { user_id }) {
 
 // Delete Talent
 export async function deleteTalent(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)

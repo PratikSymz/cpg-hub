@@ -7,7 +7,7 @@ export async function getServices(
   token,
   { category_of_service, markets_covered, search_query }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   let query = supabase.from(table_name).select("*");
 
@@ -36,7 +36,7 @@ export async function getServices(
 
 // Read Single Service
 export async function getSingleService(token, { broker_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   let query = supabase
     .from(table_name)
     .select(
@@ -58,7 +58,7 @@ export async function getSingleService(token, { broker_id }) {
 
 // Fetch my profile
 export async function getMyServiceProfile(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
@@ -78,7 +78,7 @@ export async function getMyServiceProfile(token, { user_id }) {
 
 // - Post Service
 export async function addNewService(token, serviceData) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Company logo url
   let company_logo_url = null;
@@ -139,7 +139,7 @@ export async function addNewService(token, serviceData) {
 
 // - Post Service
 export async function updateService(token, serviceData, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Current company logo url
   let company_logo_url = serviceData.logo_url;
@@ -199,7 +199,7 @@ export async function updateService(token, serviceData, { user_id }) {
 
 // Delete Service
 export async function deleteService(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)
