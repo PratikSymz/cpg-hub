@@ -4,7 +4,7 @@ const table_name = "brand_profiles";
 
 // Fetch Brands
 export async function getAllBrands(token) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase.from(table_name).select("*");
 
   if (error) {
@@ -17,7 +17,7 @@ export async function getAllBrands(token) {
 
 // Fetch single Brand
 export async function getBrand(token, id) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select("*")
@@ -34,7 +34,7 @@ export async function getBrand(token, id) {
 
 // Fetch my profile
 export async function getMyBrandProfile(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
@@ -54,7 +54,7 @@ export async function getMyBrandProfile(token, { user_id }) {
 
 // Add Brand
 export async function addNewBrand(token, brandData) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Current brand logo url
   let company_logo_url = null;
@@ -111,7 +111,7 @@ export async function addNewBrand(token, brandData) {
 
 // Update Brand Info
 export async function updateBrand(token, brandData, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Current brand logo url
   let company_logo_url = brandData.logo_url;
@@ -165,7 +165,7 @@ export async function updateBrand(token, brandData, { user_id }) {
 
 // Delete Brand
 export async function deleteBrand(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)

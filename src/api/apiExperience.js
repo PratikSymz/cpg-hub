@@ -4,7 +4,7 @@ const table_name = "talent_experiences";
 
 // Fetch all Experiences
 export async function getAllExperiences(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Talent Function field
   let query = supabase.from(table_name).select("*").eq("user_id", user_id);
@@ -21,7 +21,7 @@ export async function getAllExperiences(token, { user_id }) {
 
 // Add a new Experience
 export async function addNewExperience(token, experienceData, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Brand logo url (experience)
   let brand_logo_url = null;
@@ -79,7 +79,7 @@ export async function updateExperience(
   experienceData,
   { user_id, experience_id }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   // Brand logo url (experience)
   let brand_logo_url = experienceData.brand_logo;
@@ -130,7 +130,7 @@ export async function updateExperience(
 
 // Delete Experience
 export async function deleteExperience(token, { experience_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)

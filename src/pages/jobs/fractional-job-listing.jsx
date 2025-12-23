@@ -181,11 +181,18 @@ function FractionalJobListing() {
                 </Select>
               </div>
 
-              <div className="w-full sm:w-64">
+              <div className="w-full flex gap-4 sm:w-64">
                 <Button
-                  variant="default"
+                  className="flex-1 bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
                   size="default"
-                  className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
+                  variant="default"
+                >
+                  Apply Filters
+                </Button>
+                <Button
+                  className="flex-1 cursor-pointer"
+                  size="default"
+                  variant="outline"
                   onClick={clearFilters}
                 >
                   Clear Filters

@@ -4,7 +4,7 @@ const table_name = "endorsements";
 
 // Get all endorsements for this user (user_id)
 export async function getAllEndorsements(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
@@ -42,7 +42,7 @@ export async function createEndorsement(
   message,
   { endorser_id, target_id }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from("endorsements")
     .insert([
@@ -61,7 +61,7 @@ export async function updateEndorsement(
   new_message,
   { endorser_id, target_id }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .upsert(
@@ -83,7 +83,7 @@ export async function updateEndorsement(
 }
 
 export async function hasEndorsed(token, { from_user_id, to_user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
   const { count, error } = await supabase
     .from(table_name)
     .select("*", { count: "exact", head: true })
@@ -95,7 +95,7 @@ export async function hasEndorsed(token, { from_user_id, to_user_id }) {
 }
 
 export async function deleteEndorsement(token, { endorser_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)

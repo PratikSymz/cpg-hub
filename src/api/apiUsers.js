@@ -6,7 +6,7 @@ export async function syncUserProfile(
   token,
   { user_id, full_name, email, profile_picture_url }
 ) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)
@@ -30,7 +30,7 @@ export async function syncUserProfile(
 }
 
 export async function getUser(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+  const supabase = supabaseClient(token);
 
   const { data, error } = await supabase
     .from(table_name)

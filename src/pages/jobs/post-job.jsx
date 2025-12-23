@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { addNewJob } from "@/api/apiFractionalJobs.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
@@ -38,6 +38,7 @@ const PostJob = () => {
   // Load the current user -> Brand
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const submittedRef = useRef(false); // Block duplicate submission
 
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -68,19 +69,32 @@ const PostJob = () => {
   } = useFetch(addNewJob);
 
   const onSubmit = async (data) => {
+    if (submittedRef.current) {
+      console.warn("Duplicate submission prevented");
+      return;
+    }
+    submittedRef.current = true;
+
     try {
       if (user && user.id) {
-        await funcCreateJob({
+        const result = await funcCreateJob({
           ...data,
           brand_id: user.id,
           is_open: true,
         });
+
+        // Check if useFetch detected an error
+        if (result.error) {
+          throw new Error(errorCreateJob.message || "Failed to create job");
+        }
+
+        navigate("/jobs", { replace: true });
+        toast.success("Job created successfully!");
       }
-      toast.success("Job created successfully!");
-      navigate("/jobs", { replace: true });
     } catch (err) {
       console.log(err);
-      toast.error("Error creating job!");
+      toast.error("Failed to create job!");
+      submittedRef.current = false; // allow resubmission if needed
     }
   };
 

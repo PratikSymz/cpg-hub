@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getTalent } from "@/api/apiTalent.js"; // <- fetch talent_profiles by ID
-import { Copy, ExternalLink } from "lucide-react";
 import { BarLoader } from "react-spinners";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button.jsx";
@@ -28,6 +27,7 @@ import TalentExperienceSection from "@/components/experience-section.jsx";
 import clsx from "clsx";
 import BackButton from "@/components/back-button.jsx";
 import ShowLoginDialog from "@/components/show-login-dialog.jsx";
+import { ADMIN_USER_IDS } from "@/constants/admins.js";
 
 const tabs = [
   {
@@ -46,6 +46,8 @@ const tabs = [
     content: "",
   },
 ];
+
+const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
 
 const FractionalTalentDetail = () => {
   const { id } = useParams();
@@ -256,12 +258,12 @@ const FractionalTalentDetail = () => {
           </div>
 
           {/* Edit button for self */}
-          {user_info?.user_id === user?.id && (
+          {(user_info?.user_id === user?.id || isAdmin(user?.id)) && (
             <Button
               className="rounded-full cursor-pointer w-full sm:w-auto"
               variant="outline"
               size="lg"
-              onClick={() => navigate("/edit-talent")}
+              onClick={() => navigate(`/edit-talent`)}
             >
               Edit profile
             </Button>
