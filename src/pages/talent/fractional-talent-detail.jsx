@@ -263,7 +263,7 @@ const FractionalTalentDetail = () => {
               className="rounded-full cursor-pointer w-full sm:w-auto"
               variant="outline"
               size="lg"
-              onClick={() => navigate(`/edit-talent/${id}`)}
+              onClick={() => navigate(`/edit-talent`)}
             >
               Edit profile
             </Button>
