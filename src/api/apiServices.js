@@ -215,6 +215,83 @@ export async function deleteService(token, { user_id }) {
   return data;
 }
 
+// Update Service by ID (for admin/owner editing any profile by ID)
+export async function updateServiceById(token, serviceData, { service_id }) {
+  const supabase = supabaseClient(token);
+
+  // Current company logo url
+  let company_logo_url = serviceData.logo_url;
+  const newFile = serviceData.logo?.[0];
+
+  const folder = "services";
+  const bucket = "company-logo";
+  if (newFile) {
+    // A new file was uploaded → upload it
+    const fileName = formatCompanyLogoUrl(service_id, newFile);
+
+    // Upload the file
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, newFile, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (storageError) {
+      console.error("Error uploading new Service logo:", storageError);
+      throw new Error("Error uploading Service Company Logo");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    company_logo_url = publicUrlData?.publicUrl;
+  }
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .update({
+      company_name: serviceData.company_name,
+      company_website: serviceData.company_website,
+      logo_url: company_logo_url,
+      num_employees: serviceData.num_employees,
+      area_of_specialization: serviceData.area_of_specialization,
+      category_of_service: serviceData.category_of_service,
+      is_broker: serviceData.is_broker,
+      type_of_broker_service: serviceData.type_of_broker_service,
+      markets_covered: serviceData.markets_covered,
+      customers_covered: serviceData.customers_covered,
+    })
+    .eq("id", service_id)
+    .select();
+
+  if (error) {
+    console.error("Error Updating Service information:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// Delete Service by ID (for admin/owner deleting any profile by ID)
+export async function deleteServiceById(token, { service_id }) {
+  const supabase = supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("id", service_id)
+    .select();
+
+  if (error) {
+    console.error("Error deleting service:", error);
+    return data;
+  }
+
+  return data;
+}
+
 const formatCompanyLogoUrl = (user_id, file) => {
   const random = Math.floor(Math.random() * 90000);
   // Get a safe file extension

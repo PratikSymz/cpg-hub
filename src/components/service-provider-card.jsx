@@ -1,15 +1,7 @@
 import React from "react";
 import { Button } from "./ui/button.jsx";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./ui/card.jsx";
 import { Link } from "react-router-dom";
-import { Skeleton } from "./ui/skeleton.jsx";
-import clsx from "clsx";
+import { ArrowRight, Building2, Globe, MapPin } from "lucide-react";
 
 const ServiceProviderCard = ({ service }) => {
   const {
@@ -25,108 +17,111 @@ const ServiceProviderCard = ({ service }) => {
   } = service;
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 sm:gap-6">
-        {/* Avatar + Company */}
-        <div className="flex self-start items-center gap-4">
-          {logo_url ? (
+    <div className="bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-cpg-teal/30 hover:shadow-lg transition-all duration-300 flex flex-col">
+      {/* Header with Logo and Company Name */}
+      <div className="flex items-start gap-4 mb-4">
+        {logo_url ? (
+          <div className="h-14 w-14 rounded-xl border-2 border-gray-100 flex-shrink-0 bg-white flex items-center justify-center overflow-hidden">
             <img
               src={logo_url}
-              alt="Logo"
-              className="h-16 w-16 rounded-full object-cover border"
+              alt={`${company_name} logo`}
+              className="max-h-full max-w-full object-contain p-1"
             />
-          ) : (
-            <Skeleton className="h-16 w-16 rounded-full bg-black/15" />
-          )}
-
-          <div className="flex flex-col text-center sm:text-left">
-            <h1
-              className={clsx(
-                "text-xl sm:text-2xl font-bold",
-                company_website && "hover:underline"
-              )}
-            >
-              {company_website ? (
-                <Link to={company_website}>{company_name}</Link>
-              ) : (
-                <span>{company_name}</span>
-              )}
-            </h1>
           </div>
-        </div>
-      </CardHeader>
+        ) : (
+          <div className="h-14 w-14 rounded-xl bg-cpg-teal/10 flex items-center justify-center flex-shrink-0">
+            <Building2 className="h-7 w-7 text-cpg-teal" />
+          </div>
+        )}
 
-      <CardContent className="flex flex-col gap-3 text-sm text-black/90">
-        {/* Categories */}
-        <div>
-          <strong>Categories of Service:</strong>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {category_of_service?.length > 0 ? (
-              category_of_service.map((category, idx) => (
-                <span
-                  key={idx}
-                  className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 rounded-full"
-                >
-                  {category}
-                </span>
-              ))
-            ) : (
-              <span className="text-gray-500 ml-2">N/A</span>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900 truncate">
+            {company_name}
+          </h3>
+
+          {/* Website Link */}
+          {company_website && (
+            <a
+              href={company_website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cpg-teal hover:underline text-sm inline-flex items-center gap-1 mt-1 max-w-full"
+            >
+              <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">
+                {company_website.replace(/^https?:\/\//, "")}
+              </span>
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Category Tags */}
+      {category_of_service?.length > 0 && (
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-1.5">
+            {category_of_service.slice(0, 3).map((category, idx) => (
+              <span
+                key={idx}
+                className="bg-cpg-teal/10 text-cpg-teal text-xs font-medium px-2.5 py-1 rounded-full"
+              >
+                {category}
+              </span>
+            ))}
+            {category_of_service.length > 3 && (
+              <span className="text-xs text-gray-500 px-2 py-1">
+                +{category_of_service.length - 3} more
+              </span>
             )}
           </div>
         </div>
+      )}
 
-        {/* Broker Services */}
-        {is_broker && type_of_broker_service?.length > 0 && (
-          <div>
-            <strong>Broker Services:</strong>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {type_of_broker_service.map((service, idx) => (
-                <span
-                  key={idx}
-                  className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 rounded-full"
-                >
-                  {service}
-                </span>
-              ))}
-            </div>
+      {/* Broker Services Tags */}
+      {is_broker && type_of_broker_service?.length > 0 && (
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-1.5">
+            {type_of_broker_service.slice(0, 2).map((svc, idx) => (
+              <span
+                key={idx}
+                className="bg-cpg-brown/10 text-cpg-brown text-xs font-medium px-2.5 py-1 rounded-full"
+              >
+                {svc}
+              </span>
+            ))}
+            {type_of_broker_service.length > 2 && (
+              <span className="text-xs text-gray-500 px-2 py-1">
+                +{type_of_broker_service.length - 2} more
+              </span>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Markets Covered */}
-        {markets_covered?.length > 0 && (
-          <div>
-            <strong>Markets Covered:</strong>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {markets_covered.map((market, idx) => (
-                <span
-                  key={idx}
-                  className="bg-cpg-teal text-white text-sm font-normal px-3 py-1 rounded-full"
-                >
-                  {market}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Markets Covered */}
+      {markets_covered?.length > 0 && (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {markets_covered.slice(0, 2).join(", ")}
+            {markets_covered.length > 2 && ` +${markets_covered.length - 2}`}
+          </span>
+        </div>
+      )}
 
-        {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-4">
-          {customers_covered}
-        </p>
-      </CardContent>
-
-      <CardFooter className="mt-2">
-        <Button
-          variant="default"
-          size="default"
-          className="w-full sm:flex-1 bg-cpg-brown hover:bg-cpg-brown/90"
-          asChild
-        >
-          <Link to={`/services/${id}`}>View Profile</Link>
-        </Button>
-      </CardFooter>
-    </Card>
+      {/* View Profile Button */}
+      <Button
+        variant="default"
+        size="default"
+        className="w-full bg-cpg-brown hover:bg-cpg-brown/90 rounded-xl h-11 group mt-auto"
+        asChild
+      >
+        <Link to={`/services/${id}`} className="flex items-center justify-center gap-2">
+          View Profile
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </Button>
+    </div>
   );
 };
 
