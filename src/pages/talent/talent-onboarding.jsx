@@ -7,7 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { addNewTalent } from "@/api/apiTalent.js";
 import { BarLoader } from "react-spinners";
 import {
@@ -33,7 +33,9 @@ import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const submittedRef = useRef(false); // Block duplicate submission
+  const returnTo = searchParams.get("returnTo");
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const imageUrl = user?.imageUrl;
@@ -129,7 +131,8 @@ const TalentOnboarding = () => {
         }
 
         await handleRoleSelection(ROLE_TALENT);
-        navigate("/talents", { replace: true });
+        const redirectPath = returnTo || "/talents";
+        navigate(redirectPath, { replace: true });
         toast.success("Profile Created!");
       }
     } catch (err) {

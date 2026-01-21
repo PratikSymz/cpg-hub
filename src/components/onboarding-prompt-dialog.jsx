@@ -22,14 +22,20 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
   const alreadyHasRole = userRoles.includes(role);
 
   const title = alreadyHasRole
-    ? `You're already onboarded as a ${formatRole(role)}`
-    : `You're about to set your profile as a ${formatRole(role)}`;
+    ? role === ROLE_BRAND
+      ? "Ready to Post a Job"
+      : `You're already onboarded as a ${formatRole(role)}`
+    : role === ROLE_BRAND
+      ? "Create a Brand Profile"
+      : `Complete Your ${formatRole(role)} Profile`;
 
   const message = alreadyHasRole
     ? role === ROLE_BRAND
-      ? `You're already registered as a brand. Taking you to the job posting page...`
+      ? "Taking you to the job posting page..."
       : `You've already completed onboarding as a ${formatRole(role)}.`
-    : `This will take you to the onboarding form to complete your ${formatRole(role)} profile.`;
+    : role === ROLE_BRAND
+      ? "To post a job, you'll need to create a brand profile first. This only takes a minute!"
+      : `This will take you to the onboarding form to complete your ${formatRole(role)} profile.`;
 
   useEffect(() => {
     if (open && role === ROLE_BRAND && alreadyHasRole) {
@@ -40,7 +46,7 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
   const handleRedirect = () => {
     setOpen(false);
     if (role === ROLE_BRAND) {
-      navigate("/onboarding/brand");
+      navigate("/post-job");
     } else if (role === ROLE_SERVICE) {
       navigate("/onboarding/service");
     } else {
@@ -76,7 +82,7 @@ export default function OnboardingPromptDialog({ open, setOpen, role }) {
               onClick={handleRedirect}
               className="cursor-pointer"
             >
-              Continue
+              {role === ROLE_BRAND ? "Get Started" : "Continue"}
             </Button>
           )}
         </DialogFooter>

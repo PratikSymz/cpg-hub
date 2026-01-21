@@ -15,30 +15,30 @@ export async function getAllBrands(token) {
   return data;
 }
 
-// Fetch single Brand
-export async function getBrand(token, id) {
+// Fetch single Brand by ID
+export async function getBrand(token, { brand_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select("*")
-    .eq("id", id)
-    .limit(1);
+    .eq("id", brand_id)
+    .single();
 
   if (error) {
-    console.error(`Error fetching Brand ${id}:`, error);
+    console.error(`Error fetching Brand ${brand_id}:`, error);
     return null;
   }
 
   return data;
 }
 
-// Fetch my profile
+// Fetch my profile (single brand - legacy)
 export async function getMyBrandProfile(token, { user_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
     .from(table_name)
     .select(
-      `*, 
+      `*,
       user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
     )
     .eq("user_id", user_id)
@@ -50,6 +50,23 @@ export async function getMyBrandProfile(token, { user_id }) {
   }
 
   return data;
+}
+
+// Fetch all brands for a user (supports multiple brands)
+export async function getMyBrands(token, { user_id }) {
+  const supabase = supabaseClient(token);
+  const { data, error } = await supabase
+    .from(table_name)
+    .select("*")
+    .eq("user_id", user_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(`Error fetching brands for user ${user_id}:`, error);
+    return [];
+  }
+
+  return data || [];
 }
 
 // Add Brand
@@ -109,7 +126,7 @@ export async function addNewBrand(token, brandData) {
   return data;
 }
 
-// Update Brand Info
+// Update Brand Info by user_id (legacy)
 export async function updateBrand(token, brandData, { user_id }) {
   const supabase = supabaseClient(token);
 
@@ -161,6 +178,73 @@ export async function updateBrand(token, brandData, { user_id }) {
   }
 
   return data;
+}
+
+// Update Brand Info by brand_id (for admin/edit-job)
+export async function updateBrandById(token, { brand_id, brandData, newLogo }) {
+  const supabase = supabaseClient(token);
+
+  // Handle logo upload if provided
+  let company_logo_url = brandData.logo_url;
+  if (newLogo && newLogo instanceof File) {
+    const folder = "brands";
+    const bucket = "company-logo";
+    const fileName = formatCompanyLogoUrl(brand_id, newLogo);
+
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, newLogo, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (storageError) {
+      console.error("Error uploading Brand logo:", storageError);
+      throw new Error("Error uploading Brand logo");
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    company_logo_url = publicUrlData?.publicUrl;
+  }
+
+  // Update brand_profiles
+  const { data: brandResult, error: brandError } = await supabase
+    .from(table_name)
+    .update({
+      brand_name: brandData.brand_name,
+      website: brandData.website,
+      linkedin_url: brandData.linkedin_url,
+      brand_hq: brandData.brand_hq,
+      logo_url: company_logo_url,
+      brand_desc: brandData.brand_desc,
+    })
+    .eq("id", brand_id)
+    .select()
+    .single();
+
+  if (brandError) {
+    console.error("Error updating Brand:", brandError);
+    throw new Error("Error updating Brand");
+  }
+
+  // Sync poster info on all jobs linked to this brand
+  const { error: jobsError } = await supabase
+    .from("job_listings")
+    .update({
+      poster_name: brandData.brand_name,
+      poster_logo: company_logo_url,
+      poster_location: brandData.brand_hq,
+    })
+    .eq("brand_id", brand_id);
+
+  if (jobsError) {
+    console.error("Error syncing jobs:", jobsError);
+    // Don't throw - brand was updated successfully
+  }
+
+  return brandResult;
 }
 
 // Delete Brand

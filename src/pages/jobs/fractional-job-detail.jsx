@@ -1,40 +1,44 @@
 import React, { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleJob } from "@/api/apiFractionalJobs.js";
-import { Label } from "@radix-ui/react-label";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
 import { getUser } from "@/api/apiUsers.js";
-import clsx from "clsx";
 import BackButton from "@/components/back-button.jsx";
+import {
+  MapPin,
+  Clock,
+  Briefcase,
+  Globe,
+  Building2,
+  FileText,
+  Mail,
+  Pencil,
+} from "lucide-react";
+import clsx from "clsx";
 
 const FractionalJobDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
+  const [activeTab, setActiveTab] = useState("about");
 
-  // Load Job and Brand info
+  // Load Job info
   const {
     loading: loadingJob,
     data: job,
     func: funcJob,
   } = useFetch(getSingleJob);
 
-  // Load brand owner profile
+  // Load poster's user profile for contact
   const {
-    loading: loadingBrand,
-    data: brandProfile,
-    func: fetchBrand,
+    loading: loadingPoster,
+    data: posterProfile,
+    func: fetchPoster,
   } = useFetch(getUser);
 
   useEffect(() => {
@@ -53,33 +57,24 @@ const FractionalJobDetail = () => {
     estimated_hrs_per_wk,
     area_of_specialization,
     is_open,
-    brand_id,
+    poster_id,
   } = job || {};
 
-  // Brand info
-  const { brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url } =
-    (job && job?.brand) || {};
+  // Poster info (inline on job) - with fallback for legacy data
+  const poster_name = job?.poster_name || job?.brand?.brand_name || "Unknown";
+  const poster_logo = job?.poster_logo || job?.brand?.logo_url;
+  const poster_location = job?.poster_location || job?.brand?.brand_hq;
+  const poster_type = job?.poster_type || "brand";
 
   useEffect(() => {
-    if (brand_id) {
-      fetchBrand({ user_id: brand_id });
+    const posterId = poster_id || job?.brand_id;
+    if (posterId) {
+      fetchPoster({ user_id: posterId });
     }
-  });
+  }, [poster_id, job?.brand_id]);
 
-  // Brand user profile
-  const { full_name, email, profile_picture_url } = brandProfile || {};
-
-  // // Load hiring status
-  // const { loading: loadingHiringStatus, func: funcHiringStatus } =
-  //   useFetch(updateHiringStatus);
-
-  // // Update hiring status and re-fetch job details
-  // const handleStatusChange = (value) => {
-  //   const isOpen = value === "open";
-  //   funcHiringStatus({ is_open: isOpen, job_id: id }).then(() =>
-  //     funcJob({ job_id: id })
-  //   );
-  // };
+  // Poster user profile (for contact)
+  const { full_name, email, profile_picture_url } = posterProfile || {};
 
   const handleEmailSend = async (message) => {
     try {
@@ -112,279 +107,277 @@ const FractionalJobDetail = () => {
   };
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-  const connectButton =
-    brand_id && user && brand_id !== user.id ? (
-      <div className="flex flex-col text-sm mt-10">
-        <ConnectEmailDialog
-          open={connectDialogOpen}
-          setOpen={setConnectDialogOpen}
-          targetUser={brandProfile}
-          senderUser={user}
-          onSend={handleEmailSend}
-        />
-      </div>
-    ) : (
-      <></>
-    );
+  const currentPosterId = poster_id || job?.brand_id;
+  const canContact = currentPosterId && user && currentPosterId !== user.id;
+  const isOwner = currentPosterId && user && currentPosterId === user.id;
 
   if (!isLoaded || loadingJob) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+    return <BarLoader className="mb-4" width={"100%"} color="#00A19A" />;
   }
 
   return (
-    <>
-      <div className="px-6 py-10">
+    <div className="py-10">
+      {/* Header */}
+      <div className="w-5/6 mx-auto mb-8">
         <BackButton />
+        <h1 className="gradient-title font-extrabold text-4xl sm:text-5xl lg:text-6xl text-center mt-6">
+          {job_title || "Job Details"}
+        </h1>
+        {is_open === false && (
+          <div className="flex justify-center mt-4">
+            <span className="bg-red-100 text-red-700 text-sm font-medium px-4 py-1.5 rounded-full">
+              This position is no longer accepting applications
+            </span>
+          </div>
+        )}
       </div>
-      <div className="flex flex-col gap-10 px-6 pb-16 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 w-full">
-          <div className="flex items-center sm:items-start gap-4">
-            <img
-              src={job?.brand && logo_url}
-              alt="Profile"
-              className="h-22 w-22 rounded-full border object-cover"
-            />
-            <div>
-              <h1
-                className={clsx(
-                  "text-3xl font-bold",
-                  website && "hover:underline"
-                )}
-              >
-                {job?.brand &&
-                  (website ? (
-                    <Link to={website}>{brand_name}</Link>
-                  ) : (
-                    <span>{brand_name}</span>
-                  ))}
-              </h1>
-              <div className="flex flex-row gap-4 mt-2">
-                {/* {job?.brand && linkedin_url && (
-                <Link to={linkedin_url}>
-                  <FaLinkedin
-                    className="text-gray-700 hover:text-gray-800 h-5.5 w-5.5 transition-transform duration-150 hover:scale-110"
-                    style={{ color: "#0072b1" }}
-                  />
-                </Link>
-              )} */}
+
+      <div className="w-5/6 mx-auto">
+        {/* Poster Card */}
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {/* Logo */}
+            {poster_logo ? (
+              <div className="h-20 w-20 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img
+                  src={poster_logo}
+                  alt={poster_name}
+                  className="h-full w-full object-contain p-2"
+                />
               </div>
+            ) : (
+              <div className="h-20 w-20 rounded-full border-2 border-gray-100 bg-gray-50 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-8 w-8 text-gray-400" />
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-2xl font-bold">{poster_name}</h2>
+              {poster_location && (
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span>{poster_location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 flex-shrink-0">
+              {canContact && (
+                <ConnectEmailDialog
+                  open={connectDialogOpen}
+                  setOpen={setConnectDialogOpen}
+                  targetUser={posterProfile}
+                  senderUser={user}
+                  onSend={handleEmailSend}
+                />
+              )}
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  className="border-2 border-cpg-teal text-cpg-teal hover:bg-cpg-teal/5 rounded-xl"
+                  asChild
+                >
+                  <Link to={`/edit-job/${id}`}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Job
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
+        </div>
 
-          {user && brand_id && brand_id === user.id && (
-            <Button
-              className="rounded-full cursor-pointer"
-              variant="outline"
-              size="lg"
-              asChild
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-8">
+          <button
+            onClick={() => setActiveTab("about")}
+            className={clsx(
+              "px-6 py-3 rounded-xl text-sm font-medium transition-all",
+              activeTab === "about"
+                ? "bg-cpg-teal text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            )}
+          >
+            About
+          </button>
+          {job?.job_description && (
+            <button
+              onClick={() => setActiveTab("description")}
+              className={clsx(
+                "px-6 py-3 rounded-xl text-sm font-medium transition-all",
+                activeTab === "description"
+                  ? "bg-cpg-teal text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
             >
-              <Link to={`/edit-job/${id}`}>Edit Job</Link>
-            </Button>
+              <FileText className="h-4 w-4 inline mr-2" />
+              Job Description
+            </button>
           )}
         </div>
 
-        {/* Horizontal divider */}
-        <div className="flex bg-gray-100 rounded-2xl h-0.5 mt-4"></div>
-
-        {/* Profile Summary tabs */}
-        <div className="flex flex-col gap-2 text-sm">
-          <Tabs defaultValue="about" className="w-full">
-            <TabsList className="flex justify-center gap-4 mb-8 bg-transparent">
-              <TabsTrigger
-                value="about"
-                className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
-              >
-                About
-              </TabsTrigger>
-
-              {job?.job_description && (
-                <TabsTrigger
-                  value="job_description"
-                  className="rounded-3xl border px-7 py-5 text-sm font-medium data-[state=active]:bg-black/5 data-[state=active]:text-black data-[state=active]:shadow-none"
-                >
-                  Description
-                </TabsTrigger>
-              )}
-            </TabsList>
-
-            {/* Tab Contents */}
-            <TabsContent className={"ms-4"} value="about">
-              <div className="flex flex-col gap-10 mt-4">
-                {/* Section: Summary Info */}
-                {brand_desc && (
-                  <div className="bg-muted rounded-md p-4">
-                    <p className="text-sm font-medium mt-1">
-                      {job?.brand && brand_desc}
-                    </p>
+        {/* Tab Content */}
+        {activeTab === "about" && (
+          <div className="space-y-8">
+            {/* Job Overview Card */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-6">Job Overview</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Scope of Work */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Briefcase className="h-5 w-5 text-cpg-teal" />
                   </div>
-                )}
-
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  <div className="bg-muted rounded-md p-4">
-                    <Label className="text-xs text-muted-foreground uppercase">
-                      Location
-                    </Label>
-                    <p className="text-sm font-medium mt-1">
-                      {brand_hq || "Remote"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Section: Details */}
-                <h1 className="text-4xl font-extrabold">{job?.job_title}</h1>
-                <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-sm font-semibold block mb-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
                       Scope of Work
-                    </Label>
-                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-                      {job && scope_of_work}
-                    </span>
+                    </p>
+                    <p className="font-medium mt-1">{scope_of_work || "N/A"}</p>
+                  </div>
+                </div>
+
+                {/* Work Location */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Globe className="h-5 w-5 text-cpg-teal" />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold block mb-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
                       Work Location
-                    </Label>
-                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-                      {job && work_location}
-                    </span>
+                    </p>
+                    <p className="font-medium mt-1">{work_location || "N/A"}</p>
+                  </div>
+                </div>
+
+                {/* Weekly Hours */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Clock className="h-5 w-5 text-cpg-teal" />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold block mb-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
                       Weekly Hours
-                    </Label>
-                    <span className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full">
-                      {job && estimated_hrs_per_wk} hrs/week
-                    </span>
+                    </p>
+                    <p className="font-medium mt-1">
+                      {estimated_hrs_per_wk ? `${estimated_hrs_per_wk} hrs/week` : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Mail className="h-5 w-5 text-cpg-teal" />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold block mb-2">
-                      Experience Level
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {job &&
-                        level_of_experience.map((level, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-                          >
-                            {level}
-                          </span>
-                        ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Status
+                    </p>
+                    <p className="font-medium mt-1">
+                      {is_open !== false ? (
+                        <span className="text-green-600">Accepting Applications</span>
+                      ) : (
+                        <span className="text-red-600">Closed</span>
+                      )}
+                    </p>
                   </div>
                 </div>
-
-                {/* Section: Specialization Tags */}
-                <div>
-                  <Label className="text-sm font-semibold block mb-2">
-                    Area of Specialization
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {area_of_specialization &&
-                      area_of_specialization.map((area, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
-                        >
-                          {area}
-                        </span>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Section: Preferred Experience */}
-                <div>
-                  <Label className="text-sm font-semibold block mb-2">
-                    Preferred Experience
-                  </Label>
-                  <div
-                    data-color-mode="light"
-                    className="prose prose-sm sm:prose-base bg-white p-4 rounded-lg"
-                  >
-                    <MDEditor.Markdown
-                      className="bg-white"
-                      source={job?.preferred_experience}
-                    />
-                  </div>
-                </div>
-
-                <div>{connectButton}</div>
               </div>
-            </TabsContent>
+            </div>
 
-            {job?.job_description && (
-              <TabsContent className={"ms-6"} value="resume">
-                {job?.job_description ? (
-                  <iframe
-                    src={job?.job_description}
-                    title="Resume"
-                    width="100%"
-                    height="800px"
-                    className="rounded-lg border"
-                  />
+            {/* Experience Level */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Experience Level</h3>
+              <div className="flex flex-wrap gap-2">
+                {(level_of_experience || []).length > 0 ? (
+                  level_of_experience.map((level, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-cpg-teal text-white text-sm font-medium px-4 py-2 rounded-full"
+                    >
+                      {level}
+                    </span>
+                  ))
                 ) : (
-                  <p className="text-gray-600">No job description uploaded.</p>
+                  <span className="text-muted-foreground">Not specified</span>
                 )}
-              </TabsContent>
+              </div>
+            </div>
+
+            {/* Area of Specialization */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Area of Specialization</h3>
+              <div className="flex flex-wrap gap-2">
+                {(area_of_specialization || []).length > 0 ? (
+                  area_of_specialization.map((area, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-cpg-teal/10 text-cpg-teal text-sm font-medium px-4 py-2 rounded-full"
+                    >
+                      {area}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground">Not specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Preferred Experience */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Preferred Experience</h3>
+              {preferred_experience ? (
+                <div
+                  data-color-mode="light"
+                  className="prose prose-sm sm:prose-base max-w-none"
+                >
+                  <MDEditor.Markdown
+                    className="bg-transparent"
+                    source={preferred_experience}
+                  />
+                </div>
+              ) : (
+                <span className="text-muted-foreground">Not specified</span>
+              )}
+            </div>
+
+            {/* Contact CTA for non-owners */}
+            {canContact && (
+              <div className="bg-gradient-to-r from-cpg-teal/10 to-cpg-brown/10 border-2 border-cpg-teal/20 rounded-2xl p-8 text-center">
+                <h3 className="text-xl font-semibold mb-2">
+                  Interested in this opportunity?
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Reach out to {poster_name} to express your interest and learn more about the role.
+                </p>
+                <ConnectEmailDialog
+                  open={connectDialogOpen}
+                  setOpen={setConnectDialogOpen}
+                  targetUser={posterProfile}
+                  senderUser={user}
+                  onSend={handleEmailSend}
+                  triggerClassName="bg-cpg-teal hover:bg-cpg-teal/90 text-white px-8 py-3 rounded-xl text-base font-medium"
+                />
+              </div>
             )}
-          </Tabs>
-        </div>
-
-        {/* Hiring Status Control */}
-        {/* {job?.brand_id === user?.id && (
-        <div>
-          <Label className="text-sm font-semibold block mb-2">
-            Hiring Status
-          </Label>
-          <Select onValueChange={handleStatusChange}>
-            <SelectTrigger
-              className={`w-full sm:w-64 ${
-                job?.is_open ? "bg-green-950" : "bg-red-950"
-              } text-white`}
-            >
-              <SelectValue
-                placeholder={`Currently ${job?.is_open ? "Open" : "Closed"}`}
-              />
-            </SelectTrigger>
-            <SelectContent className={className}>
-              <SelectItem className={className} value="open">
-                Open
-              </SelectItem>
-              <SelectItem className={className} value="closed">
-                Closed
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )} */}
-
-        {/* Apply or Manage */}
-        {/* {job?.brand_id !== user?.id && (
-        <ApplyJobDrawer
-          job={job}
-          user={user}
-          fetchJob={funcJob}
-          applied={job?.applications?.find((ap) => ap.user_id === user.id)}
-        />
-      )} */}
-
-        {/* Section: Applications (if user owns job) */}
-        {/* {loadingHiringStatus && <BarLoader width="100%" color="#36d7b7" />}
-
-      {job?.brand_id === user?.id && job?.applications?.length > 0 && (
-        <div className="mt-10">
-          <h2 className="text-xl font-bold mb-4">Applications</h2>
-          <div className="flex flex-col gap-4">
-            {job.applications.map((application) => (
-              <ApplicationCard key={application.id} application={application} />
-            ))}
           </div>
-        </div>
-      )} */}
+        )}
+
+        {activeTab === "description" && job?.job_description && (
+          <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
+            <iframe
+              src={job.job_description}
+              title="Job Description"
+              width="100%"
+              height="800px"
+              className="border-0"
+            />
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

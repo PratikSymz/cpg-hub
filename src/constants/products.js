@@ -1,6 +1,5 @@
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "./roles.js";
 
-// cardsData.js (optional file if you want to split data out)
 export const products = [
   {
     id: 1,

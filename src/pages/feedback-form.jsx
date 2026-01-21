@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label.jsx";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import ShowLoginDialog from "@/components/show-login-dialog.jsx";
+import { Send, MessageSquare } from "lucide-react";
 
 const FeedbackForm = () => {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -66,58 +66,84 @@ const FeedbackForm = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-10 space-y-8">
-      <h1 className="text-4xl font-bold text-center">Feedback</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <Label className="mb-1 block">Name</Label>
-            <Input
-              className="input-class"
-              type="text"
-              value={name}
-              readOnly
-              disabled
-            />
-          </div>
-
-          <div>
-            <Label className="mb-1 block">Email</Label>
-            <Input
-              className="input-class"
-              type="email"
-              value={email}
-              readOnly
-              disabled
-            />
+    <main className="py-10">
+      {/* Header Section */}
+      <section className="w-5/6 mx-auto mb-8">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="bg-cpg-teal/10 rounded-xl p-3">
+            <MessageSquare className="h-6 w-6 text-cpg-teal" />
           </div>
         </div>
+        <h1 className="gradient-title font-extrabold text-3xl sm:text-4xl text-center">
+          Share Your Feedback
+        </h1>
+        <p className="text-center text-muted-foreground mt-3 max-w-lg mx-auto">
+          Help us improve CPG Hub! We'd love to hear your thoughts, suggestions,
+          or any issues you've encountered.
+        </p>
+      </section>
 
-        <div>
-          <Label className="mb-1 block">Message</Label>
-          <Textarea
-            className="textarea-class resize-y block w-full h-24"
-            placeholder="Your message..."
-            rows={5}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            required
-          />
+      {/* Form Card */}
+      <section className="w-5/6 max-w-xl mx-auto">
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Name
+                </Label>
+                <Input
+                  type="text"
+                  value={name}
+                  readOnly
+                  disabled
+                  className="h-12 rounded-xl bg-gray-50 border-gray-200"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  type="email"
+                  value={email}
+                  readOnly
+                  disabled
+                  className="h-12 rounded-xl bg-gray-50 border-gray-200"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Message
+              </Label>
+              <Textarea
+                placeholder="Share your thoughts, suggestions, or report an issue..."
+                rows={5}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                className="resize-y rounded-xl border-gray-200 focus:border-cpg-teal focus:ring-cpg-teal/20"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="default"
+              size="lg"
+              disabled={sending}
+              className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl mt-2"
+              data-umami-event="Feedback Submission"
+            >
+              <Send className="h-5 w-5 mr-2" />
+              {sending ? "Sending..." : "Send Feedback"}
+            </Button>
+          </form>
         </div>
-
-        <Button
-          type="submit"
-          variant="default"
-          size="lg"
-          // disabled={sending || !message.trim() || !email.trim() || !name.trim()}
-          className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
-          data-umami-event="Feedback Submission"
-        >
-          {sending ? "Sending..." : "Submit"}
-        </Button>
-      </form>
-    </div>
+      </section>
+    </main>
   );
 };
 
