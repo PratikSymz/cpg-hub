@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button.jsx";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
+import { isAdminEmail } from "@/constants/admins.js";
 
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -123,10 +124,7 @@ const NavBar = () => {
                 </Button>
               </Link>
             )}
-            {user &&
-              (user.id === "user_2xhWB9MbqX5LvYBi2U9yo4UV9Fi" ||
-                user.id === "user_2xhVcPb80nvI4T03q4w1IZZq65g" ||
-                user.id === "user_2xjEiqsXt9y1R8BiNG8wTxZdQNE") && (
+            {isAdminEmail(user?.primaryEmailAddress?.emailAddress) && (
                 <Link to="/user-analytics">
                   <Button
                     size="default"
@@ -172,10 +170,7 @@ const NavBar = () => {
                   />
                 )}
 
-                {user &&
-                  (user.id === "user_2xhWB9MbqX5LvYBi2U9yo4UV9Fi" ||
-                    user.id === "user_2xhVcPb80nvI4T03q4w1IZZq65g" ||
-                    user.id === "user_2xjEiqsXt9y1R8BiNG8wTxZdQNE") && (
+                {isAdminEmail(user?.primaryEmailAddress?.emailAddress) && (
                     <UserButton.Link
                       label="Analytics"
                       labelIcon={<BarChart3 size={16} />}
