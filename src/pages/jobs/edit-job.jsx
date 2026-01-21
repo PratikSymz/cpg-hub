@@ -3,16 +3,13 @@ import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BarLoader } from "react-spinners";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { getMyBrandProfile, updateBrand } from "@/api/apiBrands.js";
-import { Loader2Icon, X } from "lucide-react";
-import { syncUserProfile } from "@/api/apiUsers.js";
 import { deleteJob, getSingleJob, updateJob } from "@/api/apiFractionalJobs.js";
+import { getBrand, updateBrandById } from "@/api/apiBrands.js";
 import {
   areasOfSpecialization,
   levelsOfExperience,
@@ -25,8 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import clsx from "clsx";
-import { BrandSchemaWithName } from "@/schemas/brand-schema.js";
-import { JobSchema } from "@/schemas/job-schema.js";
+import { z } from "zod";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import {
@@ -37,40 +33,104 @@ import {
 import { toast } from "sonner";
 import NumberInput from "@/components/number-input.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
-import { ArrowLeft } from "lucide-react";
+import BackButton from "@/components/back-button.jsx";
+import {
+  X,
+  Building2,
+  Trash2,
+  Save,
+  ToggleLeft,
+  ToggleRight,
+  AlertTriangle,
+  ExternalLink,
+} from "lucide-react";
+
+// Schema for brand editing
+const BrandSchema = z.object({
+  brand_name: z.string().min(1, "Brand name is required"),
+  website: z.string().url("Please enter a valid URL").or(z.literal("")),
+  linkedin_url: z.string().url("Please enter a valid LinkedIn URL").or(z.literal("")),
+  brand_hq: z.string().optional(),
+  brand_desc: z.string().optional(),
+});
+
+// Schema for job editing
+const JobSchema = z.object({
+  job_title: z.string().min(1, "Job title is required"),
+  preferred_experience: z.string().min(1, "Preferred experience is required"),
+  level_of_experience: z.array(z.string()).min(1, "Select at least one level"),
+  work_location: z.string().min(1, "Work location is required"),
+  scope_of_work: z.string().min(1, "Scope of work is required"),
+  area_of_specialization: z.array(z.string()).min(1, "Select at least one area"),
+  estimated_hrs_per_wk: z.coerce.number().min(1, "Hours per week is required"),
+});
 
 const EditJobPage = () => {
   const { id } = useParams();
-  const { user, isLoaded, isSignedIn } = useUser();
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const submittedRef = useRef(false);
 
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
+  const [newLogoFile, setNewLogoFile] = useState(null);
+  const [otherSpec, setOtherSpec] = useState("");
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState("brand");
 
-  if (!user) {
-    navigate("/");
-  }
+  // Load job data
+  const {
+    loading: loadingJob,
+    data: jobData,
+    func: fetchJob,
+  } = useFetch(getSingleJob);
 
+  // Load brand data
+  const {
+    loading: loadingBrand,
+    data: brandData,
+    func: fetchBrand,
+  } = useFetch(getBrand);
+
+  // Update brand
+  const {
+    loading: savingBrand,
+    error: saveBrandError,
+    func: saveBrand,
+  } = useFetch(updateBrandById);
+
+  // Update job
+  const {
+    loading: savingJob,
+    error: saveJobError,
+    func: saveJob,
+  } = useFetch(updateJob);
+
+  // Delete job
+  const {
+    loading: deletingJob,
+    func: removeJob,
+  } = useFetch(deleteJob);
+
+  // Brand form
   const brandForm = useForm({
     defaultValues: {
-      first_name: "",
-      last_name: "",
       brand_name: "",
       website: "",
       linkedin_url: "",
       brand_hq: "",
       brand_desc: "",
     },
-    resolver: zodResolver(BrandSchemaWithName),
+    resolver: zodResolver(BrandSchema),
   });
-  const brandErrors = brandForm.formState.errors;
 
+  // Job form
   const jobForm = useForm({
     defaultValues: {
+      job_title: "",
       preferred_experience: "",
       level_of_experience: [],
-      job_title: "",
       work_location: "Remote",
       scope_of_work: "Ongoing",
       area_of_specialization: [],
@@ -78,10 +138,57 @@ const EditJobPage = () => {
     },
     resolver: zodResolver(JobSchema),
   });
-  const jobErrors = jobForm.formState.errors;
 
+  const brandErrors = brandForm.formState.errors;
+  const jobErrors = jobForm.formState.errors;
+  const isDirty = brandForm.formState.isDirty || jobForm.formState.isDirty;
+
+  // Fetch job on mount
+  useEffect(() => {
+    if (id) {
+      fetchJob({ job_id: id });
+    }
+  }, [id]);
+
+  // Fetch brand when job data loads
+  useEffect(() => {
+    if (jobData?.brand_id) {
+      fetchBrand({ brand_id: jobData.brand_id });
+    }
+  }, [jobData?.brand_id]);
+
+  // Populate brand form when brand data loads
+  useEffect(() => {
+    if (brandData) {
+      brandForm.reset({
+        brand_name: brandData.brand_name || "",
+        website: brandData.website || "",
+        linkedin_url: brandData.linkedin_url || "",
+        brand_hq: brandData.brand_hq || "",
+        brand_desc: brandData.brand_desc || "",
+      });
+      if (brandData.logo_url) setLogoPreview(brandData.logo_url);
+    }
+  }, [brandData]);
+
+  // Populate job form when job data loads
+  useEffect(() => {
+    if (jobData) {
+      jobForm.reset({
+        job_title: jobData.job_title || "",
+        preferred_experience: jobData.preferred_experience || "",
+        level_of_experience: jobData.level_of_experience || [],
+        work_location: jobData.work_location || "Remote",
+        scope_of_work: jobData.scope_of_work || "Ongoing",
+        area_of_specialization: jobData.area_of_specialization || [],
+        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk || "",
+      });
+    }
+  }, [jobData]);
+
+  // Navigation guards
   const handleBackClick = () => {
-    if (brandForm.formState.isDirty || jobForm.formState.isDirty) {
+    if (isDirty) {
       setShowDialog(true);
       setNavTarget(-1);
     } else {
@@ -102,92 +209,98 @@ const EditJobPage = () => {
     setNavTarget(null);
   };
 
-  const {
-    loading,
-    data: brandData,
-    func: fetchBrand,
-  } = useFetch(getMyBrandProfile);
-
-  const {
-    loading: savingBrand,
-    error: saveBrandError,
-    func: saveBrand,
-  } = useFetch(updateBrand);
-
-  const {
-    loading: removingBrand,
-    error: removeBrandError,
-    func: removeBrand,
-  } = useFetch(updateBrand);
-
-  const { loadingJob, data: jobData, func: fetchJob } = useFetch(getSingleJob);
-
-  const {
-    loading: savingJob,
-    error: saveJobError,
-    func: saveJob,
-  } = useFetch(updateJob);
-
-  const {
-    loading: removingJob,
-    error: removeJobError,
-    func: removeJob,
-  } = useFetch(deleteJob);
-
-  // Update User Profile
-  const { func: updateUserProfile } = useFetch(syncUserProfile);
-
-  const [logoPreview, setLogoPreview] = useState("");
-  const [otherSpec, setOtherSpec] = useState("");
-  const [showOtherInput, setShowOtherInput] = useState(false);
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn && user?.id) {
-      fetchBrand({ user_id: user.id });
-      fetchJob({ job_id: id });
+  // Logo handling
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
-  }, [isLoaded, isSignedIn, user]);
+  };
 
-  useEffect(() => {
-    if (brandData) {
-      brandForm.reset({
-        first_name: user.firstName || "",
-        last_name: user.lastName || "",
-        brand_name: brandData.brand_name || "",
-        website: brandData.website || "",
-        linkedin_url: brandData.linkedin_url || "",
-        brand_hq: brandData.brand_hq || "",
-        brand_desc: brandData.brand_desc || "",
-      });
-      if (brandData.logo_url) setLogoPreview(brandData.logo_url);
+  // Save brand
+  const handleSaveBrand = async (data) => {
+    if (!jobData?.brand_id) {
+      toast.error("No brand linked to this job");
+      return;
     }
 
-    if (jobData) {
-      jobForm.reset({
-        preferred_experience: jobData.preferred_experience ?? "",
-        job_title: jobData.job_title ?? "",
-        level_of_experience: jobData.level_of_experience ?? [],
-        area_of_specialization: jobData.area_of_specialization ?? [],
-        work_location: jobData.work_location ?? "",
-        scope_of_work: jobData.scope_of_work ?? "",
-        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk ?? "",
-      });
-    }
-  }, [user, brandData, jobData]);
-
-  const [profileLoad, showProfileLoad] = useState(false);
-  const handleProfilePictureClick = () => fileInputRef.current.click();
-  const handleProfilePictureChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    // Update Clerk profile picture
     try {
-      showProfileLoad(true);
-      await user.setProfileImage({ file });
-      toast.success("Profile picture updated!");
-      showProfileLoad(false);
+      await saveBrand({
+        brand_id: jobData.brand_id,
+        brandData: {
+          ...data,
+          logo_url: brandData?.logo_url,
+        },
+        newLogo: newLogoFile,
+      });
+      toast.success("Brand updated! Changes synced to all jobs under this brand.");
+      setNewLogoFile(null);
+      // Refresh data
+      fetchBrand({ brand_id: jobData.brand_id });
+      fetchJob({ job_id: id });
     } catch (err) {
-      toast.error("Failed to update profile picture.");
+      console.error(err);
+      toast.error("Failed to update brand.");
+    }
+  };
+
+  // Save job
+  const handleSaveJob = async (data) => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+
+    try {
+      const result = await saveJob({
+        jobData: {
+          job_title: data.job_title,
+          preferred_experience: data.preferred_experience,
+          level_of_experience: data.level_of_experience,
+          work_location: data.work_location,
+          scope_of_work: data.scope_of_work,
+          area_of_specialization: data.area_of_specialization,
+          estimated_hrs_per_wk: data.estimated_hrs_per_wk,
+        },
+        job_id: id,
+      });
+
+      if (result?.error) {
+        throw new Error(result.error.message || "Failed to update job");
+      }
+
+      toast.success("Job updated successfully!");
+      navigate(`/job/${id}`, { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update job.");
+      submittedRef.current = false;
+    }
+  };
+
+  // Toggle job status
+  const handleToggleStatus = async () => {
+    const newStatus = jobData?.is_open === false ? true : false;
+    try {
+      await saveJob({
+        jobData: { is_open: newStatus },
+        job_id: id,
+      });
+      toast.success(newStatus ? "Job is now open" : "Job is now closed");
+      fetchJob({ job_id: id });
+    } catch (err) {
+      toast.error("Failed to update job status");
+    }
+  };
+
+  // Delete job
+  const handleDeleteJob = async () => {
+    try {
+      await removeJob({ job_id: id });
+      toast.success("Job deleted successfully!");
+      navigate("/jobs", { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete job.");
     }
   };
 
@@ -199,613 +312,586 @@ const EditJobPage = () => {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
-  const handleSubmitAll = () => {
-    brandForm.handleSubmit(async (data) => {
-      const firstName = data.first_name;
-      const lastName = data.last_name;
-
-      try {
-        // Update Clerk first and last name if changed
-        if (firstName !== user?.firstName || lastName !== user?.lastName) {
-          await user.update({
-            firstName,
-            lastName,
-          });
-        }
-        // Save Brand profile
-        if (user && user.id) {
-          await saveBrand(
-            { ...data, logo_url: brandData.logo_url },
-            { user_id: user.id }
-          );
-        }
-
-        // Sync User profile
-        if (isSignedIn && isLoaded && user) {
-          await updateUserProfile({
-            user_id: user.id,
-            full_name: user.fullName,
-            email: user.primaryEmailAddress.emailAddress,
-            profile_picture_url: user.imageUrl,
-          });
-        }
-        toast.success("Brand profile updated!");
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to update brand profile.");
-      }
-    })();
-
-    jobForm.handleSubmit(async (data) => {
-      await saveJob({
-        jobData: {
-          ...data,
-          brand_id: user.id,
-          is_open: true,
-        },
-        job_id: id,
-      });
-
-      navigate("/jobs", { replace: true });
-      toast.success("Job updated!");
-    })();
-  };
-
-  const handleDeleteJob = async () => {
-    try {
-      await removeJob({ job_id: id });
-      toast.success("Job successfully deleted!");
-      navigate("/jobs", { replace: true });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete job!");
-    }
-  };
-
-  const handleDeleteBrand = async () => {
-    if (!user?.id) return;
-
-    const ok = window.confirm(
-      "Are you sure you want to delete your brand profile?"
-    );
-    if (!ok) return;
-
-    try {
-      const deleted = await removeBrand({ user_id: user.id });
-      toast.success("Brand Profile deleted.");
-      navigate("/jobs", { replace: true });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete your brand profile.");
-    }
-  };
-
-  if (!isLoaded || loading) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  if (loadingJob || loadingBrand) {
+    return <BarLoader className="mb-4" width={"100%"} color="#00A19A" />;
   }
 
-  return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
-      <div>
-        <Button
-          className=""
-          onClick={handleBackClick}
-          variant="ghost"
-          size="default"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hover:underline">Back</span>
-        </Button>
-
-        <DiscardChangesGuard
-          show={showDialog}
-          onDiscard={handleDiscard}
-          onStay={handleStay}
-        />
-      </div>
-      <h1 className="text-4xl font-bold mb-6">Edit Brand and Job</h1>
-
-      {/* --- BRAND DETAILS --- */}
-      <div className="border rounded-xl p-8 bg-white space-y-6">
-        <h2 className="text-3xl font-semibold">Brand Details</h2>
-        <p className="text-muted-foreground text-sm mb-6">
-          Update your brand profile information.
-        </p>
-        <form className="flex flex-col space-y-6">
-          {/* Profile Pic */}
-          <div className="flex gap-6 items-center my-4">
-            <img
-              src={user.imageUrl}
-              alt="Profile"
-              className="h-24 w-24 rounded-full border object-cover cursor-pointer"
-              onClick={handleProfilePictureClick}
-            />
-            {profileLoad && <Loader2Icon className="animate-spin h-6 w-6" />}
-
-            <div>
-              <p className="font-semibold">
-                {user.primaryEmailAddress.emailAddress}
-              </p>
-              <p className="text-sm text-gray-500">(Click image to update)</p>
-            </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleProfilePictureChange}
-              className="hidden"
-            />
-          </div>
-
-          {/* First and Last name */}
-          <div className="grid grid-cols-2 gap-6 my-6">
-            <div>
-              <RequiredLabel className={classLabel}>First Name</RequiredLabel>
-              <Input
-                className={classInput}
-                type="text"
-                name="first_name"
-                placeholder="First name"
-                {...brandForm.register("first_name")}
-              />
-              {brandErrors.first_name && (
-                <FormError message={brandErrors.first_name.message} />
-              )}
-            </div>
-
-            <div>
-              <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
-              <Input
-                className={classInput}
-                type="text"
-                name="last_name"
-                placeholder="Last name"
-                {...brandForm.register("last_name")}
-              />
-              {brandErrors.last_name && (
-                <FormError message={brandErrors.last_name.message} />
-              )}
-            </div>
-          </div>
-
-          {/* Brand Name */}
-          <div>
-            <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
-            <Input
-              className={classInput}
-              type="text"
-              {...brandForm.register("brand_name")}
-              placeholder="e.g. Slingshot Coffee"
-            />
-            {brandErrors.brand_name && (
-              <FormError message={brandErrors.brand_name.message} />
-            )}
-          </div>
-
-          <div>
-            <RequiredLabel className={classLabel}>
-              Brand Description
-            </RequiredLabel>
-            <Textarea
-              className={classTextArea}
-              {...brandForm.register("brand_desc")}
-              placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
-            />
-            {brandErrors.brand_desc && (
-              <FormError message={brandErrors.brand_desc.message} />
-            )}
-          </div>
-
-          {/* Website */}
-          <div>
-            <Label className={classLabel}>Website</Label>
-            <Input
-              className={classInput}
-              type="text"
-              {...brandForm.register("website")}
-              placeholder="https://yourbrand.com"
-            />
-            {brandErrors.website && (
-              <FormError message={brandErrors.website.message} />
-            )}
-          </div>
-
-          {/* LinkedIn */}
-          <div>
-            <Label className={classLabel}>LinkedIn URL</Label>
-            <Input
-              className={classInput}
-              type="text"
-              {...brandForm.register("linkedin_url")}
-              placeholder="https://linkedin.com/company/your-brand"
-            />
-            {brandErrors.linkedin_url && (
-              <FormError message={brandErrors.linkedin_url.message} />
-            )}
-          </div>
-
-          {/* Brand HQ */}
-          <div>
-            <Label className={classLabel}>Brand HQ</Label>
-            <Input
-              className={classInput}
-              type="text"
-              {...brandForm.register("brand_hq")}
-              placeholder="New York, NY"
-            />
-            {brandErrors.brand_hq && (
-              <FormError message={brandErrors.brand_hq.message} />
-            )}
-          </div>
-
-          {/* Logo */}
-          <div>
-            <RequiredLabel className={classLabel}>Brand Logo</RequiredLabel>
-            {logoPreview && (
-              <div className="mb-4">
-                <img
-                  src={logoPreview}
-                  alt="Current Logo"
-                  className="h-24 w-24 aspect-3/2 object-contain rounded border scale-100"
-                />
-              </div>
-            )}
-            <Input
-              className={classInput}
-              type="file"
-              accept="image/*"
-              {...brandForm.register("logo")}
-            />
-
-            {brandErrors.logo && (
-              <FormError message={brandErrors.logo.message.toString()} />
-            )}
-          </div>
-
-          {saveBrandError && <FormError message={saveBrandError.message} />}
-          {removeBrandError && <FormError message={removeBrandError.message} />}
-
+  if (!jobData) {
+    return (
+      <div className="py-10">
+        <div className="w-5/6 mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">Job Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            The job you're looking for doesn't exist or has been deleted.
+          </p>
           <Button
             variant="default"
             size="lg"
-            onClick={handleDeleteBrand}
-            className="w-full bg-red-600"
+            className=""
+            onClick={() => navigate("/jobs")}
           >
-            {removingBrand ? "Deleting..." : "Delete Brand"}
-            {removingBrand && <Loader2Icon className="animate-spin h-6 w-6" />}
+            Back to Jobs
           </Button>
-        </form>
+        </div>
       </div>
+    );
+  }
 
-      {/* --- JOB DETAILS --- */}
-      <div className="border rounded-xl p-8 bg-white space-y-6">
-        <h2 className="text-3xl font-semibold">Job Details</h2>
-        <p className="text-muted-foreground text-sm mb-6">
-          Edit your job posting information.
+  return (
+    <div className="py-10">
+      {/* Header */}
+      <div className="w-5/6 mx-auto mb-8">
+        <BackButton />
+        <h1 className="gradient-title font-extrabold text-4xl sm:text-5xl lg:text-6xl text-center mt-6">
+          Edit Job
+        </h1>
+        <p className="text-center text-muted-foreground mt-4 text-lg">
+          Update brand information and job details
         </p>
-
-        <form className="flex flex-col space-y-6">
-          {/* Job title */}
-          <RequiredLabel className={classLabel}>Job Title</RequiredLabel>
-          <Input
-            placeholder="Job Title"
-            type="text"
-            className={classInput}
-            {...jobForm.register("job_title")}
-          />
-          {jobErrors.job_title && (
-            <FormError message={jobErrors.job_title.message} />
-          )}
-
-          {/* Job Description upload */}
-          <div>
-            <Label className={classLabel}>Job Description</Label>
-            {jobData?.job_description && (
-              <a
-                href={jobData?.job_description}
-                target="_blank"
-                className="underline text-sm font-medium text-cpg-teal mb-4 block"
-              >
-                View current description
-              </a>
-            )}
-            <Input
-              className={classInput}
-              type="file"
-              accept=".pdf,.doc,.docx"
-              {...jobForm.register("job_description")}
-            />
-            {jobErrors.job_description && (
-              <FormError
-                message={jobErrors.job_description.message.toString()}
-              />
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 justify-around my-6">
-            {/* Scope of Work */}
-            <div className="flex-1">
-              <RequiredLabel className={classLabel}>
-                Scope of Work
-              </RequiredLabel>
-              <Controller
-                control={jobForm.control}
-                name="scope_of_work"
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger id="scopeOfWork" className="w-full">
-                      <SelectValue placeholder="Select work scope" />
-                    </SelectTrigger>
-                    <SelectContent className="">
-                      <SelectItem className="" value="Ongoing">
-                        Ongoing
-                      </SelectItem>
-                      <SelectItem className="" value="Project-based">
-                        Project-based
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {jobErrors.scope_of_work && (
-                <FormError message={jobErrors.scope_of_work.message} />
-              )}
-            </div>
-
-            {/* Work Location */}
-            <div className="flex-1">
-              <RequiredLabel className={classLabel}>
-                Work Location
-              </RequiredLabel>
-              <Controller
-                control={jobForm.control}
-                name="work_location"
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger id="workLocation" className="w-full">
-                      <SelectValue placeholder="Select work location" />
-                    </SelectTrigger>
-                    <SelectContent className="">
-                      <SelectItem className="" value="Remote">
-                        Remote
-                      </SelectItem>
-                      <SelectItem className="" value="In-office">
-                        In-office
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {jobErrors.work_location && (
-                <FormError message={jobErrors.work_location.message} />
-              )}
-            </div>
-
-            {/* Estimated hrs/wk */}
-            <div className="flex-1">
-              <RequiredLabel className={classLabel}>
-                Estimated hrs/week
-              </RequiredLabel>
-              <NumberInput
-                placeholder="40"
-                className={classInput}
-                {...jobForm.register("estimated_hrs_per_wk")}
-              />
-              {jobErrors.estimated_hrs_per_wk && (
-                <FormError
-                  message={"Please enter the estimated hours per week"}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Area of Spec and Level of Exp */}
-          <div className="flex flex-col lg:flex-row gap-8 my-8">
-            {/* Area of Specialization */}
-            <div className="flex-1">
-              <Controller
-                name="area_of_specialization"
-                control={jobForm.control}
-                render={({ field }) => {
-                  const toggleValue = (value) => {
-                    if (value === "Other") {
-                      setShowOtherInput((prev) => !prev);
-                      return;
-                    }
-
-                    const updated = field.value.includes(value)
-                      ? field.value.filter((v) => v !== value)
-                      : [...field.value, value];
-
-                    field.onChange(updated);
-                  };
-
-                  const removeValue = (value) => {
-                    const updated = field.value.filter((v) => v !== value);
-                    field.onChange(updated);
-
-                    // if (value === "Other") {
-                    //   setShowOtherInput(false);
-                    //   setOtherSpec("");
-                    // }
-                  };
-
-                  return (
-                    <div>
-                      <RequiredLabel className={classLabel}>
-                        Area of Specialization
-                      </RequiredLabel>
-                      <div className="grid grid-cols-2 gap-3">
-                        {areasOfSpecialization.map(({ label }) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => toggleValue(label)}
-                            className={clsx(
-                              "rounded-md px-4 py-2 text-sm font-medium border",
-                              field.value.includes(label)
-                                ? "bg-teal-600 text-white border-transparent"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Other input box */}
-                      {showOtherInput && (
-                        <div className="flex gap-2 items-center my-4">
-                          <Input
-                            type="text"
-                            placeholder="Enter your specialization"
-                            value={otherSpec}
-                            onChange={(e) => setOtherSpec(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button
-                            className=""
-                            variant="default"
-                            size="lg"
-                            type="button"
-                            onClick={() => {
-                              const trimmed = toTitleCase(otherSpec.trim());
-                              // Check: valid string, not a duplicate (case-insensitive)
-                              const isDuplicate = field.value.some(
-                                (val) =>
-                                  val.toLowerCase() === trimmed.toLowerCase()
-                              );
-                              // Min 3 letters, no special chars
-                              const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
-                              if (trimmed && !isDuplicate && isValid) {
-                                field.onChange([...field.value, trimmed]);
-                                setOtherSpec("");
-                              }
-                            }}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* Show selected values as tags */}
-                      <div className="flex flex-wrap gap-2 my-2">
-                        {(field.value ?? []).map((val, idx) => (
-                          <span
-                            key={idx}
-                            className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"
-                          >
-                            {val}
-                            <button
-                              type="button"
-                              onClick={() => removeValue(val)}
-                              className="ml-2 text-teal-800 hover:text-red-500"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      {jobErrors.area_of_specialization && (
-                        <FormError
-                          message={jobErrors.area_of_specialization.message}
-                        />
-                      )}
-                    </div>
-                  );
-                }}
-              />
-            </div>
-
-            {/* Level of Experience */}
-            <div className="flex-1">
-              <Controller
-                name="level_of_experience"
-                control={jobForm.control}
-                render={({ field }) => {
-                  const toggleValue = (value) => {
-                    const updated = field.value.includes(value)
-                      ? field.value.filter((v) => v !== value)
-                      : [...field.value, value];
-                    field.onChange(updated);
-                  };
-
-                  return (
-                    <div>
-                      <Label className={classLabel}>Level of Experience</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {levelsOfExperience.map(({ label }) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => toggleValue(label)}
-                            className={clsx(
-                              "rounded-md px-4 py-2 text-sm font-medium border",
-                              field.value.includes(label)
-                                ? "bg-teal-600 text-white border-transparent"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      {jobErrors.level_of_experience && (
-                        <FormError
-                          message={jobErrors.level_of_experience.message}
-                        />
-                      )}
-                    </div>
-                  );
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Preferred Experience */}
-          <div>
-            <RequiredLabel className={classLabel}>
-              Preferred Experience
-            </RequiredLabel>
-            <Textarea
-              placeholder="Preferred Experience"
-              className={classTextArea}
-              {...jobForm.register("preferred_experience")}
-            />
-            {jobErrors.preferred_experience && (
-              <FormError message={jobErrors.preferred_experience.message} />
-            )}
-          </div>
-        </form>
       </div>
 
-      <Button
-        variant="default"
-        size="lg"
-        onClick={handleSubmitAll}
-        disabled={savingBrand || savingJob}
-        className="w-full bg-cpg-brown hover:bg-cpg-brown/90"
-      >
-        {savingBrand || savingJob ? "Saving..." : "Save All Changes"}
-        {savingBrand && <Loader2Icon className="animate-spin h-6 w-6" />}
-      </Button>
+      <DiscardChangesGuard
+        show={showDialog}
+        onDiscard={handleDiscard}
+        onStay={handleStay}
+      />
 
-      <Button
-        variant="default"
-        size="lg"
-        onClick={handleDeleteJob}
-        className="w-full bg-red-600"
-      >
-        {removingJob ? "Deleting job..." : "Delete Job"}
-        {removingJob && <Loader2Icon className="animate-spin h-6 w-6" />}
-      </Button>
+      <div className="w-5/6 mx-auto space-y-8">
+        {/* Job Status Banner */}
+        <div
+          className={clsx(
+            "rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4",
+            jobData?.is_open !== false
+              ? "bg-green-50 border-2 border-green-200"
+              : "bg-red-50 border-2 border-red-200"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            {jobData?.is_open !== false ? (
+              <ToggleRight className="h-8 w-8 text-green-600" />
+            ) : (
+              <ToggleLeft className="h-8 w-8 text-red-600" />
+            )}
+            <div>
+              <h3 className="font-semibold text-lg">
+                {jobData?.is_open !== false ? "Job is Open" : "Job is Closed"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {jobData?.is_open !== false
+                  ? "This job is visible and accepting applications"
+                  : "This job is hidden from the public listing"}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={handleToggleStatus}
+            className={clsx(
+              "border-2 rounded-xl",
+              jobData?.is_open !== false
+                ? "border-red-300 text-red-600 hover:bg-red-50"
+                : "border-green-300 text-green-600 hover:bg-green-50"
+            )}
+          >
+            {jobData?.is_open !== false ? "Close Job" : "Reopen Job"}
+          </Button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("brand")}
+            className={clsx(
+              "flex-1 sm:flex-none px-8 py-4 rounded-xl text-base font-medium transition-all",
+              activeTab === "brand"
+                ? "bg-cpg-teal text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            )}
+          >
+            Brand Information
+          </button>
+          <button
+            onClick={() => setActiveTab("job")}
+            className={clsx(
+              "flex-1 sm:flex-none px-8 py-4 rounded-xl text-base font-medium transition-all",
+              activeTab === "job"
+                ? "bg-cpg-teal text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            )}
+          >
+            Job Details
+          </button>
+        </div>
+
+        {/* Brand Tab */}
+        {activeTab === "brand" && (
+          <form onSubmit={brandForm.handleSubmit(handleSaveBrand)} className="space-y-8">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Brand Information</h2>
+                <p className="text-sm text-muted-foreground">
+                  Changes will sync to all jobs under this brand
+                </p>
+              </div>
+
+              {/* Logo */}
+              <div className="mb-6">
+                <Label className={classLabel}>Brand Logo</Label>
+                <div className="flex items-center gap-6 mt-2">
+                  {logoPreview ? (
+                    <div className="h-24 w-24 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center overflow-hidden">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="h-full w-full object-contain p-2"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-24 w-24 rounded-full border-2 border-gray-100 bg-gray-50 flex items-center justify-center">
+                      <Building2 className="h-10 w-10 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpg,image/jpeg"
+                      onChange={handleLogoChange}
+                      className="file:text-gray-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG or JPG, recommended 200x200px
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Brand Name */}
+              <div className="mb-6">
+                <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
+                <Input
+                  type="text"
+                  placeholder="e.g. Acme Corp"
+                  className={classInput}
+                  {...brandForm.register("brand_name")}
+                />
+                {brandErrors.brand_name && (
+                  <FormError message={brandErrors.brand_name.message} />
+                )}
+              </div>
+
+              {/* Website */}
+              <div className="mb-6">
+                <Label className={classLabel}>Website</Label>
+                <Input
+                  type="text"
+                  placeholder="https://yourcompany.com"
+                  className={classInput}
+                  {...brandForm.register("website")}
+                />
+                {brandErrors.website && (
+                  <FormError message={brandErrors.website.message} />
+                )}
+              </div>
+
+              {/* LinkedIn */}
+              <div className="mb-6">
+                <Label className={classLabel}>LinkedIn URL</Label>
+                <Input
+                  type="text"
+                  placeholder="https://linkedin.com/company/yourcompany"
+                  className={classInput}
+                  {...brandForm.register("linkedin_url")}
+                />
+                {brandErrors.linkedin_url && (
+                  <FormError message={brandErrors.linkedin_url.message} />
+                )}
+              </div>
+
+              {/* Headquarters */}
+              <div className="mb-6">
+                <Label className={classLabel}>Headquarters Location</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. New York, NY"
+                  className={classInput}
+                  {...brandForm.register("brand_hq")}
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <Label className={classLabel}>Brand Description</Label>
+                <Textarea
+                  placeholder="Tell us about your brand..."
+                  className={classTextArea}
+                  {...brandForm.register("brand_desc")}
+                />
+              </div>
+            </div>
+
+            {saveBrandError && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4">
+                <FormError message={saveBrandError.message} />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="default"
+              size="lg"
+              disabled={savingBrand}
+              className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              {savingBrand ? "Saving Brand..." : "Save Brand Changes"}
+            </Button>
+          </form>
+        )}
+
+        {/* Job Tab */}
+        {activeTab === "job" && (
+          <form onSubmit={jobForm.handleSubmit(handleSaveJob)} className="space-y-8">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
+              <h2 className="text-xl font-semibold mb-6">Job Details</h2>
+
+              {/* Job Title */}
+              <div className="mb-6">
+                <RequiredLabel className={classLabel}>Job Title</RequiredLabel>
+                <Input
+                  type="text"
+                  placeholder="e.g. Marketing Director"
+                  className={classInput}
+                  {...jobForm.register("job_title")}
+                />
+                {jobErrors.job_title && (
+                  <FormError message={jobErrors.job_title.message} />
+                )}
+              </div>
+
+              {/* Job Description Link */}
+              {jobData?.job_description && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-xl flex items-center justify-between">
+                  <div>
+                    <Label className={classLabel}>Job Description PDF</Label>
+                    <p className="text-sm text-muted-foreground">Currently uploaded document</p>
+                  </div>
+                  <a
+                    href={jobData.job_description}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-cpg-teal hover:underline font-medium"
+                  >
+                    View PDF <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              )}
+
+              {/* Grid: Scope, Location, Hours */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {/* Scope of Work */}
+                <div>
+                  <RequiredLabel className={classLabel}>Scope of Work</RequiredLabel>
+                  <Controller
+                    control={jobForm.control}
+                    name="scope_of_work"
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select scope" />
+                        </SelectTrigger>
+                        <SelectContent className="">
+                          <SelectItem className="" value="Ongoing">Ongoing</SelectItem>
+                          <SelectItem className="" value="Project-based">Project-based</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {jobErrors.scope_of_work && (
+                    <FormError message={jobErrors.scope_of_work.message} />
+                  )}
+                </div>
+
+                {/* Work Location */}
+                <div>
+                  <RequiredLabel className={classLabel}>Work Location</RequiredLabel>
+                  <Controller
+                    control={jobForm.control}
+                    name="work_location"
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                        <SelectContent className="">
+                          <SelectItem className="" value="Remote">Remote</SelectItem>
+                          <SelectItem className="" value="In-office">In-office</SelectItem>
+                          <SelectItem className="" value="Hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {jobErrors.work_location && (
+                    <FormError message={jobErrors.work_location.message} />
+                  )}
+                </div>
+
+                {/* Hours per Week */}
+                <div>
+                  <RequiredLabel className={classLabel}>Hours/Week</RequiredLabel>
+                  <NumberInput
+                    placeholder="e.g. 20"
+                    className={classInput}
+                    {...jobForm.register("estimated_hrs_per_wk")}
+                  />
+                  {jobErrors.estimated_hrs_per_wk && (
+                    <FormError message="Please enter hours per week" />
+                  )}
+                </div>
+              </div>
+
+              {/* Area of Specialization & Level of Experience */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                {/* Area of Specialization */}
+                <div>
+                  <Controller
+                    name="area_of_specialization"
+                    control={jobForm.control}
+                    render={({ field }) => {
+                      const toggleValue = (value) => {
+                        if (value === "Other") {
+                          setShowOtherInput((prev) => !prev);
+                          return;
+                        }
+                        const updated = field.value.includes(value)
+                          ? field.value.filter((v) => v !== value)
+                          : [...field.value, value];
+                        field.onChange(updated);
+                      };
+
+                      const removeValue = (value) => {
+                        field.onChange(field.value.filter((v) => v !== value));
+                      };
+
+                      return (
+                        <div>
+                          <RequiredLabel className={classLabel}>
+                            Area of Specialization
+                          </RequiredLabel>
+                          <div className="grid grid-cols-2 gap-2">
+                            {areasOfSpecialization.map(({ label }) => (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => toggleValue(label)}
+                                className={clsx(
+                                  "rounded-lg px-3 py-2 text-sm font-medium border transition-all",
+                                  field.value.includes(label)
+                                    ? "bg-cpg-teal text-white border-cpg-teal"
+                                    : "bg-white text-gray-700 border-gray-200 hover:border-cpg-teal hover:bg-cpg-teal/5"
+                                )}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {showOtherInput && (
+                            <div className="flex gap-2 items-center mt-4">
+                              <Input
+                                type="text"
+                                placeholder="Enter specialization"
+                                value={otherSpec}
+                                onChange={(e) => setOtherSpec(e.target.value)}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="default"
+                                size="lg"
+                                className=""
+                                onClick={() => {
+                                  const trimmed = toTitleCase(otherSpec.trim());
+                                  const isDuplicate = field.value.some(
+                                    (val) => val.toLowerCase() === trimmed.toLowerCase()
+                                  );
+                                  const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
+                                  if (trimmed && !isDuplicate && isValid) {
+                                    field.onChange([...field.value, trimmed]);
+                                    setOtherSpec("");
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          )}
+
+                          {field.value.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {field.value.map((val, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center gap-2 bg-cpg-teal/10 text-cpg-teal text-sm font-medium px-3 py-1.5 rounded-full"
+                                >
+                                  {val}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeValue(val)}
+                                    className="hover:text-red-500"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {jobErrors.area_of_specialization && (
+                            <FormError message={jobErrors.area_of_specialization.message} />
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
+
+                {/* Level of Experience */}
+                <div>
+                  <Controller
+                    name="level_of_experience"
+                    control={jobForm.control}
+                    render={({ field }) => {
+                      const toggleValue = (value) => {
+                        const updated = field.value.includes(value)
+                          ? field.value.filter((v) => v !== value)
+                          : [...field.value, value];
+                        field.onChange(updated);
+                      };
+
+                      return (
+                        <div>
+                          <RequiredLabel className={classLabel}>
+                            Level of Experience
+                          </RequiredLabel>
+                          <div className="grid grid-cols-2 gap-2">
+                            {levelsOfExperience.map(({ label }) => (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => toggleValue(label)}
+                                className={clsx(
+                                  "rounded-lg px-3 py-2 text-sm font-medium border transition-all",
+                                  field.value.includes(label)
+                                    ? "bg-cpg-teal text-white border-cpg-teal"
+                                    : "bg-white text-gray-700 border-gray-200 hover:border-cpg-teal hover:bg-cpg-teal/5"
+                                )}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          {jobErrors.level_of_experience && (
+                            <FormError message={jobErrors.level_of_experience.message} />
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Preferred Experience */}
+              <div>
+                <RequiredLabel className={classLabel}>
+                  Preferred Experience
+                </RequiredLabel>
+                <Textarea
+                  placeholder="Describe the ideal candidate's experience..."
+                  className={classTextArea}
+                  {...jobForm.register("preferred_experience")}
+                />
+                {jobErrors.preferred_experience && (
+                  <FormError message={jobErrors.preferred_experience.message} />
+                )}
+              </div>
+            </div>
+
+            {saveJobError && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4">
+                <FormError message={saveJobError.message} />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="default"
+              size="lg"
+              disabled={savingJob}
+              className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              {savingJob ? "Saving Job..." : "Save Job Changes"}
+            </Button>
+          </form>
+        )}
+
+        {/* Danger Zone */}
+        <div className="border-2 border-red-200 rounded-2xl p-6 bg-red-50/50">
+          <div className="flex items-start gap-4">
+            <div className="bg-red-100 rounded-lg p-2">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-800">Warning</h3>
+              <p className="text-sm text-red-600 mt-1 mb-4">
+                Deleting this job is permanent and cannot be undone.
+              </p>
+
+              {!showDeleteConfirm ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="border-2 border-red-300 text-red-600 hover:bg-red-100 rounded-xl"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Job
+                </Button>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    onClick={handleDeleteJob}
+                    disabled={deletingJob}
+                    className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                  >
+                    {deletingJob ? "Deleting..." : "Yes, Delete Permanently"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {(savingBrand || savingJob || deletingJob) && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <BarLoader width={200} color="#00A19A" />
+        </div>
+      )}
     </div>
   );
 };

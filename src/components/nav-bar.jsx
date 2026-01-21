@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   SignIn,
   SignUp,
   SignedIn,
   SignedOut,
-  SignInButton,
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-import { BriefcaseBusiness, PenBox, X, Menu } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  PenBox,
+  X,
+  Menu,
+  Briefcase,
+  Users,
+  Building2,
+  BarChart3,
+} from "lucide-react";
 import { Button } from "./ui/button.jsx";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 
@@ -34,42 +42,37 @@ const NavBar = () => {
   };
 
   const role = user?.unsafeMetadata?.role;
-
-  const getGreeting = () => {
-    if (!user) return null;
-    const name = user.firstName;
-    const roleLabel =
-      typeof role === "string"
-        ? `(${role.charAt(0).toUpperCase() + role.slice(1)})`
-        : "";
-    return name ? `Hi, ${name} ${roleLabel}` : null;
-  };
+  const roles = Array.isArray(user?.unsafeMetadata?.roles)
+    ? user.unsafeMetadata.roles
+    : [];
+  const hasBrandRole = roles.includes(ROLE_BRAND);
 
   return (
-    <header className="w-full px-6 py-8 shadow-none">
+    <header className="w-full px-4 sm:px-6 py-6">
       <nav className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo and Tagline */}
         <div className="flex items-center gap-4">
-          <Link to="/">
+          <Link to="/" className="flex-shrink-0">
             <img
               src="/og-image_transparent.png"
               alt="CPG Hub Logo"
-              className="h-36 w-auto"
+              className="h-24 sm:h-32 lg:h-36 w-auto"
             />
           </Link>
-          <p className="hidden lg:block text-sm md:text-base font-medium text-[#613f1b]">
+          <p className="hidden lg:block text-sm font-medium text-cpg-brown/80 max-w-xs">
             The spot for CPG brands, fractional talent, and services to connect.
           </p>
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2">
           <Link to="/jobs">
             <Button
               size="default"
               variant="ghost"
-              className="text-sm font-medium hover:text-cpg-teal"
+              className="text-sm font-medium text-gray-700 hover:text-cpg-teal hover:bg-cpg-teal/5 rounded-xl px-4"
             >
+              <Briefcase className="h-4 w-4 mr-2" />
               Jobs
             </Button>
           </Link>
@@ -77,8 +80,9 @@ const NavBar = () => {
             <Button
               size="default"
               variant="ghost"
-              className="text-sm font-medium hover:text-cpg-teal"
+              className="text-sm font-medium text-gray-700 hover:text-cpg-teal hover:bg-cpg-teal/5 rounded-xl px-4"
             >
+              <Users className="h-4 w-4 mr-2" />
               Talent
             </Button>
           </Link>
@@ -86,17 +90,20 @@ const NavBar = () => {
             <Button
               size="default"
               variant="ghost"
-              className="text-sm font-medium hover:text-cpg-teal"
+              className="text-sm font-medium text-gray-700 hover:text-cpg-teal hover:bg-cpg-teal/5 rounded-xl px-4"
             >
+              <Building2 className="h-4 w-4 mr-2" />
               Services
             </Button>
           </Link>
+
+          <div className="w-px h-6 bg-gray-200 mx-2" />
 
           <SignedOut>
             <Button
               size="default"
               variant="default"
-              className="bg-cpg-teal text-white hover:bg-cpg-teal/90"
+              className="bg-cpg-teal text-white hover:bg-cpg-teal/90 rounded-xl px-6"
               onClick={() => setShowSignIn(true)}
             >
               Login
@@ -104,15 +111,15 @@ const NavBar = () => {
           </SignedOut>
 
           <SignedIn>
-            {role === ROLE_BRAND && (
+            {hasBrandRole && (
               <Link to="/post-job">
                 <Button
                   size="default"
                   variant="default"
-                  className="bg-cpg-teal text-white hover:bg-cpg-teal/90"
+                  className="bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl px-5"
                 >
-                  <PenBox size={20} className="mr-2" />
-                  Post a Job
+                  <PenBox size={18} className="mr-2" />
+                  Post Job
                 </Button>
               </Link>
             )}
@@ -124,8 +131,9 @@ const NavBar = () => {
                   <Button
                     size="default"
                     variant="ghost"
-                    className="text-sm font-bold hover:text-cpg-teal"
+                    className="text-sm font-medium text-gray-700 hover:text-cpg-teal hover:bg-cpg-teal/5 rounded-xl px-4"
                   >
+                    <BarChart3 className="h-4 w-4 mr-2" />
                     Analytics
                   </Button>
                 </Link>
@@ -134,13 +142,13 @@ const NavBar = () => {
               showName={false}
               appearance={{
                 elements: {
-                  userButtonTrigger: "w-10 h-10",
+                  userButtonTrigger:
+                    "w-10 h-10 rounded-full border-2 border-gray-100 hover:border-cpg-teal/30 transition-colors",
                   userButtonAvatarBox: "w-10 h-10",
                   userButtonAvatarImage: "w-10 h-10",
                 },
               }}
             >
-              {/* Add custom menu items based on role */}
               <UserButton.MenuItems>
                 {role === ROLE_BRAND && (
                   <UserButton.Link
@@ -164,14 +172,13 @@ const NavBar = () => {
                   />
                 )}
 
-                {/* Move Analytics to dropdown */}
                 {user &&
                   (user.id === "user_2xhWB9MbqX5LvYBi2U9yo4UV9Fi" ||
                     user.id === "user_2xhVcPb80nvI4T03q4w1IZZq65g" ||
                     user.id === "user_2xjEiqsXt9y1R8BiNG8wTxZdQNE") && (
                     <UserButton.Link
                       label="Analytics"
-                      labelIcon={<BriefcaseBusiness size={16} />}
+                      labelIcon={<BarChart3 size={16} />}
                       href="/user-analytics"
                     />
                   )}
@@ -181,11 +188,23 @@ const NavBar = () => {
         </div>
 
         {/* Mobile Nav Toggle */}
-        <div className="sm:hidden">
+        <div className="md:hidden flex items-center gap-3">
+          <SignedIn>
+            <UserButton
+              showName={false}
+              appearance={{
+                elements: {
+                  userButtonTrigger: "w-9 h-9",
+                  userButtonAvatarBox: "w-9 h-9",
+                  userButtonAvatarImage: "w-9 h-9",
+                },
+              }}
+            />
+          </SignedIn>
           <Button
-            className=""
-            size="default"
+            size="icon"
             variant="ghost"
+            className="rounded-xl"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
           >
             {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
@@ -195,40 +214,45 @@ const NavBar = () => {
 
       {/* Mobile Menu */}
       {showMobileMenu && (
-        <div className="sm:hidden mt-4 px-4 space-y-4">
-          <Link to="/jobs">
+        <div className="md:hidden mt-4 bg-white border-2 border-gray-100 rounded-2xl p-4 mx-2 space-y-2">
+          <Link to="/jobs" onClick={() => setShowMobileMenu(false)}>
             <Button
               variant="ghost"
               size="default"
-              className="w-full justify-start"
+              className="w-full justify-start rounded-xl hover:bg-cpg-teal/5 hover:text-cpg-teal"
             >
+              <Briefcase className="h-4 w-4 mr-3" />
               Jobs
             </Button>
           </Link>
-          <Link to="/talents">
+          <Link to="/talents" onClick={() => setShowMobileMenu(false)}>
             <Button
               variant="ghost"
               size="default"
-              className="w-full justify-start"
+              className="w-full justify-start rounded-xl hover:bg-cpg-teal/5 hover:text-cpg-teal"
             >
+              <Users className="h-4 w-4 mr-3" />
               Talent
             </Button>
           </Link>
-          <Link to="/services">
+          <Link to="/services" onClick={() => setShowMobileMenu(false)}>
             <Button
               variant="ghost"
               size="default"
-              className="w-full justify-start"
+              className="w-full justify-start rounded-xl hover:bg-cpg-teal/5 hover:text-cpg-teal"
             >
+              <Building2 className="h-4 w-4 mr-3" />
               Services
             </Button>
           </Link>
+
+          <div className="h-px bg-gray-100 my-3" />
 
           <SignedOut>
             <Button
               size="default"
               variant="default"
-              className="w-full mt-4 bg-cpg-teal text-white hover:bg-cpg-teal/90"
+              className="w-full bg-cpg-teal text-white hover:bg-cpg-teal/90 rounded-xl"
               onClick={() => {
                 setShowSignIn(true);
                 setShowMobileMenu(false);
@@ -239,15 +263,15 @@ const NavBar = () => {
           </SignedOut>
 
           <SignedIn>
-            {role === ROLE_BRAND && (
-              <Link to="/post-job">
+            {hasBrandRole && (
+              <Link to="/post-job" onClick={() => setShowMobileMenu(false)}>
                 <Button
                   variant="default"
                   size="default"
-                  className="w-full bg-cpg-teal text-white hover:bg-cpg-teal/90"
+                  className="w-full bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl"
                 >
-                  <PenBox size={20} className="mr-2" />
-                  Post a Job
+                  <PenBox size={18} className="mr-2" />
+                  Post Job
                 </Button>
               </Link>
             )}
@@ -258,15 +282,15 @@ const NavBar = () => {
       {/* Sign-In Modal */}
       {showSignIn && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={handleOverlayClick}
         >
           <div
-            className="relative bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md"
+            className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-3 right-3 text-gray-700 hover:text-black"
+              className="absolute top-4 right-4 p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => {
                 setShowSignIn(false);
                 setSearch({});

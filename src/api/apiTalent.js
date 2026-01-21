@@ -59,11 +59,11 @@ export async function getMyTalentProfile(token, { user_id }) {
   const { data, error } = await supabase
     .from(table_name)
     .select(
-      `*, 
+      `*,
       user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
     )
     .eq("user_id", user_id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error(`Error fetching my profile ${user_id}:`, error);

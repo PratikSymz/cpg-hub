@@ -2,17 +2,14 @@ import supabaseClient from "@/utils/supabase.js";
 
 const table_name = "job_listings";
 
+// Fetch all jobs (poster info is now inline, no joins needed)
 export async function getJobs(
   token,
   { area_specialization, level_exp, search_query }
 ) {
   const supabase = supabaseClient(token);
 
-  let query = supabase.from(table_name).select(
-    `*, 
-    brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
-    saved: saved_jobs(id)`
-  );
+  let query = supabase.from(table_name).select(`*`);
 
   const { data, error } = await query;
 
@@ -24,20 +21,17 @@ export async function getJobs(
   return data;
 }
 
+// Fetch jobs posted by the current user
 export async function getMyJobs(
   token,
-  { area_specialization, level_exp, search_query, brand_id }
+  { area_specialization, level_exp, search_query, poster_id }
 ) {
   const supabase = supabaseClient(token);
 
   let query = supabase
     .from(table_name)
-    .select(
-      `*, 
-    brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url),
-    saved: saved_jobs(id)`
-    )
-    .eq("brand_id", brand_id);
+    .select(`*`)
+    .eq("poster_id", poster_id);
 
   const { data, error } = await query;
 
@@ -49,15 +43,12 @@ export async function getMyJobs(
   return data;
 }
 
-// Read single job
+// Read single job (poster info is inline)
 export async function getSingleJob(token, { job_id }) {
   const supabase = supabaseClient(token);
   let query = supabase
     .from(table_name)
-    .select(
-      `*, 
-      brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url)`
-    )
+    .select(`*`)
     .eq("id", job_id)
     .single();
 
@@ -71,110 +62,187 @@ export async function getSingleJob(token, { job_id }) {
   return data;
 }
 
-// Post job
-export async function addNewJob(token, jobData) {
+// Post a new job (any user type can post)
+export async function postJob(token, formData) {
   const supabase = supabaseClient(token);
 
-  // Current job description pdf url
+  // Fetch brand info if brand_profile_id is provided
+  let posterName = null;
+  let posterLogo = null;
+  let posterLocation = null;
+
+  if (formData.brand_profile_id) {
+    const { data: brandData, error: brandError } = await supabase
+      .from("brand_profiles")
+      .select("brand_name, logo_url, brand_hq")
+      .eq("id", formData.brand_profile_id)
+      .single();
+
+    if (brandError) {
+      console.error("Error fetching brand:", brandError);
+      throw new Error("Error fetching brand information");
+    }
+
+    posterName = brandData.brand_name;
+    posterLogo = brandData.logo_url;
+    posterLocation = brandData.brand_hq;
+  }
+
+  // Upload job description PDF if provided
   let job_desc_url = null;
-  const file = jobData.job_description?.[0];
+  const jobDescFile = formData.job_description?.[0];
 
-  const bucket = "job-descriptions";
-  if (file) {
-    // A new file was uploaded → upload it
-    const fileName = formatJobDescriptionUrl(jobData.user_id, file);
+  if (jobDescFile) {
+    const random = Math.floor(Math.random() * 90000);
+    const extension = jobDescFile.name.split(".").pop().toLowerCase();
+    const fileName = `job-${random}-${formData.user_id}.${extension}`;
 
-    // Upload the file
     const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${fileName}`, file, {
+      .from("job-descriptions")
+      .upload(fileName, jobDescFile, {
         cacheControl: "3600",
-        upsert: false, // prevent overwriting
+        upsert: false,
       });
 
     if (storageError) {
-      console.error("Error uploading new job description:", storageError);
-      throw new Error("Error uploading new job description");
+      console.error("Error uploading job description:", storageError);
+      throw new Error("Error uploading job description");
     }
 
-    // Get the public URL
     const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${fileName}`);
+      .from("job-descriptions")
+      .getPublicUrl(fileName);
     job_desc_url = publicUrlData?.publicUrl;
   }
 
-  const { data, error } = await supabase
+  // Create job listing with brand info
+  const { data: jobData, error: jobError } = await supabase
     .from("job_listings")
     .insert([
       {
-        preferred_experience: jobData.preferred_experience,
-        level_of_experience: jobData.level_of_experience,
-        work_location: jobData.work_location,
-        scope_of_work: jobData.scope_of_work,
-        job_title: jobData.job_title,
+        // Poster info (from brand)
+        poster_id: formData.user_id,
+        poster_type: formData.poster_type || "brand",
+        poster_name: posterName,
+        poster_logo: posterLogo,
+        poster_location: posterLocation,
+        brand_id: formData.brand_profile_id || null,
+        // Job info
+        job_title: formData.job_title,
         job_description: job_desc_url,
-        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk,
-        area_of_specialization: jobData.area_of_specialization,
+        preferred_experience: formData.preferred_experience,
+        level_of_experience: formData.level_of_experience,
+        work_location: formData.work_location,
+        scope_of_work: formData.scope_of_work,
+        estimated_hrs_per_wk: formData.estimated_hrs_per_wk,
+        area_of_specialization: formData.area_of_specialization,
+        is_open: true,
       },
     ])
     .select();
 
-  if (error) {
-    console.error(error);
-    throw new Error("Error Creating Job");
+  if (jobError) {
+    console.error("Error creating job:", jobError);
+    throw new Error("Error creating job listing");
   }
 
-  return data;
+  return jobData;
+}
+
+// Legacy function - kept for backwards compatibility during migration
+export async function addNewJob(token, jobData) {
+  return postJob(token, {
+    ...jobData,
+    user_id: jobData.brand_id || jobData.user_id,
+    poster_type: "brand",
+    poster_name: jobData.poster_name || "Unknown",
+  });
+}
+
+// Legacy function - kept for backwards compatibility
+export async function addNewJobWithBrand(token, formData) {
+  return postJob(token, {
+    ...formData,
+    poster_type: "brand",
+    poster_name: formData.brand_name || formData.poster_name,
+  });
 }
 
 // Update job
-export async function updateJob(token, { jobData, job_id }) {
+export async function updateJob(token, { jobData, job_id, newLogo }) {
   const supabase = supabaseClient(token);
 
-  // Current job description pdf url
-  let job_desc_url = jobData.job_description;
-  const file = jobData.job_description?.[0];
+  // Build update object with only provided fields
+  const updateData = {};
 
-  const bucket = "job-descriptions";
-  if (file) {
-    // A new file was uploaded → upload it
-    const fileName = formatJobDescriptionUrl(jobData.user_id, file);
+  // Poster info fields
+  if (jobData.poster_name !== undefined) updateData.poster_name = jobData.poster_name;
+  if (jobData.poster_location !== undefined) updateData.poster_location = jobData.poster_location;
+  if (jobData.is_open !== undefined) updateData.is_open = jobData.is_open;
 
-    // Upload the file
+  // Job fields
+  if (jobData.job_title !== undefined) updateData.job_title = jobData.job_title;
+  if (jobData.preferred_experience !== undefined) updateData.preferred_experience = jobData.preferred_experience;
+  if (jobData.level_of_experience !== undefined) updateData.level_of_experience = jobData.level_of_experience;
+  if (jobData.work_location !== undefined) updateData.work_location = jobData.work_location;
+  if (jobData.scope_of_work !== undefined) updateData.scope_of_work = jobData.scope_of_work;
+  if (jobData.estimated_hrs_per_wk !== undefined) updateData.estimated_hrs_per_wk = jobData.estimated_hrs_per_wk;
+  if (jobData.area_of_specialization !== undefined) updateData.area_of_specialization = jobData.area_of_specialization;
+
+  // Handle job description PDF upload
+  const jobDescFile = jobData.job_description?.[0];
+  if (jobDescFile && jobDescFile instanceof File) {
+    const fileName = formatJobDescriptionUrl(job_id, jobDescFile);
     const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${fileName}`, file, {
+      .from("job-descriptions")
+      .upload(fileName, jobDescFile, {
         cacheControl: "3600",
-        upsert: false, // prevent overwriting
+        upsert: false,
       });
 
     if (storageError) {
-      console.error("Error uploading new job description:", storageError);
-      throw new Error("Error uploading new job description");
+      console.error("Error uploading job description:", storageError);
+      throw new Error("Error uploading job description");
     }
 
-    // Get the public URL
     const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${fileName}`);
-    job_desc_url = publicUrlData?.publicUrl;
+      .from("job-descriptions")
+      .getPublicUrl(fileName);
+    updateData.job_description = publicUrlData?.publicUrl;
+  }
+
+  // Handle logo upload
+  if (newLogo && newLogo instanceof File) {
+    const random = Math.floor(Math.random() * 90000);
+    const extension = newLogo.name.split(".").pop().toLowerCase();
+    const fileName = `logo-${random}-${job_id}.${extension}`;
+
+    const { error: logoError } = await supabase.storage
+      .from("brand-logos")
+      .upload(fileName, newLogo, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (logoError) {
+      console.error("Error uploading logo:", logoError);
+      throw new Error("Error uploading logo");
+    }
+
+    const { data: logoUrlData } = supabase.storage
+      .from("brand-logos")
+      .getPublicUrl(fileName);
+    updateData.poster_logo = logoUrlData?.publicUrl;
+  }
+
+  // Only update if there's something to update
+  if (Object.keys(updateData).length === 0) {
+    return { data: null, error: null };
   }
 
   const { data, error } = await supabase
     .from(table_name)
-    .update([
-      {
-        preferred_experience: jobData.preferred_experience,
-        level_of_experience: jobData.level_of_experience,
-        work_location: jobData.work_location,
-        scope_of_work: jobData.scope_of_work,
-        job_title: jobData.job_title,
-        job_description: job_desc_url,
-        estimated_hrs_per_wk: jobData.estimated_hrs_per_wk,
-        area_of_specialization: jobData.area_of_specialization,
-      },
-    ])
+    .update(updateData)
     .eq("id", job_id)
     .select();
 
@@ -183,7 +251,7 @@ export async function updateJob(token, { jobData, job_id }) {
     throw new Error("Error updating Job");
   }
 
-  return data;
+  return { data, error: null };
 }
 
 // Delete job
@@ -204,12 +272,12 @@ export async function deleteJob(token, { job_id }) {
   return data;
 }
 
-// Read Saved Jobs
+// Read Saved Jobs (poster info is inline)
 export async function getSavedJobs(token) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase.from("saved_jobs").select(
-    `*, 
-      job: job_listings(*, brand: brand_profiles(brand_name, brand_desc, website, linkedin_url, brand_hq, logo_url))`
+    `*,
+      job: job_listings(*)`
   );
 
   if (error) {
@@ -220,12 +288,11 @@ export async function getSavedJobs(token) {
   return data;
 }
 
-// - Add / Remove Saved Job
+// Add / Remove Saved Job
 export async function saveJob(token, { alreadySaved }, saveData) {
   const supabase = supabaseClient(token);
 
   if (alreadySaved) {
-    // If the job is already saved, remove it
     const { data, error: deleteError } = await supabase
       .from("saved_jobs")
       .delete()
@@ -238,7 +305,6 @@ export async function saveJob(token, { alreadySaved }, saveData) {
 
     return data;
   } else {
-    // If the job is not saved, add it to saved jobs
     const { data, error: insertError } = await supabase
       .from("saved_jobs")
       .insert([saveData])
@@ -253,7 +319,7 @@ export async function saveJob(token, { alreadySaved }, saveData) {
   }
 }
 
-// - Job isOpen toggle - (recruiter_id = auth.uid())
+// Job isOpen toggle
 export async function updateHiringStatus(token, { is_open, job_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
@@ -273,9 +339,7 @@ export async function updateHiringStatus(token, { is_open, job_id }) {
 
 const formatJobDescriptionUrl = (user_id, file) => {
   const random = Math.floor(Math.random() * 90000);
-  // Get a safe file extension
   const extension = file.name.split(".").pop().toLowerCase();
-  // Generate a clean file name
   const fileName = `job-${random}-${user_id}.${extension}`;
   return fileName;
 };

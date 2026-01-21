@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWatch } from "react-hook-form";
 import { BarLoader } from "react-spinners";
 import useFetch from "@/hooks/use-fetch.jsx";
@@ -36,7 +36,9 @@ import { ArrowLeft, X } from "lucide-react";
 const ServiceOnboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const submittedRef = useRef(false); // Block duplicate submission
+  const returnTo = searchParams.get("returnTo");
 
   const [otherCat, setOtherCat] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -131,9 +133,9 @@ const ServiceOnboarding = () => {
         }
 
         await handleRoleSelection(ROLE_SERVICE);
-        navigate("/services", { replace: true });
+        const redirectPath = returnTo || "/services";
+        navigate(redirectPath, { replace: true });
         toast.success("Profile Created!");
-        // window.location.reload();
       }
     } catch (err) {
       console.log(err);

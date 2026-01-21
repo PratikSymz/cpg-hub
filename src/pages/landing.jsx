@@ -1,23 +1,34 @@
 // landing.jsx
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card.jsx";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button.jsx";
 import { products } from "@/constants/products.js";
 import { Link, useNavigate } from "react-router-dom";
-import { Lock } from "lucide-react";
+import {
+  Lock,
+  Briefcase,
+  Users,
+  Building2,
+  ArrowRight,
+  Search,
+  Plus,
+} from "lucide-react";
 import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
-import { ROLE_BRAND } from "@/constants/roles.js";
+import { ROLE_BRAND, ROLE_TALENT, ROLE_SERVICE } from "@/constants/roles.js";
+import { getMyBrands } from "@/api/apiBrands.js";
+
+// Icon mapping for each product
+const productIcons = {
+  1: Briefcase, // Fractional Job Board
+  2: Users,     // Directory of Talent
+  3: Building2, // Directory of Services
+};
 
 const LandingPage = () => {
   const { user, isSignedIn, isLoaded } = useUser();
+  const { redirectToSignUp } = useClerk();
   const roles = Array.isArray(user?.unsafeMetadata?.roles)
     ? user.unsafeMetadata.roles
     : [];
@@ -27,8 +38,14 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   const handleSecondarySubmit = (product) => {
+    // Wait for Clerk to load before checking auth status
+    if (!isLoaded) {
+      return;
+    }
+
     if (!isSignedIn) {
-      window.location.href = "https://accounts.mycpghub.com/sign-up";
+      // Use Clerk's built-in redirect which works in both dev and prod
+      redirectToSignUp();
       return;
     }
 
@@ -44,6 +61,7 @@ const LandingPage = () => {
   };
 
   const { func: updateUserProfile } = useFetch(syncUserProfile);
+  const { func: fetchBrands } = useFetch(getMyBrands);
 
   useEffect(() => {
     if (isSignedIn && isLoaded && user) {
@@ -53,76 +71,118 @@ const LandingPage = () => {
         email: user?.primaryEmailAddress?.emailAddress || "",
         profile_picture_url: user?.imageUrl || "",
       });
+
+      // Sync brand role if user has brands but role is missing
+      const syncBrandRole = async () => {
+        const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
+          ? user.unsafeMetadata.roles
+          : [];
+
+        // Only check if user doesn't have brand role
+        if (!existingRoles.includes(ROLE_BRAND)) {
+          const result = await fetchBrands({ user_id: user.id });
+          const brandsData = result?.data || [];
+
+          if (brandsData.length > 0) {
+            await user.update({
+              unsafeMetadata: { roles: [...existingRoles, ROLE_BRAND] },
+            });
+          }
+        }
+      };
+
+      syncBrandRole();
     }
   }, [isLoaded, isSignedIn, user]);
 
   return (
-    <main>
-      <section className="w-full py-10 px-4">
-        <div className="text-center mb-10 bg-cpg-brown/5 rounded-lg">
-          <h1 className="text-xl sm:text-2xl md:text-3xl text-cpg-brown font-bold py-6">
-            Welcome to your professional CPG Community
-          </h1>
-        </div>
+    <main className="py-10">
+      {/* Hero Section */}
+      <section className="w-5/6 mx-auto mb-12">
+        <h1 className="gradient-title font-extrabold text-4xl sm:text-5xl lg:text-6xl text-center">
+          Your CPG Community
+        </h1>
+        <p className="text-center text-muted-foreground text-lg mt-4 max-w-2xl mx-auto">
+          Connect with fractional talent, discover services, and find your next opportunity in the CPG industry.
+        </p>
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center max-w-6xl mx-auto">
-          {products.map((product, index) => {
+      {/* Products Grid */}
+      <section className="w-5/6 mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => {
             const targetRole = product.secondaryButton.role;
             const alreadyHasTargetRole = roles.includes(targetRole);
+            const IconComponent = productIcons[product.id] || Briefcase;
+            const isLocked = !onboarded || !alreadyHasTargetRole;
 
             return (
-              <Card
-                key={index}
-                className="w-full max-w-xs flex flex-col justify-between p-6 rounded-2xl border border-cpg-brown bg-cpg-brown/5 shadow-sm"
+              <div
+                key={product.id}
+                className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-cpg-teal/30 hover:shadow-lg transition-all duration-300 flex flex-col"
               >
-                <CardHeader className="gap-2">
-                  <CardTitle className="h-40 sm:h-52 md:h-64 text-center grid place-items-center text-cpg-teal font-semibold text-xl sm:text-2xl">
-                    {product.title}
-                  </CardTitle>
-                </CardHeader>
-
-                <div className="p-0 font-[400] text-neutral-600 text-sm sm:text-base">
-                  {product.description}
+                {/* Icon */}
+                <div className="bg-cpg-teal/10 rounded-xl p-4 w-fit mb-6">
+                  <IconComponent className="h-8 w-8 text-cpg-teal" />
                 </div>
 
-                <CardFooter className="flex flex-col sm:flex-row px-0 mt-6 gap-3 w-full">
-                  <div className="w-full">
-                    <Button
-                      asChild
-                      size="lg"
-                      variant="default"
-                      className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
+                {/* Title */}
+                <h2 className="text-xl font-bold text-gray-900 mb-3">
+                  {product.title}
+                </h2>
+
+                {/* Description */}
+                <p className="text-muted-foreground text-sm flex-1 mb-6">
+                  {product.description}
+                </p>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  {/* Primary Button - Explore */}
+                  <Button
+                    asChild
+                    variant="default"
+                    className="w-full bg-cpg-teal hover:bg-cpg-teal/90 rounded-xl h-12 text-base group"
+                  >
+                    <Link
+                      to={product.primaryButton.link}
+                      className="flex items-center justify-center gap-2"
                     >
-                      <Link to={product.primaryButton.link}>
-                        {product.primaryButton.label}
-                      </Link>
-                    </Button>
-                  </div>
-                  <div className="w-full">
-                    <Button
-                      size="lg"
-                      variant="default"
-                      className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-base px-5 py-2"
-                      onClick={() => handleSecondarySubmit(product)}
-                    >
-                      {(!onboarded || !alreadyHasTargetRole) && (
-                        <Lock size={20} className="inline-block mr-2" />
-                      )}
-                      {product.secondaryButton.label}
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
+                      <Search className="h-4 w-4" />
+                      {product.primaryButton.label}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </Button>
+
+                  {/* Secondary Button - Post/Add */}
+                  <Button
+                    variant="outline"
+                    className={`w-full rounded-xl h-12 text-base border-2 ${
+                      isLocked
+                        ? "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "border-cpg-brown text-cpg-brown hover:bg-cpg-brown/5"
+                    }`}
+                    onClick={() => handleSecondarySubmit(product)}
+                  >
+                    {isLocked ? (
+                      <Lock className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    {product.secondaryButton.label}
+                  </Button>
+                </div>
+              </div>
             );
           })}
         </div>
-
-        <OnboardingPromptDialog
-          open={!!selectedProduct}
-          setOpen={() => setSelectedProduct(null)}
-          role={selectedProduct?.secondaryButton.role}
-        />
       </section>
+
+      <OnboardingPromptDialog
+        open={!!selectedProduct}
+        setOpen={() => setSelectedProduct(null)}
+        role={selectedProduct?.secondaryButton.role}
+      />
     </main>
   );
 };

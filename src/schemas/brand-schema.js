@@ -4,23 +4,27 @@ import { NameSchema } from "./name-schema.js";
 
 export const BrandSchema = z.object({
   brand_name: z.string().min(1, { message: "Brand name is required" }),
-  brand_desc: z.string().min(1, { message: "Brand description is required" }),
+  brand_desc: z.string().optional(),
   website: z
     .string()
+    .min(1, { message: "Brand website URL is required" })
     .transform((val) => {
       const trimmed = val.trim();
-      if (!trimmed) return "";
+      if (!trimmed) {
+        return "";
+      }
       return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     })
     .refine((val) => !val || WEBSITE_SCHEMA.test(val), {
       message: "Must be a valid URL",
-    })
-    .optional(),
+    }),
   linkedin_url: z
     .string()
     .transform((val) => {
       const trimmed = val.trim();
-      if (!trimmed) return "";
+      if (!trimmed) {
+        return "";
+      }
       return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     })
     .refine(
@@ -35,7 +39,6 @@ export const BrandSchema = z.object({
   brand_hq: z.string().optional(),
   logo: z
     .any()
-    .optional()
     .refine((file) => file && file.length > 0, {
       message: "Logo is required",
     })

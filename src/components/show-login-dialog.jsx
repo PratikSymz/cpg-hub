@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -8,17 +8,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Textarea } from "@/components/ui/textarea.jsx";
-import { useNavigate } from "react-router-dom";
+import { useClerk } from "@clerk/clerk-react";
 
 const defaultClass = "cursor-pointer";
 
 const ShowLoginDialog = ({ open, setOpen }) => {
-  const navigate = useNavigate();
+  const { redirectToSignIn } = useClerk();
 
   const handleSend = async () => {
-    window.location.href = "https://accounts.mycpghub.com/sign-in";
     setOpen(false);
+    redirectToSignIn();
   };
 
   return (

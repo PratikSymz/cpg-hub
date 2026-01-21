@@ -21,7 +21,7 @@ import {
 } from "@/constants/classnames.js";
 import { toast } from "sonner";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 
 const BrandOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -30,6 +30,7 @@ const BrandOnboarding = () => {
 
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
   const handleRoleSelection = async (role) => {
     const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
@@ -167,58 +168,6 @@ const BrandOnboarding = () => {
           )}
         </div>
 
-        <div>
-          <RequiredLabel className={classLabel}>
-            Brand Description
-          </RequiredLabel>
-          <Textarea
-            className={classTextArea}
-            {...register("brand_desc")}
-            placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
-          />
-          {errors.brand_desc && (
-            <FormError message={errors.brand_desc.message} />
-          )}
-        </div>
-
-        {/* Website */}
-        <div>
-          <Label className={classLabel}>Website</Label>
-          <Input
-            type="text"
-            placeholder="https://yourbrand.com"
-            className={classInput}
-            {...register("website")}
-          />
-          {errors.website && <FormError message={errors.website.message} />}
-        </div>
-
-        {/* LinkedIn */}
-        <div>
-          <Label className={classLabel}>LinkedIn URL</Label>
-          <Input
-            type="text"
-            className={classInput}
-            placeholder="https://linkedin.com/company/your-brand"
-            {...register("linkedin_url")}
-          />
-          {errors.linkedin_url && (
-            <FormError message={errors.linkedin_url.message} />
-          )}
-        </div>
-
-        {/* Brand HQ */}
-        <div>
-          <Label className={classLabel}>Brand HQ / Location</Label>
-          <Input
-            type="text"
-            className={classInput}
-            placeholder="New York, NY"
-            {...register("brand_hq")}
-          />
-          {errors.brand_hq && <FormError message={errors.brand_hq.message} />}
-        </div>
-
         {/* Logo URL */}
         <div>
           <RequiredLabel className={classLabel}>Brand Logo</RequiredLabel>
@@ -244,6 +193,82 @@ const BrandOnboarding = () => {
           />
           {errors.logo && (
             <FormError message={errors.logo.message.toString()} />
+          )}
+        </div>
+
+        {/* Website */}
+        <div>
+          <RequiredLabel className={classLabel}>Website</RequiredLabel>
+          <Input
+            type="text"
+            placeholder="https://yourbrand.com"
+            className={classInput}
+            {...register("website")}
+          />
+          {errors.website && <FormError message={errors.website.message} />}
+        </div>
+
+        {/* Additional Info Section */}
+        <div className="border-t pt-4">
+          <Button
+            size="default"
+            variant="ghost"
+            onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+            className="w-full flex items-center justify-between py-4 px-0 hover:bg-transparent hover:underline"
+          >
+            <span className="text-lg font-semibold">
+              Additional Info (Optional)
+            </span>
+
+            {showAdditionalInfo ? (
+              <ChevronUp className="w-5 h-5" />
+            ) : (
+              <ChevronDown className="w-5 h-5" />
+            )}
+          </Button>
+
+          {showAdditionalInfo && (
+            <div className="mt-4 space-y-6 px-2">
+              <div>
+                <Label className={classLabel}>Brand Description</Label>
+                <Textarea
+                  className={classTextArea}
+                  {...register("brand_desc")}
+                  placeholder="e.g. We believe everyone should have better, more exciting coffee experiences..."
+                />
+                {errors.brand_desc && (
+                  <FormError message={errors.brand_desc.message} />
+                )}
+              </div>
+
+              {/* LinkedIn */}
+              <div>
+                <Label className={classLabel}>LinkedIn URL</Label>
+                <Input
+                  type="text"
+                  className={classInput}
+                  placeholder="https://linkedin.com/company/your-brand"
+                  {...register("linkedin_url")}
+                />
+                {errors.linkedin_url && (
+                  <FormError message={errors.linkedin_url.message} />
+                )}
+              </div>
+
+              {/* Brand HQ */}
+              <div>
+                <Label className={classLabel}>Brand HQ / Location</Label>
+                <Input
+                  type="text"
+                  className={classInput}
+                  placeholder="New York, NY"
+                  {...register("brand_hq")}
+                />
+                {errors.brand_hq && (
+                  <FormError message={errors.brand_hq.message} />
+                )}
+              </div>
+            </div>
           )}
         </div>
 
