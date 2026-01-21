@@ -8,10 +8,10 @@ import { toast } from "sonner";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import BackButton from "@/components/back-button.jsx";
-import { ADMIN_USER_IDS } from "@/constants/admins.js";
+import { ADMIN_EMAILS } from "@/constants/admins.js";
 import { Briefcase, Building2, Globe, Users, MapPin } from "lucide-react";
 
-const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
+const isAdmin = (email) => ADMIN_EMAILS.includes(email);
 
 const ServiceProviderDetail = () => {
   const { id } = useParams();
@@ -50,7 +50,7 @@ const ServiceProviderDetail = () => {
 
   // Check if current user can edit (owner or admin)
   const canEdit =
-    user_info?.user_id === user?.id || isAdmin(user?.id);
+    user_info?.user_id === user?.id || isAdmin(user?.primaryEmailAddress?.emailAddress);
 
   const handleEmailSend = async (message) => {
     try {

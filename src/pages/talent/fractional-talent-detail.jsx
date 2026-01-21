@@ -17,7 +17,7 @@ import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 import TalentExperienceSection from "@/components/experience-section.jsx";
 import BackButton from "@/components/back-button.jsx";
 import ShowLoginDialog from "@/components/show-login-dialog.jsx";
-import { ADMIN_USER_IDS } from "@/constants/admins.js";
+import { ADMIN_EMAILS } from "@/constants/admins.js";
 import {
   Pencil,
   Globe,
@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
-const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
+const isAdmin = (email) => ADMIN_EMAILS.includes(email);
 
 const FractionalTalentDetail = () => {
   const { id } = useParams();
@@ -149,7 +149,7 @@ const FractionalTalentDetail = () => {
   });
 
   const canContact = user_info && user_info.user_id !== user?.id;
-  const isOwner = user_info?.user_id === user?.id || isAdmin(user?.id);
+  const isOwner = user_info?.user_id === user?.id || isAdmin(user?.primaryEmailAddress?.emailAddress);
 
   if (!isLoaded || loadingTalent) {
     return <BarLoader className="mb-4" width={"100%"} color="#00A19A" />;
