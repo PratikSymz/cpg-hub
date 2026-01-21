@@ -1,66 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
-import { getTalent } from "@/api/apiTalent.js"; // <- fetch talent_profiles by ID
+import { getTalent } from "@/api/apiTalent.js";
 import { BarLoader } from "react-spinners";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button.jsx";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs.jsx";
 import { toast } from "sonner";
-import ConnectDialog from "@/components/endorsement-dialog.jsx";
-import { FaGlobe, FaLinkedin } from "react-icons/fa";
-import ComposeEmailDialog from "@/components/connect-email-dialog.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
+import { FaLinkedin } from "react-icons/fa";
 import {
   getAllEndorsements,
   createEndorsement,
-  updateEndorsement,
 } from "@/api/apiConnections.js";
 import EndorsementDialog from "@/components/endorsement-dialog.jsx";
 import EndorsementEditDialog from "@/components/endorsement-edit-dialog.jsx";
 import TalentExperienceSection from "@/components/experience-section.jsx";
-import clsx from "clsx";
 import BackButton from "@/components/back-button.jsx";
 import ShowLoginDialog from "@/components/show-login-dialog.jsx";
 import { ADMIN_USER_IDS } from "@/constants/admins.js";
-
-const tabs = [
-  {
-    name: "About",
-    value: "about",
-    content: "",
-  },
-  {
-    name: "Resume",
-    value: "resume",
-    content: "",
-  },
-  {
-    name: "About",
-    value: "about_2",
-    content: "",
-  },
-];
+import {
+  Pencil,
+  Globe,
+  Briefcase,
+  Award,
+  FileText,
+  Users,
+  Mail,
+} from "lucide-react";
+import clsx from "clsx";
 
 const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
 
 const FractionalTalentDetail = () => {
   const { id } = useParams();
   const { isLoaded, user, isSignedIn } = useUser();
-  const role = user?.unsafeMetadata?.role;
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("about");
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-
   const [endorseDialogOpen, setEndorseDialogOpen] = useState(false);
   const [endorseTargetId, setEndorseTargetId] = useState(null);
-  // ^ who we’re endorsing: either the profile owner OR a specific endorser (for endorse‑back)
-
   const [activeEndorsement, setActiveEndorsement] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -75,7 +54,6 @@ const FractionalTalentDetail = () => {
 
   useEffect(() => {
     if (isLoaded && id) {
-      // Load talent
       funcTalent({ talent_id: id });
     }
   }, [isLoaded, id]);
@@ -103,28 +81,14 @@ const FractionalTalentDetail = () => {
   } = useFetch(getAllEndorsements);
 
   // Create endorsement message
-  const { func: funcCreateEndorsement, loading: loadingUpdateEndorsement } =
+  const { func: funcCreateEndorsement, loading: loadingCreateEndorsement } =
     useFetch(createEndorsement);
 
   useEffect(() => {
-    // Load endorsements for this talent
     if (isLoaded && user_info) {
       fetchEndorsements({ user_id: user_info.user_id });
     }
   }, [isLoaded, user, user_info]);
-
-  // const handleUpdateRequest = async (requester_id, updated_status) => {
-  //   if (!isLoaded || !user?.id) return;
-  //   await funcUpdateStatus({
-  //     requester_id: requester_id,
-  //     target_id: user.id,
-  //     new_status: updated_status,
-  //   });
-
-  //   if (errorUpdateStatus) {
-  //     toast.error("Failed to update connection request.");
-  //   }
-  // };
 
   const handleEmailSend = async (message) => {
     try {
@@ -164,7 +128,6 @@ const FractionalTalentDetail = () => {
         target_id: user_info.user_id,
       });
 
-      // Load endorsements for this talent
       if (isLoaded && user_info) {
         await fetchEndorsements({ user_id: user_info.user_id });
       }
@@ -185,309 +148,421 @@ const FractionalTalentDetail = () => {
     return Number(isCurrentUser(b)) - Number(isCurrentUser(a));
   });
 
-  const connectButton =
-    user_info && user_info.user_id !== user?.id ? (
-      <div className="flex flex-col text-sm mt-10">
-        <Button
-          className={"bg-cpg-brown hover:bg-cpg-brown/90"}
-          variant="default"
-          size="lg"
-          onClick={() => {
-            if (!isSignedIn || !user) {
-              setShowLoginDialog(true);
-            } else {
-              setConnectDialogOpen(true);
-            }
-          }}
-        >
-          Connect
-        </Button>
+  const canContact = user_info && user_info.user_id !== user?.id;
+  const isOwner = user_info?.user_id === user?.id || isAdmin(user?.id);
 
-        <ConnectEmailDialog
-          open={connectDialogOpen}
-          setOpen={setConnectDialogOpen}
-          targetUser={user_info}
-          senderUser={user}
-          onSend={handleEmailSend}
-          data-umami-event="Talent Connection"
-        />
-        <ShowLoginDialog open={showLoginDialog} setOpen={setShowLoginDialog} />
+  if (!isLoaded || loadingTalent) {
+    return <BarLoader className="mb-4" width={"100%"} color="#00A19A" />;
+  }
+
+  if (error || !talent) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-red-500">Error loading profile.</p>
       </div>
-    ) : null;
-
-  if (loadingTalent || !talent) {
-    return <BarLoader width="100%" color="#36d7b7" />;
+    );
   }
 
-  if (error) {
-    return <p className="text-red-500 text-center">Error loading profile.</p>;
-  }
-
-  // Only showing key layout changes — assumes logic from your file remains unchanged
   return (
-    <>
-      <div className="px-4 sm:px-6 py-10">
+    <div className="py-10">
+      {/* Header */}
+      <div className="w-5/6 mx-auto mb-8">
         <BackButton />
+        <h1 className="gradient-title font-extrabold text-4xl sm:text-5xl lg:text-6xl text-center mt-6">
+          {full_name || "Talent Profile"}
+        </h1>
       </div>
 
-      <div className="flex flex-col gap-10 px-4 sm:px-6 pb-16 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 w-full text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <img
-              src={image_url}
-              alt="Profile"
-              className="h-24 w-24 rounded-full border object-cover"
-            />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold break-words hover:underline">
-                {portfolio_url ? (
-                  <Link to={portfolio_url}>{full_name}</Link>
-                ) : (
-                  <span>{full_name}</span>
-                )}
-              </h1>
-              {linkedin_url && (
-                <div className="mt-2">
-                  <Link to={linkedin_url}>
-                    <FaLinkedin className="text-[#0072b1] h-5 w-5 inline-block hover:scale-110 transition" />
+      <div className="w-5/6 mx-auto">
+        {/* Profile Card */}
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {/* Avatar */}
+            {image_url ? (
+              <div className="h-20 w-20 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img
+                  src={image_url}
+                  alt={full_name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="h-20 w-20 rounded-full border-2 border-gray-100 bg-cpg-teal/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-cpg-teal font-bold text-2xl">
+                  {full_name?.charAt(0) || "?"}
+                </span>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-2xl font-bold">{full_name}</h2>
+              <div className="flex items-center justify-center sm:justify-start gap-3 mt-2">
+                {linkedin_url && (
+                  <Link
+                    to={linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0072b1] hover:scale-110 transition-transform"
+                  >
+                    <FaLinkedin className="h-5 w-5" />
                   </Link>
-                </div>
+                )}
+                {portfolio_url && (
+                  <Link
+                    to={portfolio_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-500 hover:text-cpg-teal hover:scale-110 transition-transform"
+                  >
+                    <Globe className="h-5 w-5" />
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 flex-shrink-0">
+              {canContact && (
+                <ConnectEmailDialog
+                  open={connectDialogOpen}
+                  setOpen={setConnectDialogOpen}
+                  targetUser={user_info}
+                  senderUser={user}
+                  onSend={handleEmailSend}
+                  data-umami-event="Talent Connection"
+                />
+              )}
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  className="border-2 border-cpg-teal text-cpg-teal hover:bg-cpg-teal/5 rounded-xl"
+                  onClick={() => navigate(`/edit-talent/${id}`)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
               )}
             </div>
           </div>
-
-          {/* Edit button for self */}
-          {(user_info?.user_id === user?.id || isAdmin(user?.id)) && (
-            <Button
-              className="rounded-full cursor-pointer w-full sm:w-auto"
-              variant="outline"
-              size="lg"
-              onClick={() => navigate(`/edit-talent`)}
-            >
-              Edit profile
-            </Button>
-          )}
         </div>
 
-        {/* Divider */}
-        <div className="bg-gray-100 rounded-2xl h-0.5 w-full" />
-
-        {/* Tabs */}
-        <Tabs defaultValue="about" className="w-full">
-          <TabsList className="flex overflow-x-auto whitespace-nowrap gap-2 sm:justify-center mb-8 bg-transparent">
-            <TabsTrigger
-              value="about"
-              className="rounded-full px-5 py-3 text-sm font-medium"
-            >
-              About
-            </TabsTrigger>
-            {resume_url && (
-              <TabsTrigger
-                value="resume"
-                className="rounded-full px-5 py-3 text-sm font-medium"
-              >
-                Resume
-              </TabsTrigger>
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-8">
+          <button
+            onClick={() => setActiveTab("about")}
+            className={clsx(
+              "px-6 py-3 rounded-xl text-sm font-medium transition-all",
+              activeTab === "about"
+                ? "bg-cpg-teal text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             )}
-            <TabsTrigger
-              value="endorsements"
-              className="rounded-full px-5 py-3 text-sm font-medium"
+          >
+            About
+          </button>
+          {resume_url && (
+            <button
+              onClick={() => setActiveTab("resume")}
+              className={clsx(
+                "px-6 py-3 rounded-xl text-sm font-medium transition-all",
+                activeTab === "resume"
+                  ? "bg-cpg-teal text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
             >
-              Endorsements
-            </TabsTrigger>
-          </TabsList>
+              <FileText className="h-4 w-4 inline mr-2" />
+              Resume
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab("endorsements")}
+            className={clsx(
+              "px-6 py-3 rounded-xl text-sm font-medium transition-all",
+              activeTab === "endorsements"
+                ? "bg-cpg-teal text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            )}
+          >
+            <Users className="h-4 w-4 inline mr-2" />
+            Endorsements
+          </button>
+        </div>
 
-          {/* About Tab */}
-          <TabsContent value="about">
-            <div className="flex flex-col gap-10">
-              <div>
-                <h2 className="text-xl font-semibold mb-2">
-                  Industry Experience
-                </h2>
+        {/* Tab Content */}
+        {activeTab === "about" && (
+          <div className="space-y-8">
+            {/* Overview Card */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-6">Overview</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Specializations Count */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Briefcase className="h-5 w-5 text-cpg-teal" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Specializations
+                    </p>
+                    <p className="font-medium mt-1">
+                      {area_of_specialization?.length || 0} areas
+                    </p>
+                  </div>
+                </div>
+
+                {/* Experience Levels */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Award className="h-5 w-5 text-cpg-teal" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Experience Level
+                    </p>
+                    <p className="font-medium mt-1">
+                      {level_of_experience?.length > 0
+                        ? level_of_experience.join(", ")
+                        : "Not specified"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Endorsements Count */}
+                <div className="flex items-start gap-3">
+                  <div className="bg-cpg-teal/10 rounded-lg p-2.5 flex-shrink-0">
+                    <Users className="h-5 w-5 text-cpg-teal" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Endorsements
+                    </p>
+                    <p className="font-medium mt-1">
+                      {endorsements?.length || 0} endorsements
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Industry Experience */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Industry Experience</h3>
+              {industry_experience ? (
                 <p className="text-muted-foreground whitespace-pre-line">
                   {industry_experience}
                 </p>
-              </div>
+              ) : (
+                <span className="text-muted-foreground">Not specified</span>
+              )}
+            </div>
 
-              <div>
-                <TalentExperienceSection
-                  user_id={user_info.user_id}
-                  showEdit={false}
-                />
-              </div>
+            {/* Brand Experience */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <TalentExperienceSection
+                user_id={user_info?.user_id}
+                showEdit={false}
+              />
+            </div>
 
-              <div>
-                <h2 className="text-xl font-semibold mb-2">
-                  Level of Experience
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {level_of_experience.map((level, idx) => (
+            {/* Experience Level */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Experience Level</h3>
+              <div className="flex flex-wrap gap-2">
+                {level_of_experience.length > 0 ? (
+                  level_of_experience.map((level, idx) => (
                     <span
                       key={idx}
-                      className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                      className="bg-cpg-teal text-white text-sm font-medium px-4 py-2 rounded-full"
                     >
                       {level}
                     </span>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground">Not specified</span>
+                )}
               </div>
+            </div>
 
-              <div>
-                <h2 className="text-xl font-semibold mb-2">
-                  Area of Specialization
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {area_of_specialization.map((area, idx) => (
+            {/* Area of Specialization */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Area of Specialization</h3>
+              <div className="flex flex-wrap gap-2">
+                {area_of_specialization.length > 0 ? (
+                  area_of_specialization.map((area, idx) => (
                     <span
                       key={idx}
-                      className="bg-cpg-teal text-white text-sm px-4 py-1 rounded-full"
+                      className="bg-cpg-teal/10 text-cpg-teal text-sm font-medium px-4 py-2 rounded-full"
                     >
                       {area}
                     </span>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground">Not specified</span>
+                )}
               </div>
-
-              {connectButton}
             </div>
-          </TabsContent>
 
-          {/* Resume Tab */}
-          {resume_url && (
-            <TabsContent value="resume">
-              <div className="w-full overflow-x-auto">
-                <iframe
-                  src={resume_url}
-                  title="Resume"
-                  width="100%"
-                  height="600px"
-                  className="rounded-lg border"
-                />
+            {/* Contact CTA for non-owners */}
+            {canContact && (
+              <div className="bg-gradient-to-r from-cpg-teal/10 to-cpg-brown/10 border-2 border-cpg-teal/20 rounded-2xl p-8 text-center">
+                <h3 className="text-xl font-semibold mb-2">
+                  Interested in working with {full_name?.split(" ")[0]}?
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Reach out to discuss potential opportunities and collaborations.
+                </p>
+                <Button
+                  onClick={() => {
+                    if (!isSignedIn || !user) {
+                      setShowLoginDialog(true);
+                    } else {
+                      setConnectDialogOpen(true);
+                    }
+                  }}
+                  className="bg-cpg-teal hover:bg-cpg-teal/90 text-white px-8 py-3 rounded-xl text-base font-medium"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Connect
+                </Button>
+                <ShowLoginDialog open={showLoginDialog} setOpen={setShowLoginDialog} />
               </div>
-            </TabsContent>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Endorsements Tab */}
-          <TabsContent value="endorsements">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Endorsements</h2>
-                {isSignedIn &&
-                  user_info?.user_id !== user?.id &&
-                  !hasEndorsed && (
-                    <EndorsementDialog
-                      open={endorseDialogOpen}
-                      setOpen={setEndorseDialogOpen}
-                      onSend={handleEndorsementSubmit}
-                    />
-                  )}
-              </div>
+        {/* Resume Tab */}
+        {activeTab === "resume" && resume_url && (
+          <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
+            <iframe
+              src={resume_url}
+              title="Resume"
+              width="100%"
+              height="800px"
+              className="border-0"
+            />
+          </div>
+        )}
 
-              {loadingEndorsements && (
-                <BarLoader width="100%" color="#00A19A" />
-              )}
-              {errorEndorsements && (
-                <p className="text-red-500">Error loading endorsements.</p>
-              )}
-              {(!endorsements || endorsements?.length === 0) && (
-                <p className="text-gray-500">No endorsements yet.</p>
-              )}
-
-              <ul className="space-y-4">
-                {sortedEndorsements?.map((endorsement) => {
-                  const endorserId = endorsement.endorser?.user_id; // who endorsed the owner
-                  const endorsedBack = endorsements.some(
-                    // Has the current user already endorsed this endorser? (reciprocal)
-                    (rev) =>
-                      rev.from_user_id === user?.id &&
-                      rev.to_user_id === endorserId
-                  );
-
-                  return (
-                    <li
-                      key={endorsement.id}
-                      className="border rounded-lg p-4 bg-white shadow-sm flex flex-col sm:flex-row justify-between gap-4"
-                    >
-                      {/* Profile + Message */}
-                      <div className="flex gap-4">
-                        <img
-                          src={endorsement.endorser?.profile_picture_url}
-                          alt={endorsement.endorser?.full_name}
-                          className="w-14 h-14 rounded-full object-cover border"
-                        />
-                        <div>
-                          <p className="font-semibold">
-                            {endorsement.endorser?.full_name}
-                          </p>
-                          <p className="text-gray-700 mt-1">
-                            {endorsement.message}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex justify-center self-center gap-4">
-                        {/* Edit my own endorsement on the owner */}
-                        {isSignedIn && endorserId === user?.id && (
-                          <Button
-                            className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
-                            variant="outline"
-                            size="lg"
-                            onClick={() => {
-                              setActiveEndorsement(endorsement);
-                              setEndorseTargetId(user_info.user_id); // editing endorsement TO the owner
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                        )}
-
-                        {/* Endorse back the endorser (reciprocal) */}
-                        {isSignedIn &&
-                          !endorsedBack &&
-                          endorserId !== user?.id && (
-                            <Button
-                              className="bg-cpg-brown text-white rounded-full hover:bg-cpg-brown/90 hover:text-white w-full sm:w-auto cursor-pointer"
-                              variant="outline"
-                              size="lg"
-                              onClick={() => {
-                                if (!isSignedIn || !user) {
-                                  setShowLoginDialog(true);
-                                  return;
-                                }
-                                setEndorseTargetId(endorserId); // <-- target is the original endorser
-                                setEndorseDialogOpen(true);
-                                // optionally track target
-                              }}
-                            >
-                              Endorse back
-                            </Button>
-                          )}
-                      </div>
-                    </li>
-                  );
-                })}
-                {activeEndorsement && (
-                  <EndorsementEditDialog
-                    open={editDialogOpen}
-                    setOpen={(open) => {
-                      setEditDialogOpen(open);
-                      if (!open) setActiveEndorsement(null);
-                    }}
-                    initialMessage={activeEndorsement.message}
-                    onSave={async (newMessage) => {
-                      await handleEndorsementSubmit(newMessage);
-                      setEditDialogOpen(false);
-                      setActiveEndorsement(null);
-                    }}
+        {/* Endorsements Tab */}
+        {activeTab === "endorsements" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Endorsements</h2>
+              {isSignedIn &&
+                user_info?.user_id !== user?.id &&
+                !hasEndorsed && (
+                  <EndorsementDialog
+                    open={endorseDialogOpen}
+                    setOpen={setEndorseDialogOpen}
+                    onSend={handleEndorsementSubmit}
                   />
                 )}
-              </ul>
             </div>
-          </TabsContent>
-        </Tabs>
+
+            {loadingEndorsements && (
+              <BarLoader width="100%" color="#00A19A" />
+            )}
+            {errorEndorsements && (
+              <p className="text-red-500">Error loading endorsements.</p>
+            )}
+            {(!endorsements || endorsements?.length === 0) && (
+              <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 text-center">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No endorsements yet.</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {sortedEndorsements?.map((endorsement) => {
+                const endorserId = endorsement.endorser?.user_id;
+                const endorsedBack = endorsements.some(
+                  (rev) =>
+                    rev.from_user_id === user?.id &&
+                    rev.to_user_id === endorserId
+                );
+
+                return (
+                  <div
+                    key={endorsement.id}
+                    className="bg-white border-2 border-gray-100 rounded-2xl p-6 flex flex-col sm:flex-row justify-between gap-4"
+                  >
+                    {/* Profile + Message */}
+                    <div className="flex gap-4">
+                      <img
+                        src={endorsement.endorser?.profile_picture_url}
+                        alt={endorsement.endorser?.full_name}
+                        className="w-14 h-14 rounded-full object-cover border-2 border-gray-100"
+                      />
+                      <div>
+                        <p className="font-semibold">
+                          {endorsement.endorser?.full_name}
+                        </p>
+                        <p className="text-gray-600 mt-1">
+                          {endorsement.message}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-center self-center gap-4">
+                      {/* Edit my own endorsement */}
+                      {isSignedIn && endorserId === user?.id && (
+                        <Button
+                          className="bg-cpg-brown text-white rounded-xl hover:bg-cpg-brown/90"
+                          variant="default"
+                          size="default"
+                          onClick={() => {
+                            setActiveEndorsement(endorsement);
+                            setEndorseTargetId(user_info.user_id);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+
+                      {/* Endorse back */}
+                      {isSignedIn &&
+                        !endorsedBack &&
+                        endorserId !== user?.id && (
+                          <Button
+                            className="bg-cpg-brown text-white rounded-xl hover:bg-cpg-brown/90"
+                            variant="default"
+                            size="default"
+                            onClick={() => {
+                              if (!isSignedIn || !user) {
+                                setShowLoginDialog(true);
+                                return;
+                              }
+                              setEndorseTargetId(endorserId);
+                              setEndorseDialogOpen(true);
+                            }}
+                          >
+                            Endorse back
+                          </Button>
+                        )}
+                    </div>
+                  </div>
+                );
+              })}
+              {activeEndorsement && (
+                <EndorsementEditDialog
+                  open={editDialogOpen}
+                  setOpen={(open) => {
+                    setEditDialogOpen(open);
+                    if (!open) setActiveEndorsement(null);
+                  }}
+                  initialMessage={activeEndorsement.message}
+                  onSave={async (newMessage) => {
+                    await handleEndorsementSubmit(newMessage);
+                    setEditDialogOpen(false);
+                    setActiveEndorsement(null);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
