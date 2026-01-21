@@ -29,9 +29,9 @@ import FormError from "@/components/form-error.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import { toTitleCase } from "@/utils/common-functions.js";
-import { ADMIN_USER_IDS } from "@/constants/admins.js";
+import { ADMIN_EMAILS } from "@/constants/admins.js";
 
-const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
+const isAdmin = (email) => ADMIN_EMAILS.includes(email);
 
 const EditTalentPage = () => {
   const { id } = useParams();
@@ -111,7 +111,7 @@ const EditTalentPage = () => {
   // Check if current user can edit this profile
   const canEdit =
     isSignedIn &&
-    (userInfo?.user_id === user?.id || isAdmin(user?.id));
+    (userInfo?.user_id === user?.id || isAdmin(user?.primaryEmailAddress?.emailAddress));
 
   const handleDelete = async () => {
     if (!id) return;
