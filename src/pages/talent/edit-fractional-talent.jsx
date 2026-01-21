@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch.jsx";
 import {
-  deleteTalent,
-  getMyTalentProfile,
-  updateTalent,
+  deleteTalentById,
+  getTalent,
+  updateTalentById,
 } from "@/api/apiTalent.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   areasOfSpecialization,
@@ -20,23 +20,22 @@ import {
 import clsx from "clsx";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2Icon, X } from "lucide-react";
-import { syncUserProfile } from "@/api/apiUsers.js";
+import { Send, Trash2, X, Users } from "lucide-react";
 import TalentExperienceSection from "@/components/experience-section.jsx";
-import { TalentSchemaWithName } from "@/schemas/talent-schema.js";
+import { TalentSchema } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
 import RequiredLabel from "@/components/required-label.jsx";
-import {
-  classLabel,
-  classInput,
-  classTextArea,
-} from "@/constants/classnames.js";
 import FormError from "@/components/form-error.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import BackButton from "@/components/back-button.jsx";
+import { toTitleCase } from "@/utils/common-functions.js";
+import { ADMIN_USER_IDS } from "@/constants/admins.js";
+
+const isAdmin = (userId) => ADMIN_USER_IDS.includes(userId);
 
 const EditTalentPage = () => {
+  const { id } = useParams();
   const { user, isSignedIn, isLoaded } = useUser();
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const {
@@ -46,60 +45,58 @@ const EditTalentPage = () => {
     setValue,
     formState: { errors, isDirty },
   } = useForm({
-    mode: "onChange", // enables tracking dirty fields
+    mode: "onChange",
     defaultValues: {
-      first_name: "",
-      last_name: "",
       level_of_experience: [],
       industry_experience: "",
       area_of_specialization: [],
       linkedin_url: "",
       portfolio_url: "",
     },
-    resolver: zodResolver(TalentSchemaWithName),
+    resolver: zodResolver(TalentSchema),
   });
 
   const {
     func: fetchTalent,
     data: talentData,
     loading,
-  } = useFetch(getMyTalentProfile);
+  } = useFetch(getTalent);
 
   const {
     func: saveTalent,
     loading: savingTalent,
     error: saveError,
-  } = useFetch(updateTalent);
+  } = useFetch(updateTalentById);
 
   const {
     func: removeTalent,
     loading: removingTalent,
     error: removeError,
-  } = useFetch(deleteTalent);
+  } = useFetch(deleteTalentById);
 
-  // Load talent profile
+  // Load talent profile by ID from URL
   useEffect(() => {
-    if (isLoaded && isSignedIn && user?.id) {
-      fetchTalent({ user_id: user.id });
+    if (isLoaded && id) {
+      fetchTalent({ talent_id: id });
     }
-  }, [isLoaded, isSignedIn]);
-
-  // Update User Profile
-  const { func: updateUserProfile } = useFetch(syncUserProfile);
+  }, [isLoaded, id]);
 
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
-  const [profileLoad, showProfileLoad] = useState(false);
 
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
 
-  // Prefill form
+  // Profile info from fetched talent data
+  const userInfo = talentData?.user_info;
+  const profileName = userInfo?.full_name || "Unknown";
+  const profileEmail = userInfo?.email || "";
+  const profileImage = userInfo?.profile_picture_url || "";
+
+  // Prefill form when data loads
   useEffect(() => {
     if (talentData) {
-      setValue("first_name", user.firstName || "");
-      setValue("last_name", user.lastName || "");
       setValue("level_of_experience", talentData.level_of_experience || []);
       setValue("industry_experience", talentData.industry_experience || "");
       setValue(
@@ -109,96 +106,48 @@ const EditTalentPage = () => {
       setValue("linkedin_url", talentData.linkedin_url || "");
       setValue("portfolio_url", talentData.portfolio_url || "");
     }
-  }, [user, talentData]);
+  }, [talentData, setValue]);
 
-  const handleProfilePictureClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleProfilePictureChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Update Clerk profile picture
-    try {
-      showProfileLoad(true);
-      await user.setProfileImage({
-        file,
-      });
-
-      toast.success("Profile picture updated!");
-      showProfileLoad(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update profile picture.");
-    }
-  };
+  // Check if current user can edit this profile
+  const canEdit =
+    isSignedIn &&
+    (userInfo?.user_id === user?.id || isAdmin(user?.id));
 
   const handleDelete = async () => {
-    if (!user?.id) return;
+    if (!id) return;
 
-    const ok = window.confirm("Are you sure you want to delete your profile?");
+    const ok = window.confirm("Are you sure you want to delete this profile?");
     if (!ok) return;
 
     try {
-      const deleted = await removeTalent({ user_id: user.id });
+      await removeTalent({ talent_id: id });
       toast.success("Profile deleted.");
       navigate("/talents", { replace: true });
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete your profile.");
+      toast.error("Failed to delete profile.");
     }
   };
-
-  const toTitleCase = (str) =>
-    str
-      .toLowerCase()
-      .split(" ")
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
 
   const onSubmit = async (data) => {
     const combinedAreaOfSpec = otherSpec
       ? [...data.area_of_specialization, otherSpec]
       : data.area_of_specialization;
 
-    const firstName = data.first_name;
-    const lastName = data.last_name;
-
     try {
-      // Update Clerk first and last name if changed
-      if (firstName !== user?.firstName || lastName !== user?.lastName) {
-        await user.update({
-          firstName,
-          lastName,
-        });
-      }
-
-      // Save Talent profile
-      if (user && user.id) {
+      if (id) {
         await saveTalent(
           {
             ...data,
             area_of_specialization: combinedAreaOfSpec,
             resume_url: talentData.resume_url,
           },
-          { user_id: user.id }
+          { talent_id: id }
         );
       }
 
-      // Sync User profile
-      if (isSignedIn && isLoaded && user) {
-        await updateUserProfile({
-          user_id: user?.id,
-          full_name: user?.fullName || "",
-          email: user?.primaryEmailAddress?.emailAddress || "",
-          profile_picture_url: user?.imageUrl || "",
-        });
-      }
-
       toast.success("Profile Updated!");
-      navigate("/talents", { replace: true });
+      navigate(`/talents/${id}`, { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Failed to update profile.");
@@ -228,378 +177,371 @@ const EditTalentPage = () => {
   };
 
   if (loading || !isLoaded) {
-    return <BarLoader width={"100%"} color="#36d7b7" />;
+    return <BarLoader width={"100%"} color="#00A19A" />;
+  }
+
+  if (!talentData) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-gray-500">Talent profile not found.</p>
+      </div>
+    );
+  }
+
+  if (!canEdit) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-gray-500">You don't have permission to edit this profile.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <h1 className="text-4xl font-bold mb-6">Edit Profile</h1>
-      <div className="px-6">
-        <Button
-          className=""
-          onClick={handleBackClick}
-          variant="ghost"
-          size="default"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hover:underline">Back</span>
-        </Button>
-
-        <DiscardChangesGuard
-          show={showDialog}
-          onDiscard={handleDiscard}
-          onStay={handleStay}
-        />
-      </div>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-6 w-5/6 mx-auto"
-      >
-        <div>
-          {/* Profile Pic */}
-          <div className="flex gap-6 items-center my-4">
-            <img
-              src={user.imageUrl}
-              alt="Profile"
-              className="h-24 w-24 rounded-full border object-cover cursor-pointer"
-              onClick={handleProfilePictureClick}
-            />
-            {profileLoad && <Loader2Icon className="animate-spin h-6 w-6" />}
-
-            <div>
-              <p className="font-semibold">
-                {user.primaryEmailAddress.emailAddress}
-              </p>
-              <p className="text-sm text-gray-500">(Click image to update)</p>
-            </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleProfilePictureChange}
-              className="hidden"
-            />
+    <main className="py-10">
+      {/* Header Section */}
+      <section className="w-5/6 mx-auto mb-8">
+        <BackButton />
+        <div className="flex items-center justify-center gap-3 mb-4 mt-6">
+          <div className="bg-cpg-teal/10 rounded-xl p-3">
+            <Users className="h-6 w-6 text-cpg-teal" />
           </div>
+        </div>
+        <h1 className="gradient-title font-extrabold text-3xl sm:text-4xl text-center">
+          Edit Talent Profile
+        </h1>
+        <p className="text-center text-muted-foreground mt-3 max-w-lg mx-auto">
+          Update the profile information below.
+        </p>
+      </section>
 
-          {/* First and Last name */}
-          <div className="grid grid-cols-2 gap-6 my-6">
-            <div>
-              <RequiredLabel className={classLabel}>First Name</RequiredLabel>
-              <Input
-                className={classInput}
-                type="text"
-                name="first_name"
-                placeholder="First name"
-                {...register("first_name")}
-              />
-              {errors.first_name && (
-                <FormError message={errors.first_name.message} />
-              )}
-            </div>
+      <DiscardChangesGuard
+        show={showDialog}
+        onDiscard={handleDiscard}
+        onStay={handleStay}
+      />
 
-            <div>
-              <RequiredLabel className={classLabel}>Last Name</RequiredLabel>
-              <Input
-                className={classInput}
-                type="text"
-                name="last_name"
-                placeholder="Last name"
-                {...register("last_name")}
+      {/* Profile Card - Shows whose profile is being edited */}
+      <section className="w-5/6 max-w-3xl mx-auto mb-8">
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="h-16 w-16 rounded-full border-2 border-gray-100 object-cover"
               />
-              {errors.last_name && (
-                <FormError message={errors.last_name.message} />
-              )}
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-cpg-teal/10 flex items-center justify-center">
+                <span className="text-cpg-teal font-semibold text-xl">
+                  {profileName?.charAt(0) || "?"}
+                </span>
+              </div>
+            )}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">{profileName}</h2>
+              <p className="text-sm text-muted-foreground">{profileEmail}</p>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Industry Experience */}
-        <div>
-          <RequiredLabel className={classLabel}>
-            Industry Experience
-          </RequiredLabel>
-          <Textarea
-            className={classTextArea}
-            {...register("industry_experience")}
-            placeholder="e.g. 8 years in food & beverage..."
-          />
-          {errors.industry_experience && (
-            <FormError message={errors.industry_experience.message} />
-          )}
-        </div>
+      {/* Form Card */}
+      <section className="w-5/6 max-w-3xl mx-auto">
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Industry Experience */}
+            <div>
+              <RequiredLabel className="text-sm font-medium text-gray-700 mb-2 block">
+                Industry Experience
+              </RequiredLabel>
+              <Textarea
+                {...register("industry_experience")}
+                placeholder="e.g. 8 years in food & beverage, specializing in product development and brand strategy..."
+                rows={4}
+                className="rounded-xl border-gray-200 focus:border-cpg-teal focus:ring-cpg-teal/20"
+              />
+              {errors.industry_experience && (
+                <FormError message={errors.industry_experience?.message} />
+              )}
+            </div>
 
-        {/* Brand Experience */}
-        <div>
-          <TalentExperienceSection user_id={user?.id} showEdit={true} />
-        </div>
+            {/* Brand Experience */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <TalentExperienceSection user_id={userInfo?.user_id} showEdit={true} />
+            </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 my-6">
-          {/* Area of Specialization */}
-          <div className="flex-1">
-            <Controller
-              name="area_of_specialization"
-              control={control}
-              defaultValue={[]}
-              render={({ field }) => {
-                const toggleValue = (value) => {
-                  if (value === "Other") {
-                    setShowOtherInput((prev) => !prev);
-                    return;
-                  }
+            {/* Area of Specialization */}
+            <div>
+              <Controller
+                name="area_of_specialization"
+                control={control}
+                render={({ field }) => {
+                  const toggleValue = (value) => {
+                    if (value === "Other") {
+                      setShowOtherInput((prev) => !prev);
+                      return;
+                    }
 
-                  const updated = field.value.includes(value)
-                    ? field.value.filter((v) => v !== value)
-                    : [...field.value, value];
+                    const updated = field.value.includes(value)
+                      ? field.value.filter((v) => v !== value)
+                      : [...field.value, value];
 
-                  field.onChange(updated);
-                };
+                    field.onChange(updated);
+                  };
 
-                const removeValue = (value) => {
-                  const updated = field.value.filter((v) => v !== value);
-                  field.onChange(updated);
-                };
+                  const removeValue = (value) => {
+                    const updated = field.value.filter((v) => v !== value);
+                    field.onChange(updated);
+                  };
 
-                return (
-                  <div>
-                    <RequiredLabel className={classLabel}>
-                      Area of Specialization
-                    </RequiredLabel>
-                    <div className="grid grid-cols-2 gap-3">
-                      {areasOfSpecialization.map(({ label }) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => toggleValue(label)}
-                          className={clsx(
-                            "rounded-md px-4 py-2 text-sm font-medium border",
-                            field.value.includes(label)
-                              ? "bg-cpg-teal text-white border-transparent"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Other freeform specializations (already added by user) */}
-                    {showOtherInput && (
-                      <>
-                        <div className="flex gap-2 items-center my-4">
-                          <Input
-                            type="text"
-                            placeholder="Enter your specialization"
-                            value={otherSpec}
-                            onChange={(e) => setOtherSpec(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button
-                            className=""
-                            variant="default"
-                            size="lg"
-                            type="button"
-                            onClick={() => {
-                              const trimmed = toTitleCase(otherSpec.trim());
-                              // Check: valid string, not a duplicate (case-insensitive)
-                              const isDuplicate = field.value.some(
-                                (val) =>
-                                  val.toLowerCase() === trimmed.toLowerCase()
-                              );
-                              // Min 3 letters, no special chars
-                              const isValid = OTHER_SCHEMA.test(trimmed);
-
-                              if (!trimmed) {
-                                setOtherSpecError(
-                                  "Specialization cannot be empty."
-                                );
-                                return;
-                              }
-                              if (isDuplicate) {
-                                setOtherSpecError(
-                                  "This specialization has already been added."
-                                );
-                                return;
-                              }
-                              if (!isValid) {
-                                setOtherSpecError(
-                                  "Must be at least 3 characters and contain only letters, numbers, spaces.\nAllowed symbols: /, -, &, +, :, ., and ()"
-                                );
-                                return;
-                              }
-
-                              if (trimmed && !isDuplicate && isValid) {
-                                field.onChange([...field.value, trimmed]);
-                                setOtherSpec("");
-                                setOtherSpecError("");
-                              }
-                            }}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                        {otherSpecError && (
-                          <FormError message={otherSpecError} />
-                        )}
-                      </>
-                    )}
-
-                    {/* Show selected values as tags */}
-                    <div className="flex flex-wrap gap-2 my-4">
-                      {field.value.map((val, idx) => (
-                        <span
-                          key={idx}
-                          className="flex items-center bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full"
-                        >
-                          {val}
+                  return (
+                    <div>
+                      <RequiredLabel className="text-sm font-medium text-gray-700 mb-3 block">
+                        Area of Specialization
+                      </RequiredLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {areasOfSpecialization.map(({ label }) => (
                           <button
+                            key={label}
                             type="button"
-                            onClick={() => removeValue(val)}
-                            className="ml-2 text-cpg-teal hover:text-red-500"
+                            onClick={() => toggleValue(label)}
+                            className={clsx(
+                              "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+                              field.value.includes(label)
+                                ? "bg-cpg-teal text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            )}
                           >
-                            <X className="w-4 h-4" />
+                            {label}
                           </button>
-                        </span>
-                      ))}
-                    </div>
-                    {errors.area_of_specialization && (
-                      <FormError
-                        message={errors.area_of_specialization.message}
-                      />
-                    )}
-                  </div>
-                );
-              }}
-            />
-          </div>
+                        ))}
+                      </div>
 
-          {/* Level of Experience */}
-          <div className="flex-1">
-            <Controller
-              name="level_of_experience"
-              control={control}
-              render={({ field }) => {
-                const toggleValue = (value) => {
-                  const updated = field.value.includes(value)
-                    ? field.value.filter((v) => v !== value)
-                    : [...field.value, value];
-                  field.onChange(updated);
-                };
+                      {/* Other input box */}
+                      {showOtherInput && (
+                        <div className="mt-4">
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="text"
+                              placeholder="Enter your specialization"
+                              value={otherSpec}
+                              onChange={(e) => setOtherSpec(e.target.value)}
+                              className="flex-1 h-11 rounded-xl"
+                            />
+                            <Button
+                              variant="default"
+                              size="default"
+                              type="button"
+                              className="h-11 rounded-xl bg-cpg-teal hover:bg-cpg-teal/90"
+                              onClick={() => {
+                                const trimmed = toTitleCase(otherSpec.trim());
+                                const isDuplicate = field.value.some(
+                                  (val) =>
+                                    val.toLowerCase() === trimmed.toLowerCase()
+                                );
+                                const isValid = OTHER_SCHEMA.test(trimmed);
 
-                return (
-                  <div>
-                    <RequiredLabel className="mb-4 block">
-                      Level of Experience
-                    </RequiredLabel>
-                    <div className="grid grid-cols-2 gap-3">
-                      {levelsOfExperience.map(({ label }) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => toggleValue(label)}
-                          className={clsx(
-                            "rounded-md px-4 py-2 text-sm font-medium border",
-                            field.value.includes(label)
-                              ? "bg-teal-600 text-white border-transparent"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                if (!trimmed) {
+                                  setOtherSpecError(
+                                    "Specialization cannot be empty."
+                                  );
+                                  return;
+                                }
+                                if (isDuplicate) {
+                                  setOtherSpecError(
+                                    "This specialization has already been added."
+                                  );
+                                  return;
+                                }
+                                if (!isValid) {
+                                  setOtherSpecError(
+                                    "Must be at least 3 characters and contain only letters, numbers, spaces."
+                                  );
+                                  return;
+                                }
+
+                                if (trimmed && !isDuplicate && isValid) {
+                                  field.onChange([...field.value, trimmed]);
+                                  setOtherSpec("");
+                                  setOtherSpecError("");
+                                }
+                              }}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                          {otherSpecError && (
+                            <FormError message={otherSpecError} />
                           )}
-                        >
-                          {label}
-                        </button>
-                      ))}
+                        </div>
+                      )}
+
+                      {/* Show selected values as tags */}
+                      {field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {field.value.map((val, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 bg-cpg-teal/10 text-cpg-teal px-3 py-1.5 rounded-full text-sm font-medium"
+                            >
+                              {val}
+                              <button
+                                type="button"
+                                onClick={() => removeValue(val)}
+                                className="hover:text-red-500 ml-1"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {errors.area_of_specialization && (
+                        <FormError
+                          message={errors.area_of_specialization.message}
+                        />
+                      )}
                     </div>
+                  );
+                }}
+              />
+            </div>
 
-                    {errors.level_of_experience && (
-                      <FormError message={errors.level_of_experience.message} />
-                    )}
-                  </div>
-                );
-              }}
-            />
-          </div>
+            {/* Level of Experience */}
+            <div>
+              <Controller
+                name="level_of_experience"
+                control={control}
+                render={({ field }) => {
+                  const toggleValue = (value) => {
+                    const updated = field.value.includes(value)
+                      ? field.value.filter((v) => v !== value)
+                      : [...field.value, value];
+                    field.onChange(updated);
+                  };
+
+                  return (
+                    <div>
+                      <RequiredLabel className="text-sm font-medium text-gray-700 mb-3 block">
+                        Level of Experience
+                      </RequiredLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {levelsOfExperience.map(({ label }) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => toggleValue(label)}
+                            className={clsx(
+                              "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+                              field.value.includes(label)
+                                ? "bg-cpg-brown text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.level_of_experience && (
+                        <FormError message={errors.level_of_experience.message} />
+                      )}
+                    </div>
+                  );
+                }}
+              />
+            </div>
+
+            {/* Links Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  LinkedIn URL
+                </Label>
+                <Input
+                  type="text"
+                  {...register("linkedin_url")}
+                  placeholder="https://linkedin.com/in/your-profile"
+                  className="h-12 rounded-xl border-gray-200"
+                />
+                {errors.linkedin_url && (
+                  <FormError message={errors.linkedin_url.message} />
+                )}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Website URL
+                </Label>
+                <Input
+                  type="text"
+                  {...register("portfolio_url")}
+                  placeholder="https://yourwebsite.com"
+                  className="h-12 rounded-xl border-gray-200"
+                />
+                {errors.portfolio_url && (
+                  <FormError message={errors.portfolio_url.message} />
+                )}
+              </div>
+            </div>
+
+            {/* Resume */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Resume
+              </Label>
+              {talentData?.resume_url && (
+                <a
+                  href={talentData.resume_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cpg-teal hover:underline text-sm font-medium mb-2 block"
+                >
+                  View Current Resume
+                </a>
+              )}
+              <Input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                {...register("resume")}
+                className="file:text-gray-500"
+              />
+              {errors.resume && (
+                <FormError message={errors.resume.message.toString()} />
+              )}
+            </div>
+
+            {saveError && <FormError message={saveError.message} />}
+            {removeError && <FormError message={removeError.message} />}
+
+            {/* Action Buttons */}
+            <div className="space-y-3 pt-4">
+              <Button
+                variant="default"
+                type="submit"
+                size="lg"
+                disabled={savingTalent}
+                className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl"
+              >
+                <Send className="h-5 w-5 mr-2" />
+                {savingTalent ? "Saving Changes..." : "Save Changes"}
+              </Button>
+
+              <Button
+                variant="outline"
+                type="button"
+                size="lg"
+                disabled={removingTalent}
+                onClick={handleDelete}
+                className="w-full h-14 text-base rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                {removingTalent ? "Deleting..." : "Delete Profile"}
+              </Button>
+            </div>
+          </form>
         </div>
-
-        {/* Links */}
-        <div>
-          <Label className={classLabel}>LinkedIn URL</Label>
-          <Input
-            className={classInput}
-            type="text"
-            placeholder="LinkedIn URL"
-            {...register("linkedin_url")}
-          />
-          {errors.linkedin_url && (
-            <FormError message={errors.linkedin_url.message} />
-          )}
-        </div>
-
-        <div>
-          <Label className={classLabel}>Website URL</Label>
-          <Input
-            className={classInput}
-            type="text"
-            placeholder="Website URL"
-            {...register("portfolio_url")}
-          />
-          {errors.portfolio_url && (
-            <FormError message={errors.portfolio_url.message} />
-          )}
-        </div>
-
-        {/* Resume upload */}
-        <div>
-          <Label className={classLabel}>Resume</Label>
-          {talentData?.resume_url && (
-            <a
-              href={talentData.resume_url}
-              target="_blank"
-              className="underline text-sm font-medium text-cpg-teal mb-4 block"
-            >
-              View Current Resume
-            </a>
-          )}
-          <Input
-            className={classInput}
-            type="file"
-            accept=".pdf,.doc,.docx"
-            {...register("resume")}
-          />
-          {errors.resume && (
-            <FormError message={errors.resume.message.toString()} />
-          )}
-        </div>
-
-        {saveError && <p className="text-red-500">{saveError.message}</p>}
-        {removeError && <p className="text-red-500">{removeError.message}</p>}
-
-        {/* <button
-          className="w-full bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer p-4"
-          type="submit"
-          disabled={savingTalent}
-        >
-          {savingTalent ? "Saving..." : "Save Changes"}
-        </button> */}
-        <Button
-          variant="default"
-          type="submit"
-          size="lg"
-          className="mt-4 bg-cpg-brown hover:bg-cpg-brown/90 cursor-pointer"
-          disabled={savingTalent || removingTalent}
-        >
-          {savingTalent ? "Saving..." : "Save Changes"}
-          {savingTalent && <Loader2Icon className="animate-spin h-6 w-6" />}
-        </Button>
-        <Button
-          variant="default"
-          type="button"
-          size="lg"
-          className="bg-red-600 hover:bg-red-700 cursor-pointer"
-          disabled={removingTalent}
-          onClick={handleDelete}
-        >
-          {removingTalent ? "Deleting..." : "Delete Profile"}
-          {removingTalent && <Loader2Icon className="animate-spin h-6 w-6" />}
-        </Button>
-      </form>
-    </div>
+      </section>
+    </main>
   );
 };
 

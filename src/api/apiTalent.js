@@ -180,6 +180,60 @@ export async function updateTalent(token, talentData, { user_id }) {
   return data;
 }
 
+// Update Talent Info by ID
+export async function updateTalentById(token, talentData, { talent_id }) {
+  const supabase = supabaseClient(token);
+
+  // Resume url
+  let resume_url = talentData.resume_url;
+  const newFile = talentData.resume?.[0];
+
+  const folder = "talent";
+  const bucket = "resumes";
+  if (newFile) {
+    // A new file was uploaded → upload it
+    const fileName = formatResumeUrl(talent_id, newFile);
+
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .upload(`${folder}/${fileName}`, newFile, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (storageError) {
+      console.error("Error uploading new resume:", storageError);
+      throw new Error("Error uploading new resume");
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(`${folder}/${fileName}`);
+    resume_url = publicUrlData?.publicUrl;
+  }
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .update({
+      level_of_experience: talentData.level_of_experience,
+      industry_experience: talentData.industry_experience,
+      area_of_specialization: talentData.area_of_specialization,
+      linkedin_url: talentData.linkedin_url,
+      portfolio_url: talentData.portfolio_url,
+      resume_url: resume_url,
+    })
+    .eq("id", talent_id)
+    .select();
+
+  if (error) {
+    console.error("Error Updating Talent information:", error);
+    return null;
+  }
+
+  return data;
+}
+
 // Delete Talent
 export async function deleteTalent(token, { user_id }) {
   const supabase = supabaseClient(token);
@@ -188,6 +242,24 @@ export async function deleteTalent(token, { user_id }) {
     .from(table_name)
     .delete()
     .eq("user_id", user_id)
+    .select();
+
+  if (error) {
+    console.error("Error Deleting Talent:", error);
+    return data;
+  }
+
+  return data;
+}
+
+// Delete Talent by ID
+export async function deleteTalentById(token, { talent_id }) {
+  const supabase = supabaseClient(token);
+
+  const { data, error } = await supabase
+    .from(table_name)
+    .delete()
+    .eq("id", talent_id)
     .select();
 
   if (error) {

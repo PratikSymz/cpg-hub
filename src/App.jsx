@@ -76,7 +76,7 @@ const router = createBrowserRouter([
         element: <FractionalTalentDetail />,
       },
       {
-        path: "/edit-talent",
+        path: "/edit-talent/:id",
         element: <TalentEditProfile />,
       },
       {
