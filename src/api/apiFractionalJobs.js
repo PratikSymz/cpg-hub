@@ -1,15 +1,25 @@
+/**
+ * @fileoverview API functions for fractional job listings
+ * Handles CRUD operations for job posts with support for multiple poster types.
+ */
+
 import supabaseClient from "@/utils/supabase.js";
 
-const table_name = "job_listings";
+const TABLE_NAME = "job_listings";
 
-// Fetch all jobs (poster info is now inline, no joins needed)
+/**
+ * Fetch all job listings
+ * @param {string} token - Clerk session token for Supabase authentication
+ * @param {Object} filters - Filter options (currently unused, reserved for future filtering)
+ * @returns {Promise<Array|null>} Array of job listings or null on error
+ */
 export async function getJobs(
   token,
-  { area_specialization, level_exp, search_query }
+  { area_specialization, level_exp, search_query },
 ) {
   const supabase = supabaseClient(token);
 
-  let query = supabase.from(table_name).select(`*`);
+  let query = supabase.from(TABLE_NAME).select(`*`);
 
   const { data, error } = await query;
 
@@ -21,17 +31,20 @@ export async function getJobs(
   return data;
 }
 
-// Fetch jobs posted by the current user
+/**
+ * Fetch jobs posted by a specific user
+ * @param {string} token - Clerk session token
+ * @param {Object} params - Query parameters
+ * @param {string} params.poster_id - User ID of the job poster
+ * @returns {Promise<Array|null>} Array of user's job listings or null on error
+ */
 export async function getMyJobs(
   token,
-  { area_specialization, level_exp, search_query, poster_id }
+  { area_specialization, level_exp, search_query, poster_id },
 ) {
   const supabase = supabaseClient(token);
 
-  let query = supabase
-    .from(table_name)
-    .select(`*`)
-    .eq("poster_id", poster_id);
+  let query = supabase.from(TABLE_NAME).select(`*`).eq("poster_id", poster_id);
 
   const { data, error } = await query;
 
@@ -43,14 +56,16 @@ export async function getMyJobs(
   return data;
 }
 
-// Read single job (poster info is inline)
+/**
+ * Fetch a single job listing by ID
+ * @param {string} token - Clerk session token
+ * @param {Object} params - Query parameters
+ * @param {string} params.job_id - UUID of the job listing
+ * @returns {Promise<Object|null>} Job listing object or null on error
+ */
 export async function getSingleJob(token, { job_id }) {
   const supabase = supabaseClient(token);
-  let query = supabase
-    .from(table_name)
-    .select(`*`)
-    .eq("id", job_id)
-    .single();
+  let query = supabase.from(TABLE_NAME).select(`*`).eq("id", job_id).single();
 
   const { data, error } = await query;
 
@@ -62,16 +77,39 @@ export async function getSingleJob(token, { job_id }) {
   return data;
 }
 
-// Post a new job (any user type can post)
+/**
+ * Create a new job listing
+ *
+ * Supports multiple poster types:
+ * - Personal: Uses user's profile info (full_name, profile_picture_url)
+ * - Brand: Uses brand profile info (brand_name, logo_url, brand_hq)
+ * - Talent/Service: Uses user's profile info (same as personal)
+ *
+ * @param {string} token - Clerk session token
+ * @param {Object} formData - Job posting form data
+ * @param {string} formData.user_id - ID of the user creating the job
+ * @param {string} formData.poster_type - "personal" | "brand" | "talent" | "service"
+ * @param {string|null} formData.brand_profile_id - Brand UUID (if posting as brand)
+ * @param {string} formData.job_title - Title of the job
+ * @param {Array<string>} formData.area_of_specialization - Required specializations
+ * @param {Array<string>} formData.level_of_experience - Required experience levels
+ * @param {string} formData.work_location - "Remote" | "In-office" | "Hybrid"
+ * @param {string} formData.scope_of_work - "Project-based" | "Ongoing"
+ * @param {number} formData.estimated_hrs_per_wk - Estimated weekly hours
+ * @param {string} formData.preferred_experience - Description of preferred experience
+ * @param {FileList} [formData.job_description] - Optional PDF file upload
+ * @returns {Promise<Object>} Created job listing or error
+ */
 export async function postJob(token, formData) {
   const supabase = supabaseClient(token);
 
-  // Fetch brand info if brand_profile_id is provided
+  // Determine poster info based on whether a brand is specified
   let posterName = null;
   let posterLogo = null;
   let posterLocation = null;
 
   if (formData.brand_profile_id) {
+    // Posting with a brand - fetch brand profile info
     const { data: brandData, error: brandError } = await supabase
       .from("brand_profiles")
       .select("brand_name, logo_url, brand_hq")
@@ -86,6 +124,18 @@ export async function postJob(token, formData) {
     posterName = brandData.brand_name;
     posterLogo = brandData.logo_url;
     posterLocation = brandData.brand_hq;
+  } else {
+    // No brand - fetch user profile for poster info
+    const { data: userProfile, error: userError } = await supabase
+      .from("user_profiles")
+      .select("full_name, profile_picture_url")
+      .eq("user_id", formData.user_id)
+      .single();
+
+    if (!userError && userProfile) {
+      posterName = userProfile.full_name;
+      posterLogo = userProfile.profile_picture_url;
+    }
   }
 
   // Upload job description PDF if provided
@@ -176,18 +226,26 @@ export async function updateJob(token, { jobData, job_id, newLogo }) {
   const updateData = {};
 
   // Poster info fields
-  if (jobData.poster_name !== undefined) updateData.poster_name = jobData.poster_name;
-  if (jobData.poster_location !== undefined) updateData.poster_location = jobData.poster_location;
+  if (jobData.poster_name !== undefined)
+    updateData.poster_name = jobData.poster_name;
+  if (jobData.poster_location !== undefined)
+    updateData.poster_location = jobData.poster_location;
   if (jobData.is_open !== undefined) updateData.is_open = jobData.is_open;
 
   // Job fields
   if (jobData.job_title !== undefined) updateData.job_title = jobData.job_title;
-  if (jobData.preferred_experience !== undefined) updateData.preferred_experience = jobData.preferred_experience;
-  if (jobData.level_of_experience !== undefined) updateData.level_of_experience = jobData.level_of_experience;
-  if (jobData.work_location !== undefined) updateData.work_location = jobData.work_location;
-  if (jobData.scope_of_work !== undefined) updateData.scope_of_work = jobData.scope_of_work;
-  if (jobData.estimated_hrs_per_wk !== undefined) updateData.estimated_hrs_per_wk = jobData.estimated_hrs_per_wk;
-  if (jobData.area_of_specialization !== undefined) updateData.area_of_specialization = jobData.area_of_specialization;
+  if (jobData.preferred_experience !== undefined)
+    updateData.preferred_experience = jobData.preferred_experience;
+  if (jobData.level_of_experience !== undefined)
+    updateData.level_of_experience = jobData.level_of_experience;
+  if (jobData.work_location !== undefined)
+    updateData.work_location = jobData.work_location;
+  if (jobData.scope_of_work !== undefined)
+    updateData.scope_of_work = jobData.scope_of_work;
+  if (jobData.estimated_hrs_per_wk !== undefined)
+    updateData.estimated_hrs_per_wk = jobData.estimated_hrs_per_wk;
+  if (jobData.area_of_specialization !== undefined)
+    updateData.area_of_specialization = jobData.area_of_specialization;
 
   // Handle job description PDF upload
   const jobDescFile = jobData.job_description?.[0];
@@ -241,7 +299,7 @@ export async function updateJob(token, { jobData, job_id, newLogo }) {
   }
 
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .update(updateData)
     .eq("id", job_id)
     .select();
@@ -259,7 +317,7 @@ export async function deleteJob(token, { job_id }) {
   const supabase = supabaseClient(token);
 
   const { data, error: deleteError } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .delete()
     .eq("id", job_id)
     .select();
@@ -277,7 +335,7 @@ export async function getSavedJobs(token) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase.from("saved_jobs").select(
     `*,
-      job: job_listings(*)`
+      job: job_listings(*)`,
   );
 
   if (error) {

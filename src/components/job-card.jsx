@@ -76,7 +76,7 @@ const JobCard = ({
             <img
               src={poster_logo}
               alt={poster_name}
-              className="h-full w-full object-contain p-1"
+              className="h-full w-full object-cover"
             />
           </div>
         ) : (

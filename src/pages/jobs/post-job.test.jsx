@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 
@@ -99,7 +99,7 @@ describe("PostJob Component", () => {
     });
   });
 
-  describe("Poster Type Selection", () => {
+  describe("Poster Selection", () => {
     beforeEach(() => {
       useUser.mockReturnValue({
         user: {
@@ -119,34 +119,44 @@ describe("PostJob Component", () => {
       });
     });
 
-    it("should display poster type options", async () => {
+    it("should display poster selection options", async () => {
       renderWithRouter(<PostJob />);
 
       await waitFor(() => {
-        expect(screen.getByText("I'm posting as a...")).toBeInTheDocument();
-        expect(screen.getByText("Brand")).toBeInTheDocument();
-        expect(screen.getByText("Talent")).toBeInTheDocument();
-        expect(screen.getByText("Service")).toBeInTheDocument();
+        expect(screen.getByText("Who's posting this job?")).toBeInTheDocument();
+        expect(screen.getByText("Me")).toBeInTheDocument();
+        expect(screen.getByText("Add a Company")).toBeInTheDocument();
       });
     });
 
-    it("should allow switching poster types", async () => {
+    it("should show 'Me' as default selection", async () => {
+      renderWithRouter(<PostJob />);
+
+      await waitFor(() => {
+        const meButton = screen.getByText("Me").closest("button");
+        expect(meButton).toHaveClass("border-cpg-teal");
+      });
+    });
+
+    it("should allow switching to 'Add a Company'", async () => {
       const user = userEvent.setup();
       renderWithRouter(<PostJob />);
 
       await waitFor(() => {
-        expect(screen.getByText("Brand")).toBeInTheDocument();
+        expect(screen.getByText("Add a Company")).toBeInTheDocument();
       });
 
-      const talentButton = screen.getByText("Talent");
-      await user.click(talentButton);
+      const addCompanyButton = screen.getByText("Add a Company");
+      await user.click(addCompanyButton);
 
-      // The talent button should now be selected
-      expect(talentButton.closest("button")).toHaveClass("border-cpg-teal");
+      // Should show brand form fields
+      await waitFor(() => {
+        expect(screen.getByText("Brand Name")).toBeInTheDocument();
+      });
     });
   });
 
-  describe("Brand Selection", () => {
+  describe("Brand Form Fields", () => {
     beforeEach(() => {
       useUser.mockReturnValue({
         user: {
@@ -157,32 +167,24 @@ describe("PostJob Component", () => {
         },
         isLoaded: true,
       });
-    });
 
-    it("should show 'Create new brand' when user has no brands", async () => {
       useFetch.mockReturnValue({
         data: null,
         loading: false,
         error: null,
         func: vi.fn(() => Promise.resolve({ data: [], error: null })),
       });
+    });
 
+    it("should show brand form fields when 'Add a Company' is selected", async () => {
+      const user = userEvent.setup();
       renderWithRouter(<PostJob />);
 
       await waitFor(() => {
-        expect(screen.getByText("Create new brand")).toBeInTheDocument();
-      });
-    });
-
-    it("should show brand form fields when creating new brand", async () => {
-      useFetch.mockReturnValue({
-        data: null,
-        loading: false,
-        error: null,
-        func: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        expect(screen.getByText("Add a Company")).toBeInTheDocument();
       });
 
-      renderWithRouter(<PostJob />);
+      await user.click(screen.getByText("Add a Company"));
 
       await waitFor(() => {
         expect(screen.getByText("Brand Name")).toBeInTheDocument();
@@ -243,7 +245,6 @@ describe("PostJob Component", () => {
     });
 
     it("should allow selecting multiple levels of experience", async () => {
-      const user = userEvent.setup();
       renderWithRouter(<PostJob />);
 
       await waitFor(() => {
@@ -291,77 +292,4 @@ describe("PostJob Component", () => {
     });
   });
 
-  describe("Talent/Service Profile Display", () => {
-    it("should show create profile button for talent without profile", async () => {
-      useUser.mockReturnValue({
-        user: {
-          id: "user_test123",
-          fullName: "Test User",
-          imageUrl: "https://example.com/image.jpg",
-          unsafeMetadata: { roles: ["talent"] },
-        },
-        isLoaded: true,
-      });
-
-      useFetch.mockReturnValue({
-        data: null,
-        loading: false,
-        error: null,
-        func: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      });
-
-      renderWithRouter(<PostJob />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Talent")).toBeInTheDocument();
-      });
-
-      const talentButton = screen.getByText("Talent");
-      await userEvent.click(talentButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Create Talent Profile")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Optional Brand Fields", () => {
-    beforeEach(() => {
-      useUser.mockReturnValue({
-        user: {
-          id: "user_test123",
-          fullName: "Test User",
-          imageUrl: "https://example.com/image.jpg",
-          unsafeMetadata: { roles: ["brand"] },
-        },
-        isLoaded: true,
-      });
-
-      useFetch.mockReturnValue({
-        data: null,
-        loading: false,
-        error: null,
-        func: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      });
-    });
-
-    it("should have collapsible additional info section", async () => {
-      const user = userEvent.setup();
-      renderWithRouter(<PostJob />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Additional Info (Optional)")).toBeInTheDocument();
-      });
-
-      // Click to expand
-      const expandButton = screen.getByText("Additional Info (Optional)");
-      await user.click(expandButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Headquarters Location")).toBeInTheDocument();
-        expect(screen.getByText("LinkedIn URL")).toBeInTheDocument();
-        expect(screen.getByText("Brand Description")).toBeInTheDocument();
-      });
-    });
-  });
 });

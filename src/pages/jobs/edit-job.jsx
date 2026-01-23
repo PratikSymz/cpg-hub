@@ -74,10 +74,14 @@ const EditJobPage = () => {
   const [navTarget, setNavTarget] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [newLogoFile, setNewLogoFile] = useState(null);
+  const [posterLogoPreview, setPosterLogoPreview] = useState("");
+  const [newPosterLogoFile, setNewPosterLogoFile] = useState(null);
+  const [posterName, setPosterName] = useState("");
+  const [posterLocation, setPosterLocation] = useState("");
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState("brand");
+  const [activeTab, setActiveTab] = useState("job"); // Default to job tab
 
   // Load job data
   const {
@@ -183,6 +187,12 @@ const EditJobPage = () => {
         area_of_specialization: jobData.area_of_specialization || [],
         estimated_hrs_per_wk: jobData.estimated_hrs_per_wk || "",
       });
+      // For brandless jobs, populate poster info
+      if (!jobData.brand_id) {
+        setPosterName(jobData.poster_name || "");
+        setPosterLocation(jobData.poster_location || "");
+        if (jobData.poster_logo) setPosterLogoPreview(jobData.poster_logo);
+      }
     }
   }, [jobData]);
 
@@ -209,12 +219,41 @@ const EditJobPage = () => {
     setNavTarget(null);
   };
 
-  // Logo handling
+  // Logo handling (for brand)
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setNewLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Poster logo handling (for brandless jobs)
+  const handlePosterLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewPosterLogoFile(file);
+      setPosterLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Save poster info (for brandless jobs)
+  const handleSavePoster = async () => {
+    try {
+      await saveJob({
+        jobData: {
+          poster_name: posterName,
+          poster_location: posterLocation,
+        },
+        job_id: id,
+        newLogo: newPosterLogoFile,
+      });
+      toast.success("Poster information updated!");
+      setNewPosterLogoFile(null);
+      fetchJob({ job_id: id });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update poster information.");
     }
   };
 
@@ -346,7 +385,7 @@ const EditJobPage = () => {
           Edit Job
         </h1>
         <p className="text-center text-muted-foreground mt-4 text-lg">
-          Update brand information and job details
+          Update poster information and job details
         </p>
       </div>
 
@@ -401,17 +440,31 @@ const EditJobPage = () => {
 
         {/* Tab Navigation */}
         <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab("brand")}
-            className={clsx(
-              "flex-1 sm:flex-none px-8 py-4 rounded-xl text-base font-medium transition-all",
-              activeTab === "brand"
-                ? "bg-cpg-teal text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            )}
-          >
-            Brand Information
-          </button>
+          {jobData?.brand_id ? (
+            <button
+              onClick={() => setActiveTab("brand")}
+              className={clsx(
+                "flex-1 sm:flex-none px-8 py-4 rounded-xl text-base font-medium transition-all",
+                activeTab === "brand"
+                  ? "bg-cpg-teal text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              Brand Information
+            </button>
+          ) : (
+            <button
+              onClick={() => setActiveTab("poster")}
+              className={clsx(
+                "flex-1 sm:flex-none px-8 py-4 rounded-xl text-base font-medium transition-all",
+                activeTab === "poster"
+                  ? "bg-cpg-teal text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              Poster Information
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("job")}
             className={clsx(
@@ -425,8 +478,84 @@ const EditJobPage = () => {
           </button>
         </div>
 
+        {/* Poster Tab (for brandless jobs) */}
+        {activeTab === "poster" && !jobData?.brand_id && (
+          <div className="space-y-8">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
+              <h2 className="text-xl font-semibold mb-6">Poster Information</h2>
+
+              {/* Poster Logo */}
+              <div className="mb-6">
+                <Label className={classLabel}>Profile Photo</Label>
+                <div className="flex items-center gap-6 mt-2">
+                  {posterLogoPreview ? (
+                    <div className="h-24 w-24 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center overflow-hidden">
+                      <img
+                        src={posterLogoPreview}
+                        alt="Poster photo"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-24 w-24 rounded-full border-2 border-gray-100 bg-gray-50 flex items-center justify-center">
+                      <Building2 className="h-10 w-10 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpg,image/jpeg"
+                      onChange={handlePosterLogoChange}
+                      className="file:text-gray-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG or JPG, recommended 200x200px
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Poster Name */}
+              <div className="mb-6">
+                <Label className={classLabel}>Display Name</Label>
+                <Input
+                  type="text"
+                  placeholder="Your name or company name"
+                  className={classInput}
+                  value={posterName}
+                  onChange={(e) => setPosterName(e.target.value)}
+                />
+              </div>
+
+              {/* Poster Location */}
+              <div>
+                <Label className={classLabel}>Location (Optional)</Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. New York, NY"
+                  className={classInput}
+                  value={posterLocation}
+                  onChange={(e) => setPosterLocation(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              onClick={handleSavePoster}
+              disabled={savingJob}
+              className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              {savingJob ? "Saving..." : "Save Poster Information"}
+            </Button>
+          </div>
+        )}
+
         {/* Brand Tab */}
-        {activeTab === "brand" && (
+        {activeTab === "brand" && jobData?.brand_id && (
           <form onSubmit={brandForm.handleSubmit(handleSaveBrand)} className="space-y-8">
             <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">

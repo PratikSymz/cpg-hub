@@ -1,8 +1,31 @@
+/**
+ * @fileoverview Job posting page component
+ * Allows users to post fractional job listings with flexible poster options.
+ * Users can post as themselves (personal), their talent/service profile, or a company.
+ */
+
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Third-party libraries
+import { useUser } from "@clerk/clerk-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import clsx from "clsx";
+import { ChevronDown, ChevronUp, Plus, Send, X } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { BarLoader } from "react-spinners";
+import { toast } from "sonner";
+
+// API functions
+import { addNewBrand, getMyBrands } from "@/api/apiBrands.js";
 import { postJob } from "@/api/apiFractionalJobs.js";
-import { getMyBrands, addNewBrand } from "@/api/apiBrands.js";
-import { getMyTalentProfile } from "@/api/apiTalent.js";
 import { getMyServiceProfile } from "@/api/apiServices.js";
+import { getMyTalentProfile } from "@/api/apiTalent.js";
+
+// UI Components
+import FormError from "@/components/form-error.jsx";
+import NumberInput from "@/components/number-input.jsx";
+import RequiredLabel from "@/components/required-label.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
@@ -14,31 +37,37 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group.jsx";
+
+// Hooks
 import useFetch from "@/hooks/use-fetch.jsx";
-import { useUser } from "@clerk/clerk-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { BarLoader } from "react-spinners";
+
+// Constants and schemas
+import {
+  classInput,
+  classLabel,
+  classTextArea,
+} from "@/constants/classnames.js";
 import {
   areasOfSpecialization,
   levelsOfExperience,
 } from "@/constants/filters.js";
-import clsx from "clsx";
-import { X, ChevronDown, ChevronUp, Send } from "lucide-react";
+import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 import { JobPostingSchema } from "@/schemas/job-posting-schema.js";
-import RequiredLabel from "@/components/required-label.jsx";
-import FormError from "@/components/form-error.jsx";
-import {
-  classLabel,
-  classInput,
-  classTextArea,
-} from "@/constants/classnames.js";
-import { toast } from "sonner";
-import NumberInput from "@/components/number-input.jsx";
-import { ROLE_BRAND, ROLE_TALENT, ROLE_SERVICE } from "@/constants/roles.js";
 
+/**
+ * PostJob Component
+ *
+ * Provides a form for users to create fractional job listings.
+ *
+ * Poster Options:
+ * - "Me" (personal): Posts using user's Clerk profile info
+ * - "My Talent Profile": Posts using talent profile (if exists)
+ * - "My Service Profile": Posts using service profile (if exists)
+ * - "My Company": Posts using existing brand (if any)
+ * - "Add a Company": Creates new brand and posts with it
+ *
+ * @returns {JSX.Element} The job posting form
+ */
 const PostJob = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -57,11 +86,9 @@ const PostJob = () => {
   // Get user's roles from metadata
   const userRoles = user?.unsafeMetadata?.roles || [];
 
-  // Determine default poster type (priority: Talent > Service > Brand)
+  // Default poster type is always "personal" (simplest option)
   const getDefaultPosterType = () => {
-    if (userRoles.includes(ROLE_TALENT)) return "talent";
-    if (userRoles.includes(ROLE_SERVICE)) return "service";
-    return "brand";
+    return "personal";
   };
 
   // Fetch profiles on mount
@@ -79,9 +106,9 @@ const PostJob = () => {
   } = useForm({
     defaultValues: {
       // Poster type
-      poster_type: "brand",
+      poster_type: "personal",
       // Brand selection
-      brand_selection: "new",
+      brand_selection: "none",
       brand_profile_id: "",
       // New brand fields
       brand_name: "",
@@ -142,13 +169,9 @@ const PostJob = () => {
         const defaultType = getDefaultPosterType();
         setValue("poster_type", defaultType);
 
-        // Set brand selection based on existing brands
-        if (brandsData.length > 0) {
-          setValue("brand_selection", "existing");
-          setValue("brand_profile_id", brandsData[0].id.toString());
-        } else {
-          setValue("brand_selection", "new");
-        }
+        // Default to "none" for brand selection (posting as personal)
+        setValue("brand_selection", "none");
+        setValue("brand_profile_id", "");
       };
 
       loadProfiles();
@@ -158,13 +181,8 @@ const PostJob = () => {
 
   // Derived state for profile existence (requires BOTH role in metadata AND database record)
   const hasTalentProfile = userRoles.includes(ROLE_TALENT) && !!talentProfile;
-  const hasServiceProfile = userRoles.includes(ROLE_SERVICE) && !!serviceProfile;
-
-  // Check if user can proceed with the selected poster type
-  const canProceedWithPosterType =
-    posterType === "brand" ||
-    (posterType === "talent" && hasTalentProfile) ||
-    (posterType === "service" && hasServiceProfile);
+  const hasServiceProfile =
+    userRoles.includes(ROLE_SERVICE) && !!serviceProfile;
 
   // API for creating job
   const {
@@ -174,7 +192,8 @@ const PostJob = () => {
   } = useFetch(postJob);
 
   // API for creating brand
-  const { loading: loadingCreateBrand, func: funcCreateBrand } = useFetch(addNewBrand);
+  const { loading: loadingCreateBrand, func: funcCreateBrand } =
+    useFetch(addNewBrand);
 
   const onSubmit = async (data) => {
     if (submittedRef.current) {
@@ -185,10 +204,13 @@ const PostJob = () => {
 
     try {
       if (user && user.id) {
-        let brandId = data.brand_profile_id;
+        let brandId = null;
 
-        // If creating new brand, create it first
-        if (data.brand_selection === "new") {
+        // Set brandId based on brand selection
+        if (data.brand_selection === "existing" && data.brand_profile_id) {
+          brandId = data.brand_profile_id;
+        } else if (data.brand_selection === "new") {
+          // If creating new brand, create it first
           const brandResult = await funcCreateBrand({
             user_id: user.id,
             brand_name: data.brand_name,
@@ -206,7 +228,10 @@ const PostJob = () => {
           brandId = brandResult.data[0].id;
 
           // Update local brands list
-          setUserBrands((prev) => [brandResult.data[0], ...(Array.isArray(prev) ? prev : [])]);
+          setUserBrands((prev) => [
+            brandResult.data[0],
+            ...(Array.isArray(prev) ? prev : []),
+          ]);
 
           // Update user role to include "brand" if not already present
           const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
@@ -269,377 +294,381 @@ const PostJob = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-5/6 mx-auto gap-8"
       >
-        {/* Step 1: Poster Type Selection */}
+        {/* Unified Poster Selection */}
         <div>
-          <h2 className="text-xl font-semibold mb-6">I'm posting as a...</h2>
-          <Controller
-            control={control}
-            name="poster_type"
-            render={({ field }) => (
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { value: "brand", label: "Brand", description: "Post as a company" },
-                  { value: "talent", label: "Talent", description: "Post on behalf of a client" },
-                  { value: "service", label: "Service", description: "Post for your agency" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => field.onChange(option.value)}
+          <h2 className="text-xl font-semibold mb-6">
+            Who's posting this job?
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Me - Always shown */}
+            <button
+              type="button"
+              onClick={() => {
+                setValue("poster_type", "personal");
+                setValue("brand_selection", "none");
+                setValue("brand_profile_id", "");
+              }}
+              className={clsx(
+                "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
+                posterType === "personal"
+                  ? "border-cpg-teal bg-cpg-teal/10"
+                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+              )}
+            >
+              <img
+                src={user?.imageUrl}
+                alt="Profile"
+                className="h-12 w-12 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <p
+                  className={clsx(
+                    "font-semibold truncate",
+                    posterType === "personal"
+                      ? "text-cpg-teal"
+                      : "text-gray-900",
+                  )}
+                >
+                  Me
+                </p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {user?.fullName || "Your Name"}
+                </p>
+              </div>
+            </button>
+
+            {/* My Talent Profile - Only if user has talent profile */}
+            {hasTalentProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("poster_type", "talent");
+                  setValue("brand_selection", "none");
+                  setValue("brand_profile_id", "");
+                }}
+                className={clsx(
+                  "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
+                  posterType === "talent"
+                    ? "border-cpg-teal bg-cpg-teal/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+                )}
+              >
+                <img
+                  src={
+                    talentProfile?.user_info?.profile_picture_url ||
+                    user?.imageUrl
+                  }
+                  alt="Talent Profile"
+                  className="h-12 w-12 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <p
                     className={clsx(
-                      "flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all",
-                      field.value === option.value
-                        ? "border-cpg-teal bg-cpg-teal/10 text-cpg-teal"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      "font-semibold truncate",
+                      posterType === "talent"
+                        ? "text-cpg-teal"
+                        : "text-gray-900",
                     )}
                   >
-                    <span className="text-lg font-semibold">{option.label}</span>
-                    <span className="text-sm text-muted-foreground mt-1">{option.description}</span>
-                  </button>
-                ))}
-              </div>
+                    My Talent Profile
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {talentProfile?.area_of_specialization?.[0] ||
+                      "Fractional Talent"}
+                  </p>
+                </div>
+              </button>
             )}
-          />
+
+            {/* My Service Profile - Only if user has service profile */}
+            {hasServiceProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("poster_type", "service");
+                  setValue("brand_selection", "none");
+                  setValue("brand_profile_id", "");
+                }}
+                className={clsx(
+                  "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
+                  posterType === "service"
+                    ? "border-cpg-teal bg-cpg-teal/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+                )}
+              >
+                {serviceProfile?.logo_url ? (
+                  <img
+                    src={serviceProfile.logo_url}
+                    alt="Service Logo"
+                    className="h-12 w-12 rounded-lg object-cover border-2 border-gray-200 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg border-2 border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gray-400 text-lg font-bold">
+                      {serviceProfile?.company_name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p
+                    className={clsx(
+                      "font-semibold truncate",
+                      posterType === "service"
+                        ? "text-cpg-teal"
+                        : "text-gray-900",
+                    )}
+                  >
+                    My Service Profile
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {serviceProfile?.company_name}
+                  </p>
+                </div>
+              </button>
+            )}
+
+            {/* My Company - Only if user has brands */}
+            {userBrands.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("poster_type", "brand");
+                  setValue("brand_selection", "existing");
+                  setValue("brand_profile_id", userBrands[0].id.toString());
+                }}
+                className={clsx(
+                  "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
+                  posterType === "brand" && brandSelection === "existing"
+                    ? "border-cpg-teal bg-cpg-teal/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+                )}
+              >
+                {userBrands[0]?.logo_url ? (
+                  <img
+                    src={userBrands[0].logo_url}
+                    alt="Brand Logo"
+                    className="h-12 w-12 rounded-lg object-cover border-2 border-gray-200 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg border-2 border-gray-200 bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gray-400 text-lg font-bold">
+                      {userBrands[0]?.brand_name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p
+                    className={clsx(
+                      "font-semibold truncate",
+                      posterType === "brand" && brandSelection === "existing"
+                        ? "text-cpg-teal"
+                        : "text-gray-900",
+                    )}
+                  >
+                    My Company
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {userBrands.length === 1
+                      ? userBrands[0].brand_name
+                      : `${userBrands.length} companies`}
+                  </p>
+                </div>
+              </button>
+            )}
+
+            {/* Add a Company - Always shown */}
+            <button
+              type="button"
+              onClick={() => {
+                setValue("poster_type", "brand");
+                setValue("brand_selection", "new");
+                setValue("brand_profile_id", "");
+              }}
+              className={clsx(
+                "flex items-center gap-4 p-4 rounded-lg border-2 border-dashed transition-all text-left",
+                posterType === "brand" && brandSelection === "new"
+                  ? "border-cpg-teal bg-cpg-teal/10"
+                  : "border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50",
+              )}
+            >
+              <div className="h-12 w-12 rounded-lg border-2 border-gray-300 bg-gray-50 flex items-center justify-center flex-shrink-0">
+                <Plus className="h-6 w-6 text-gray-400" />
+              </div>
+              <div className="min-w-0">
+                <p
+                  className={clsx(
+                    "font-semibold truncate",
+                    posterType === "brand" && brandSelection === "new"
+                      ? "text-cpg-teal"
+                      : "text-gray-900",
+                  )}
+                >
+                  Add a Company
+                </p>
+                <p className="text-sm text-muted-foreground truncate">
+                  Create a new brand profile
+                </p>
+              </div>
+            </button>
+          </div>
           {errors.poster_type && (
             <FormError message={errors.poster_type.message} />
           )}
         </div>
 
-        {/* Poster Profile Info - shown for Talent/Service */}
-        {posterType === "talent" && (
+        {/* Brand Selection Dropdown - Only show if user selected "My Company" and has multiple brands */}
+        {posterType === "brand" &&
+          brandSelection === "existing" &&
+          userBrands.length > 1 && (
+            <div>
+              <Label className={classLabel}>Select Company</Label>
+              <Controller
+                control={control}
+                name="brand_profile_id"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userBrands.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id.toString()}>
+                          {brand.brand_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.brand_profile_id && (
+                <FormError message={errors.brand_profile_id.message} />
+              )}
+            </div>
+          )}
+
+        {/* New brand form - shown when "Add a Company" is selected */}
+        {posterType === "brand" && brandSelection === "new" && (
           <div className="border-t pt-6">
-            <h2 className="text-xl font-semibold mb-6">Your Talent Profile</h2>
-            {hasTalentProfile ? (
-              <div className="flex items-start gap-5">
+            <h2 className="text-xl font-semibold mb-6">New Company Details</h2>
+
+            {/* Brand Name - Required */}
+            <div className="mb-6">
+              <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
+              <Input
+                type="text"
+                placeholder="e.g. Acme Corp"
+                className={classInput}
+                {...register("brand_name")}
+              />
+              {errors.brand_name && (
+                <FormError message={errors.brand_name.message} />
+              )}
+            </div>
+
+            {/* Logo - Required */}
+            <div className="mb-6">
+              <RequiredLabel className={classLabel}>Logo</RequiredLabel>
+              {watch("brand_logo")?.[0] && (
                 <img
-                  src={talentProfile.user_info?.profile_picture_url || user?.imageUrl}
-                  alt="Profile"
-                  className="h-16 w-16 rounded-full border-2 object-cover"
+                  src={URL.createObjectURL(watch("brand_logo")[0])}
+                  alt="Logo Preview"
+                  className="my-2 max-h-32 rounded-lg"
                 />
-                <div className="flex flex-col gap-2">
-                  <p className="text-lg font-medium">{talentProfile.user_info?.full_name || user?.fullName}</p>
-                  {talentProfile.area_of_specialization?.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {talentProfile.area_of_specialization.map((spec, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-cpg-teal/15 text-cpg-teal text-xs font-medium px-2.5 py-1 rounded-full"
-                        >
-                          {spec}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Your profile is missing specializations.{" "}
-                      <button
-                        type="button"
-                        className="text-cpg-teal hover:underline font-medium"
-                        onClick={() => navigate(`/onboarding/talent?returnTo=${encodeURIComponent("/jobs/post")}`)}
-                      >
-                        Update your profile
-                      </button>
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 py-4">
-                <p className="text-muted-foreground">
-                  You need to create a talent profile before posting as a Talent.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-fit"
-                  onClick={() => navigate(`/onboarding/talent?returnTo=${encodeURIComponent("/jobs/post")}`)}
-                >
-                  Create Talent Profile
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+              <Input
+                type="file"
+                accept="image/png,image/jpg,image/jpeg"
+                className="file:text-gray-500"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files.length > 0) {
+                    setValue("brand_logo", files, { shouldValidate: true });
+                  } else {
+                    setValue("brand_logo", null, { shouldValidate: true });
+                  }
+                }}
+              />
+              {errors.brand_logo && (
+                <FormError message={errors.brand_logo.message} />
+              )}
+            </div>
 
-        {posterType === "service" && (
-          <div className="border-t pt-6">
-            <h2 className="text-xl font-semibold mb-6">Your Service Profile</h2>
-            {hasServiceProfile ? (
-              <div className="flex items-start gap-5">
-                {serviceProfile.logo_url ? (
-                  <img
-                    src={serviceProfile.logo_url}
-                    alt="Company Logo"
-                    className="h-16 w-16 rounded-lg border-2 object-cover"
-                  />
+            {/* Website - Required */}
+            <div className="mb-6">
+              <RequiredLabel className={classLabel}>Website</RequiredLabel>
+              <Input
+                type="text"
+                className={classInput}
+                placeholder="https://yourcompany.com"
+                {...register("brand_website")}
+              />
+              {errors.brand_website && (
+                <FormError message={errors.brand_website.message} />
+              )}
+            </div>
+
+            {/* Optional Fields - Collapsible */}
+            <div className="border-t pt-4 mt-6">
+              <Button
+                type="button"
+                size="default"
+                variant="ghost"
+                onClick={() =>
+                  setShowAdditionalBrandInfo(!showAdditionalBrandInfo)
+                }
+                className="w-full flex items-center justify-between py-4 px-0 hover:bg-transparent hover:underline"
+              >
+                <span className="text-lg font-semibold">
+                  Additional Info (Optional)
+                </span>
+                {showAdditionalBrandInfo ? (
+                  <ChevronUp className="w-5 h-5" />
                 ) : (
-                  <div className="h-16 w-16 rounded-lg border-2 bg-gray-100 flex items-center justify-center">
-                    <span className="text-gray-400 text-xl font-bold">
-                      {serviceProfile.company_name?.charAt(0)?.toUpperCase()}
-                    </span>
-                  </div>
+                  <ChevronDown className="w-5 h-5" />
                 )}
-                <div className="flex flex-col gap-2">
-                  <p className="text-lg font-medium">{serviceProfile.company_name}</p>
-                  {serviceProfile.category_of_service?.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {serviceProfile.category_of_service.map((cat, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-cpg-teal/15 text-cpg-teal text-xs font-medium px-2.5 py-1 rounded-full"
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Your profile is missing service categories.{" "}
-                      <button
-                        type="button"
-                        className="text-cpg-teal hover:underline font-medium"
-                        onClick={() => navigate(`/onboarding/service?returnTo=${encodeURIComponent("/jobs/post")}`)}
-                      >
-                        Update your profile
-                      </button>
-                    </p>
-                  )}
+              </Button>
+
+              {showAdditionalBrandInfo && (
+                <div className="mt-4 space-y-6 px-2">
+                  {/* Location */}
+                  <div>
+                    <Label className={classLabel}>Headquarters Location</Label>
+                    <Input
+                      type="text"
+                      className={classInput}
+                      placeholder="e.g. New York, NY"
+                      {...register("brand_location")}
+                    />
+                  </div>
+
+                  {/* LinkedIn URL */}
+                  <div>
+                    <Label className={classLabel}>LinkedIn URL</Label>
+                    <Input
+                      type="text"
+                      className={classInput}
+                      placeholder="https://linkedin.com/company/yourcompany"
+                      {...register("brand_linkedin_url")}
+                    />
+                    {errors.brand_linkedin_url && (
+                      <FormError message={errors.brand_linkedin_url.message} />
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <Label className={classLabel}>Brand Description</Label>
+                    <Textarea
+                      className={classTextArea}
+                      placeholder="Tell us about your brand..."
+                      {...register("brand_desc")}
+                    />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 py-4">
-                <p className="text-muted-foreground">
-                  You need to create a service profile before posting as a Service.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-fit"
-                  onClick={() => navigate(`/onboarding/service?returnTo=${encodeURIComponent("/jobs/post")}`)}
-                >
-                  Create Service Profile
-                </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
-
-        {/* Step 2: Brand Selection - only show if user can proceed */}
-        {canProceedWithPosterType && (
-          <>
-        <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold mb-6">Posting job for...</h2>
-
-          {/* Brand selection mode */}
-          <Controller
-            control={control}
-            name="brand_selection"
-            render={({ field }) => (
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <button
-                  type="button"
-                  disabled={userBrands.length === 0}
-                  onClick={() => {
-                    field.onChange("existing");
-                    if (userBrands.length > 0) {
-                      setValue("brand_profile_id", userBrands[0].id.toString());
-                    }
-                  }}
-                  className={clsx(
-                    "flex flex-col items-center justify-center p-5 rounded-lg border-2 transition-all",
-                    field.value === "existing"
-                      ? "border-cpg-teal bg-cpg-teal/10 text-cpg-teal"
-                      : userBrands.length === 0
-                        ? "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                  )}
-                >
-                  <span className="text-base font-semibold">Use existing brand</span>
-                  <span className="text-sm text-muted-foreground mt-1">
-                    {userBrands.length > 0
-                      ? `${userBrands.length} brand${userBrands.length > 1 ? "s" : ""} available`
-                      : "No brands yet"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    field.onChange("new");
-                    setValue("brand_profile_id", "");
-                  }}
-                  className={clsx(
-                    "flex flex-col items-center justify-center p-5 rounded-lg border-2 transition-all",
-                    field.value === "new"
-                      ? "border-cpg-teal bg-cpg-teal/10 text-cpg-teal"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                  )}
-                >
-                  <span className="text-base font-semibold">Create new brand</span>
-                  <span className="text-sm text-muted-foreground mt-1">Add a new company</span>
-                </button>
-              </div>
-            )}
-          />
-
-          {/* Existing brand dropdown */}
-          {brandSelection === "existing" && (
-            userBrands.length > 0 ? (
-              <div className="mb-6">
-                <RequiredLabel className={classLabel}>Select Brand</RequiredLabel>
-                <Controller
-                  control={control}
-                  name="brand_profile_id"
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a brand" />
-                      </SelectTrigger>
-                      <SelectContent className="">
-                        {userBrands.map((brand) => (
-                          <SelectItem className="" key={brand.id} value={brand.id.toString()}>
-                            {brand.brand_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.brand_profile_id && (
-                  <FormError message={errors.brand_profile_id.message} />
-                )}
-              </div>
-            ) : (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-amber-800 text-sm">
-                  You don't have any brands yet. Please select "Create new brand" to add one.
-                </p>
-              </div>
-            )
-          )}
-
-          {/* New brand form */}
-          {brandSelection === "new" && (
-            <>
-              {/* Brand Name - Required */}
-              <div className="mb-6">
-                <RequiredLabel className={classLabel}>Brand Name</RequiredLabel>
-                <Input
-                  type="text"
-                  placeholder="e.g. Acme Corp"
-                  className={classInput}
-                  {...register("brand_name")}
-                />
-                {errors.brand_name && (
-                  <FormError message={errors.brand_name.message} />
-                )}
-              </div>
-
-              {/* Logo - Required */}
-              <div className="mb-6">
-                <RequiredLabel className={classLabel}>Logo</RequiredLabel>
-                {watch("brand_logo")?.[0] && (
-                  <img
-                    src={URL.createObjectURL(watch("brand_logo")[0])}
-                    alt="Logo Preview"
-                    className="my-2 max-h-32 rounded-lg"
-                  />
-                )}
-                <Input
-                  type="file"
-                  accept="image/png,image/jpg,image/jpeg"
-                  className="file:text-gray-500"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files.length > 0) {
-                      setValue("brand_logo", files, { shouldValidate: true });
-                    } else {
-                      setValue("brand_logo", null, { shouldValidate: true });
-                    }
-                  }}
-                />
-                {errors.brand_logo && (
-                  <FormError message={errors.brand_logo.message} />
-                )}
-              </div>
-
-              {/* Website - Required */}
-              <div className="mb-6">
-                <RequiredLabel className={classLabel}>Website</RequiredLabel>
-                <Input
-                  type="text"
-                  className={classInput}
-                  placeholder="https://yourcompany.com"
-                  {...register("brand_website")}
-                />
-                {errors.brand_website && (
-                  <FormError message={errors.brand_website.message} />
-                )}
-              </div>
-
-              {/* Optional Fields - Collapsible */}
-              <div className="border-t pt-4 mt-6">
-                <Button
-                  type="button"
-                  size="default"
-                  variant="ghost"
-                  onClick={() => setShowAdditionalBrandInfo(!showAdditionalBrandInfo)}
-                  className="w-full flex items-center justify-between py-4 px-0 hover:bg-transparent hover:underline"
-                >
-                  <span className="text-lg font-semibold">
-                    Additional Info (Optional)
-                  </span>
-                  {showAdditionalBrandInfo ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
-                </Button>
-
-                {showAdditionalBrandInfo && (
-                  <div className="mt-4 space-y-6 px-2">
-                    {/* Location */}
-                    <div>
-                      <Label className={classLabel}>Headquarters Location</Label>
-                      <Input
-                        type="text"
-                        className={classInput}
-                        placeholder="e.g. New York, NY"
-                        {...register("brand_location")}
-                      />
-                    </div>
-
-                    {/* LinkedIn URL */}
-                    <div>
-                      <Label className={classLabel}>LinkedIn URL</Label>
-                      <Input
-                        type="text"
-                        className={classInput}
-                        placeholder="https://linkedin.com/company/yourcompany"
-                        {...register("brand_linkedin_url")}
-                      />
-                      {errors.brand_linkedin_url && (
-                        <FormError message={errors.brand_linkedin_url.message} />
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <Label className={classLabel}>Brand Description</Label>
-                      <Textarea
-                        className={classTextArea}
-                        placeholder="Tell us about your brand..."
-                        {...register("brand_desc")}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
 
         {/* Step 3: Job Details Section */}
         <div className="border-t pt-6">
@@ -654,7 +683,9 @@ const PostJob = () => {
               className={classInput}
               {...register("job_title")}
             />
-            {errors.job_title && <FormError message={errors.job_title.message} />}
+            {errors.job_title && (
+              <FormError message={errors.job_title.message} />
+            )}
           </div>
 
           {/* Job Description upload */}
@@ -674,7 +705,9 @@ const PostJob = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 justify-around my-6">
             {/* Scope of Work */}
             <div className="flex-1">
-              <RequiredLabel className={classLabel}>Scope of Work</RequiredLabel>
+              <RequiredLabel className={classLabel}>
+                Scope of Work
+              </RequiredLabel>
               <Controller
                 control={control}
                 name="scope_of_work"
@@ -688,8 +721,12 @@ const PostJob = () => {
                       <SelectValue placeholder="Select work scope" />
                     </SelectTrigger>
                     <SelectContent className="">
-                      <SelectItem className="" value="Ongoing">Ongoing</SelectItem>
-                      <SelectItem className="" value="Project-based">Project-based</SelectItem>
+                      <SelectItem className="" value="Ongoing">
+                        Ongoing
+                      </SelectItem>
+                      <SelectItem className="" value="Project-based">
+                        Project-based
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -701,7 +738,9 @@ const PostJob = () => {
 
             {/* Work Location */}
             <div className="flex-1">
-              <RequiredLabel className={classLabel}>Work Location</RequiredLabel>
+              <RequiredLabel className={classLabel}>
+                Work Location
+              </RequiredLabel>
               <Controller
                 control={control}
                 name="work_location"
@@ -715,9 +754,15 @@ const PostJob = () => {
                       <SelectValue placeholder="Select work location" />
                     </SelectTrigger>
                     <SelectContent className="">
-                      <SelectItem className="" value="Remote">Remote</SelectItem>
-                      <SelectItem className="" value="In-office">In-office</SelectItem>
-                      <SelectItem className="" value="Hybrid">Hybrid</SelectItem>
+                      <SelectItem className="" value="Remote">
+                        Remote
+                      </SelectItem>
+                      <SelectItem className="" value="In-office">
+                        In-office
+                      </SelectItem>
+                      <SelectItem className="" value="Hybrid">
+                        Hybrid
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -738,7 +783,9 @@ const PostJob = () => {
                 {...register("estimated_hrs_per_wk")}
               />
               {errors.estimated_hrs_per_wk && (
-                <FormError message={"Please enter the estimated hours per week"} />
+                <FormError
+                  message={"Please enter the estimated hours per week"}
+                />
               )}
             </div>
           </div>
@@ -784,7 +831,7 @@ const PostJob = () => {
                               "rounded-md px-4 py-2 text-sm font-medium border",
                               field.value.includes(label)
                                 ? "bg-cpg-teal text-white border-transparent"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
                             )}
                           >
                             {label}
@@ -810,7 +857,7 @@ const PostJob = () => {
                               const trimmed = toTitleCase(otherSpec.trim());
                               const isDuplicate = field.value.some(
                                 (val) =>
-                                  val.toLowerCase() === trimmed.toLowerCase()
+                                  val.toLowerCase() === trimmed.toLowerCase(),
                               );
                               const isValid = /^[A-Za-z\s]{3,}$/.test(trimmed);
                               if (trimmed && !isDuplicate && isValid) {
@@ -880,7 +927,7 @@ const PostJob = () => {
                               "rounded-md px-4 py-2 text-sm font-medium border",
                               field.value.includes(label)
                                 ? "bg-cpg-teal text-white border-transparent"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
                             )}
                           >
                             {label}
@@ -888,7 +935,9 @@ const PostJob = () => {
                         ))}
                       </div>
                       {errors.level_of_experience && (
-                        <FormError message={errors.level_of_experience.message} />
+                        <FormError
+                          message={errors.level_of_experience.message}
+                        />
                       )}
                     </div>
                   );
@@ -928,10 +977,10 @@ const PostJob = () => {
           className="w-full bg-cpg-brown hover:bg-cpg-brown/90 h-14 text-base rounded-xl mt-6"
         >
           <Send className="h-5 w-5 mr-2" />
-          {loadingCreateJob || loadingCreateBrand ? "Posting Job..." : "Post Job"}
+          {loadingCreateJob || loadingCreateBrand
+            ? "Posting Job..."
+            : "Post Job"}
         </Button>
-          </>
-        )}
       </form>
     </div>
   );
