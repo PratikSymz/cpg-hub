@@ -46,7 +46,6 @@ const NavBar = () => {
   const roles = Array.isArray(user?.unsafeMetadata?.roles)
     ? user.unsafeMetadata.roles
     : [];
-  const hasBrandRole = roles.includes(ROLE_BRAND);
 
   return (
     <header className="w-full px-4 sm:px-6 py-6">
@@ -112,18 +111,16 @@ const NavBar = () => {
           </SignedOut>
 
           <SignedIn>
-            {hasBrandRole && (
-              <Link to="/post-job">
-                <Button
-                  size="default"
-                  variant="default"
-                  className="bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl px-5"
-                >
-                  <PenBox size={18} className="mr-2" />
-                  Post Job
-                </Button>
-              </Link>
-            )}
+            <Link to="/post-job">
+              <Button
+                size="default"
+                variant="default"
+                className="bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl px-5"
+              >
+                <PenBox size={18} className="mr-2" />
+                Post Job
+              </Button>
+            </Link>
             {isAdminEmail(user?.primaryEmailAddress?.emailAddress) && (
                 <Link to="/user-analytics">
                   <Button
@@ -258,18 +255,16 @@ const NavBar = () => {
           </SignedOut>
 
           <SignedIn>
-            {hasBrandRole && (
-              <Link to="/post-job" onClick={() => setShowMobileMenu(false)}>
-                <Button
-                  variant="default"
-                  size="default"
-                  className="w-full bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl"
-                >
-                  <PenBox size={18} className="mr-2" />
-                  Post Job
-                </Button>
-              </Link>
-            )}
+            <Link to="/post-job" onClick={() => setShowMobileMenu(false)}>
+              <Button
+                variant="default"
+                size="default"
+                className="w-full bg-cpg-brown text-white hover:bg-cpg-brown/90 rounded-xl"
+              >
+                <PenBox size={18} className="mr-2" />
+                Post Job
+              </Button>
+            </Link>
           </SignedIn>
         </div>
       )}
