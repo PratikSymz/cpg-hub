@@ -12,12 +12,15 @@ import {
   ArrowRight,
   Search,
   Plus,
+  User,
 } from "lucide-react";
 import OnboardingPromptDialog from "@/components/onboarding-prompt-dialog.jsx";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
 import { ROLE_BRAND, ROLE_TALENT, ROLE_SERVICE } from "@/constants/roles.js";
 import { getMyBrands } from "@/api/apiBrands.js";
+import { getMyTalentProfile } from "@/api/apiTalent.js";
+import { getMyServiceProfile } from "@/api/apiServices.js";
 
 // Icon mapping for each product
 const productIcons = {
@@ -50,9 +53,21 @@ const LandingPage = () => {
     }
 
     const targetRole = product.secondaryButton.role;
-    const alreadyHasTargetRole = roles.includes(targetRole);
 
-    if (targetRole === ROLE_BRAND && alreadyHasTargetRole) {
+    // If user has talent profile, navigate directly to it
+    if (targetRole === ROLE_TALENT && talentProfile?.id) {
+      navigate(`/talents/${talentProfile.id}`);
+      return;
+    }
+
+    // If user has service profile, navigate directly to it
+    if (targetRole === ROLE_SERVICE && serviceProfile?.id) {
+      navigate(`/services/${serviceProfile.id}`);
+      return;
+    }
+
+    // For brand role (post job), navigate directly - anyone can post jobs
+    if (targetRole === ROLE_BRAND) {
       navigate(product.secondaryButton.link);
       return;
     }
@@ -62,6 +77,8 @@ const LandingPage = () => {
 
   const { func: updateUserProfile } = useFetch(syncUserProfile);
   const { func: fetchBrands } = useFetch(getMyBrands);
+  const { data: talentProfile, func: fetchTalentProfile } = useFetch(getMyTalentProfile);
+  const { data: serviceProfile, func: fetchServiceProfile } = useFetch(getMyServiceProfile);
 
   useEffect(() => {
     if (isSignedIn && isLoaded && user) {
@@ -71,6 +88,10 @@ const LandingPage = () => {
         email: user?.primaryEmailAddress?.emailAddress || "",
         profile_picture_url: user?.imageUrl || "",
       });
+
+      // Fetch talent and service profiles
+      fetchTalentProfile({ user_id: user.id });
+      fetchServiceProfile({ user_id: user.id });
 
       // Sync brand role if user has brands but role is missing
       const syncBrandRole = async () => {
@@ -114,7 +135,22 @@ const LandingPage = () => {
             const targetRole = product.secondaryButton.role;
             const alreadyHasTargetRole = roles.includes(targetRole);
             const IconComponent = productIcons[product.id] || Briefcase;
-            const isLocked = !onboarded || !alreadyHasTargetRole;
+
+            // Check if user has existing profile for talent/service
+            const hasTalentProfile = targetRole === ROLE_TALENT && talentProfile?.id;
+            const hasServiceProfile = targetRole === ROLE_SERVICE && serviceProfile?.id;
+            const hasExistingProfile = hasTalentProfile || hasServiceProfile;
+
+            // Determine button state - brand role is never locked (anyone can post jobs)
+            const isLocked = targetRole !== ROLE_BRAND && !hasExistingProfile && (!onboarded || !alreadyHasTargetRole);
+
+            // Determine button label
+            let buttonLabel = product.secondaryButton.label;
+            if (hasTalentProfile) {
+              buttonLabel = "My Talent Profile";
+            } else if (hasServiceProfile) {
+              buttonLabel = "My Service Profile";
+            }
 
             return (
               <div
@@ -154,22 +190,26 @@ const LandingPage = () => {
                     </Link>
                   </Button>
 
-                  {/* Secondary Button - Post/Add */}
+                  {/* Secondary Button - Post/Add/My Profile */}
                   <Button
                     variant="outline"
                     className={`w-full rounded-xl h-12 text-base border-2 ${
-                      isLocked
-                        ? "border-gray-200 text-gray-600 hover:bg-gray-50"
-                        : "border-cpg-brown text-cpg-brown hover:bg-cpg-brown/5"
+                      hasExistingProfile
+                        ? "border-cpg-teal text-cpg-teal hover:bg-cpg-teal/5"
+                        : isLocked
+                          ? "border-gray-200 text-gray-600 hover:bg-gray-50"
+                          : "border-cpg-brown text-cpg-brown hover:bg-cpg-brown/5"
                     }`}
                     onClick={() => handleSecondarySubmit(product)}
                   >
-                    {isLocked ? (
+                    {hasExistingProfile ? (
+                      <User className="h-4 w-4 mr-2" />
+                    ) : isLocked ? (
                       <Lock className="h-4 w-4 mr-2" />
                     ) : (
                       <Plus className="h-4 w-4 mr-2" />
                     )}
-                    {product.secondaryButton.label}
+                    {buttonLabel}
                   </Button>
                 </div>
               </div>
