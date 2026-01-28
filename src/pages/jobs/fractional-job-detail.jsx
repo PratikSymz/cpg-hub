@@ -60,9 +60,9 @@ const FractionalJobDetail = () => {
     poster_id,
   } = job || {};
 
-  // Poster info (inline on job) - with fallback for legacy data
-  const poster_name = job?.poster_name || job?.brand?.brand_name || "Unknown";
-  const poster_logo = job?.poster_logo || job?.brand?.logo_url;
+  // Poster info - prefer live profile data, fall back to stored snapshot
+  const poster_name = job?.poster_profile?.full_name || job?.poster_name || job?.brand?.brand_name || "Unknown";
+  const poster_logo = job?.poster_profile?.profile_picture_url || job?.poster_logo || job?.brand?.logo_url;
   const poster_location = job?.poster_location || job?.brand?.brand_hq;
   const poster_type = job?.poster_type || "brand";
 

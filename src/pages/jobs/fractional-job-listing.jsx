@@ -81,7 +81,7 @@ function FractionalJobListing() {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const title = job?.job_title?.toLowerCase() ?? "";
-        const posterName = job?.poster_name?.toLowerCase() ?? "";
+        const posterName = (job?.poster_profile?.full_name || job?.poster_name || "").toLowerCase();
         if (!title.includes(q) && !posterName.includes(q)) return false;
       }
 

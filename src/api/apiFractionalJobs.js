@@ -19,7 +19,10 @@ export async function getJobs(
 ) {
   const supabase = supabaseClient(token);
 
-  let query = supabase.from(TABLE_NAME).select(`*`);
+  let query = supabase.from(TABLE_NAME).select(`
+    *,
+    poster_profile:user_profiles!poster_id(full_name, profile_picture_url)
+  `);
 
   const { data, error } = await query;
 
@@ -44,7 +47,10 @@ export async function getMyJobs(
 ) {
   const supabase = supabaseClient(token);
 
-  let query = supabase.from(TABLE_NAME).select(`*`).eq("poster_id", poster_id);
+  let query = supabase.from(TABLE_NAME).select(`
+    *,
+    poster_profile:user_profiles!poster_id(full_name, profile_picture_url)
+  `).eq("poster_id", poster_id);
 
   const { data, error } = await query;
 
@@ -65,7 +71,10 @@ export async function getMyJobs(
  */
 export async function getSingleJob(token, { job_id }) {
   const supabase = supabaseClient(token);
-  let query = supabase.from(TABLE_NAME).select(`*`).eq("id", job_id).single();
+  let query = supabase.from(TABLE_NAME).select(`
+    *,
+    poster_profile:user_profiles!poster_id(full_name, profile_picture_url)
+  `).eq("id", job_id).single();
 
   const { data, error } = await query;
 
