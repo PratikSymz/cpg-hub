@@ -64,7 +64,7 @@ describe("apiFractionalJobs", () => {
       const result = await getJobs("token", {});
 
       expect(mockSupabase.from).toHaveBeenCalledWith("job_listings");
-      expect(mockSupabase.select).toHaveBeenCalledWith("*");
+      expect(mockSupabase.select).toHaveBeenCalledWith(expect.stringContaining("poster_profile:user_profiles"));
       expect(result).toEqual(mockJobs);
     });
 

@@ -140,7 +140,7 @@ describe("EditJobPage", () => {
     it("displays title and subtitle", () => {
       renderPage();
       expect(screen.getByText("Edit Job")).toBeInTheDocument();
-      expect(screen.getByText(/Update brand information and job details/i)).toBeInTheDocument();
+      expect(screen.getByText(/Update poster information and job details/i)).toBeInTheDocument();
     });
   });
 
@@ -179,47 +179,55 @@ describe("EditJobPage", () => {
       expect(jobTabs.length).toBeGreaterThan(0);
     });
 
-    it("brand tab active by default", () => {
+    it("job tab active by default", () => {
       renderPage();
       // Find the tab button specifically (has rounded-xl class)
-      const brandTabs = screen.getAllByText("Brand Information");
-      const tabButton = brandTabs.find(el => el.classList.contains("rounded-xl"));
+      const jobTabs = screen.getAllByText("Job Details");
+      const tabButton = jobTabs.find(el => el.classList.contains("rounded-xl"));
       expect(tabButton).toHaveClass("bg-cpg-teal");
     });
 
-    it("switches to job tab on click", async () => {
+    it("switches to brand tab on click", async () => {
       const user = userEvent.setup();
       renderPage();
       // Find tab buttons by role
       const tabButtons = screen.getAllByRole("button");
-      const jobTabButton = tabButtons.find(btn => btn.textContent === "Job Details" && btn.classList.contains("rounded-xl"));
-      await user.click(jobTabButton);
-      expect(jobTabButton).toHaveClass("bg-cpg-teal");
+      const brandTabButton = tabButtons.find(btn => btn.textContent === "Brand Information" && btn.classList.contains("rounded-xl"));
+      await user.click(brandTabButton);
+      expect(brandTabButton).toHaveClass("bg-cpg-teal");
     });
   });
 
   describe("Brand Tab Form", () => {
-    it("displays brand form fields", () => {
+    it("displays brand form fields", async () => {
+      const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       expect(screen.getByText("Brand Logo")).toBeInTheDocument();
       expect(screen.getByText("Brand Name")).toBeInTheDocument();
       expect(screen.getByText("Website")).toBeInTheDocument();
       expect(screen.getByText("LinkedIn URL")).toBeInTheDocument();
     });
 
-    it("populates with existing brand data", () => {
+    it("populates with existing brand data", async () => {
+      const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       expect(screen.getByPlaceholderText("e.g. Acme Corp")).toHaveValue("Test Brand");
       expect(screen.getByPlaceholderText("https://yourcompany.com")).toHaveValue("https://testbrand.com");
     });
 
-    it("shows sync message", () => {
+    it("shows sync message", async () => {
+      const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       expect(screen.getByText(/Changes will sync to all jobs under this brand/i)).toBeInTheDocument();
     });
 
-    it("shows logo preview", () => {
+    it("shows logo preview", async () => {
+      const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       expect(screen.getByAltText("Logo preview")).toHaveAttribute("src", mockBrandData.logo_url);
     });
   });
@@ -228,6 +236,7 @@ describe("EditJobPage", () => {
     it("shows error when brand name empty", async () => {
       const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       await user.clear(screen.getByPlaceholderText("e.g. Acme Corp"));
       await user.click(screen.getByText("Save Brand Changes"));
       await waitFor(() => {
@@ -238,6 +247,7 @@ describe("EditJobPage", () => {
     it("validates URL format", async () => {
       const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       const websiteInput = screen.getByPlaceholderText("https://yourcompany.com");
       await user.clear(websiteInput);
       await user.type(websiteInput, "not-valid");
@@ -252,6 +262,7 @@ describe("EditJobPage", () => {
     it("calls saveBrand with correct data", async () => {
       const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       await user.click(screen.getByText("Save Brand Changes"));
       await waitFor(() => {
         expect(mockSaveBrand).toHaveBeenCalledWith({
@@ -265,6 +276,7 @@ describe("EditJobPage", () => {
     it("shows success toast", async () => {
       const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       await user.click(screen.getByText("Save Brand Changes"));
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalledWith(expect.stringContaining("Brand updated"));
@@ -273,28 +285,23 @@ describe("EditJobPage", () => {
   });
 
   describe("Job Tab Form", () => {
-    it("displays job form fields", async () => {
-      const user = userEvent.setup();
+    it("displays job form fields", () => {
       renderPage();
-      await user.click(screen.getByText("Job Details"));
+      // Job tab is now default, no need to click
       expect(screen.getByText("Job Title")).toBeInTheDocument();
       expect(screen.getByText("Scope of Work")).toBeInTheDocument();
       expect(screen.getByText("Work Location")).toBeInTheDocument();
       expect(screen.getByText("Hours/Week")).toBeInTheDocument();
     });
 
-    it("shows job description PDF link", async () => {
-      const user = userEvent.setup();
+    it("shows job description PDF link", () => {
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       expect(screen.getByText("Job Description PDF")).toBeInTheDocument();
       expect(screen.getByText("View PDF")).toBeInTheDocument();
     });
 
-    it("populates with existing job data", async () => {
-      const user = userEvent.setup();
+    it("populates with existing job data", () => {
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       expect(screen.getByPlaceholderText("e.g. Marketing Director")).toHaveValue("Marketing Director");
     });
   });
@@ -303,7 +310,6 @@ describe("EditJobPage", () => {
     it("shows error when job title empty", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.clear(screen.getByPlaceholderText("e.g. Marketing Director"));
       await user.click(screen.getByText("Save Job Changes"));
       await waitFor(() => {
@@ -316,7 +322,6 @@ describe("EditJobPage", () => {
     it("calls saveJob with correct data", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByText("Save Job Changes"));
       await waitFor(() => {
         expect(mockSaveJob).toHaveBeenCalledWith({
@@ -329,7 +334,6 @@ describe("EditJobPage", () => {
     it("navigates to job detail on success", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByText("Save Job Changes"));
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith("/job/test-job-123", { replace: true });
@@ -339,7 +343,6 @@ describe("EditJobPage", () => {
     it("shows success toast", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByText("Save Job Changes"));
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalledWith("Job updated successfully!");
@@ -403,7 +406,7 @@ describe("EditJobPage", () => {
     it("allows toggling specializations", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
+      // Job tab is now default
       const financeButton = screen.getByRole("button", { name: "Finance" });
       await user.click(financeButton);
       expect(financeButton).toHaveClass("bg-cpg-teal");
@@ -412,7 +415,6 @@ describe("EditJobPage", () => {
     it("shows Other input when clicked", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByRole("button", { name: "Other" }));
       expect(screen.getByPlaceholderText("Enter specialization")).toBeInTheDocument();
     });
@@ -420,7 +422,6 @@ describe("EditJobPage", () => {
     it("adds custom specialization", async () => {
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByRole("button", { name: "Other" }));
       await user.type(screen.getByPlaceholderText("Enter specialization"), "Custom Spec");
       await user.click(screen.getByRole("button", { name: "Add" }));
@@ -429,26 +430,18 @@ describe("EditJobPage", () => {
   });
 
   describe("Level of Experience", () => {
-    it("displays all options", async () => {
-      const user = userEvent.setup();
+    it("displays all options", () => {
       renderPage();
-      // Find and click the Job Details tab button
-      const tabButtons = screen.getAllByRole("button");
-      const jobTabButton = tabButtons.find(btn => btn.textContent === "Job Details" && btn.classList.contains("rounded-xl"));
-      await user.click(jobTabButton);
+      // Job tab is now default
       expect(screen.getByRole("button", { name: "Entry Level" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Mid-Level" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Senior Level" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Executive Level" })).toBeInTheDocument();
     });
 
-    it("pre-selects existing levels", async () => {
-      const user = userEvent.setup();
+    it("pre-selects existing levels", () => {
       renderPage();
-      // Find and click the Job Details tab button
-      const tabButtons = screen.getAllByRole("button");
-      const jobTabButton = tabButtons.find(btn => btn.textContent === "Job Details" && btn.classList.contains("rounded-xl"));
-      await user.click(jobTabButton);
+      // Job tab is now default
       // Find buttons with exact text that have the selected class
       const allButtons = screen.getAllByRole("button");
       const seniorButton = allButtons.find(btn => btn.textContent === "Senior Level" && btn.classList.contains("bg-cpg-teal"));
@@ -463,6 +456,7 @@ describe("EditJobPage", () => {
       mockSaveBrand.mockRejectedValue(new Error("Failed"));
       const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       await user.click(screen.getByText("Save Brand Changes"));
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith("Failed to update brand.");
@@ -473,7 +467,6 @@ describe("EditJobPage", () => {
       mockSaveJob.mockResolvedValue({ error: { message: "Failed" } });
       const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       await user.click(screen.getByText("Save Job Changes"));
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith("Failed to update job.");
@@ -493,32 +486,38 @@ describe("EditJobPage", () => {
   });
 
   describe("Save Button States", () => {
-    it("shows loading text when saving brand", () => {
+    it("shows loading text when saving brand", async () => {
       isSavingBrand = true;
+      const user = userEvent.setup();
       renderPage();
+      await user.click(screen.getByText("Brand Information"));
       expect(screen.getByText("Saving Brand...")).toBeInTheDocument();
     });
 
-    it("shows loading text when saving job", async () => {
+    it("shows loading text when saving job", () => {
       isSavingJob = true;
-      const user = userEvent.setup();
       renderPage();
-      await user.click(screen.getByText("Job Details"));
       expect(screen.getByText("Saving Job...")).toBeInTheDocument();
     });
   });
 
-  describe("No Brand Linked", () => {
-    it("shows error when saving brand with no brand_id", async () => {
+  describe("Brandless Jobs (Poster Tab)", () => {
+    it("shows Poster Information tab for jobs without brand", () => {
+      jobDataToReturn = { ...mockJobData, brand_id: null };
+      brandDataToReturn = null;
+      renderPage();
+      expect(screen.getByText("Poster Information")).toBeInTheDocument();
+      expect(screen.queryByText("Brand Information")).not.toBeInTheDocument();
+    });
+
+    it("shows poster form fields", async () => {
       jobDataToReturn = { ...mockJobData, brand_id: null };
       brandDataToReturn = null;
       const user = userEvent.setup();
       renderPage();
-      await user.type(screen.getByPlaceholderText("e.g. Acme Corp"), "Test");
-      await user.click(screen.getByText("Save Brand Changes"));
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("No brand linked to this job");
-      });
+      await user.click(screen.getByText("Poster Information"));
+      expect(screen.getByText("Display Name")).toBeInTheDocument();
+      expect(screen.getByText("Location (Optional)")).toBeInTheDocument();
     });
   });
 });

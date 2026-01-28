@@ -1,16 +1,33 @@
-import { z } from "zod";
-import { WEBSITE_SCHEMA, LINKEDIN_SCHEMA } from "@/constants/schemas.js";
+/**
+ * @fileoverview Zod validation schema for job posting form
+ * Handles validation for all poster types: personal, brand, talent, and service
+ */
 
-// Schema for posting a job (any user type)
+import { z } from "zod";
+
+import { LINKEDIN_SCHEMA, WEBSITE_SCHEMA } from "@/constants/schemas.js";
+
+/**
+ * Job Posting Schema
+ *
+ * Validates the job posting form with conditional requirements:
+ * - poster_type: "personal" | "brand" | "talent" | "service"
+ * - brand_selection: "none" | "existing" | "new"
+ *
+ * Brand fields are only required when brand_selection is "new".
+ * Brand profile ID is required when brand_selection is "existing".
+ * When poster_type is "personal", "talent", or "service" with brand_selection "none",
+ * no brand fields are required.
+ */
 export const JobPostingSchema = z
   .object({
     // Poster type selection
-    poster_type: z.enum(["brand", "talent", "service"], {
+    poster_type: z.enum(["personal", "brand", "talent", "service"], {
       message: "Select who you're posting as",
     }),
 
     // Brand selection mode
-    brand_selection: z.enum(["existing", "new"], {
+    brand_selection: z.enum(["existing", "new", "none"], {
       message: "Select how to specify the brand",
     }),
 
@@ -66,7 +83,7 @@ export const JobPostingSchema = z
         .number()
         .int("Must be a whole number")
         .min(1, "Must be at least 1 hour/week")
-        .lte(40, "Must be 40 or below")
+        .lte(40, "Must be 40 or below"),
     ),
     area_of_specialization: z
       .array(z.string())
@@ -80,7 +97,7 @@ export const JobPostingSchema = z
           ["application/pdf"].includes(file[0]?.type),
         {
           message: "Only PDF files are allowed",
-        }
+        },
       ),
   })
   .refine(
@@ -94,7 +111,7 @@ export const JobPostingSchema = z
     {
       message: "Please select a brand",
       path: ["brand_profile_id"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -107,7 +124,7 @@ export const JobPostingSchema = z
     {
       message: "Brand name is required",
       path: ["brand_name"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -120,7 +137,7 @@ export const JobPostingSchema = z
     {
       message: "Brand logo is required",
       path: ["brand_logo"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -133,7 +150,7 @@ export const JobPostingSchema = z
     {
       message: "Brand website is required",
       path: ["brand_website"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -146,12 +163,15 @@ export const JobPostingSchema = z
     {
       message: "Must be a valid URL",
       path: ["brand_website"],
-    }
+    },
   )
   .refine(
     (data) => {
       // Validate LinkedIn URL format if provided
-      if (data.brand_linkedin_url && data.brand_linkedin_url.trim().length > 0) {
+      if (
+        data.brand_linkedin_url &&
+        data.brand_linkedin_url.trim().length > 0
+      ) {
         return LINKEDIN_SCHEMA.test(data.brand_linkedin_url);
       }
       return true;
@@ -159,14 +179,14 @@ export const JobPostingSchema = z
     {
       message: "Must be a valid LinkedIn URL",
       path: ["brand_linkedin_url"],
-    }
+    },
   )
   .refine(
     (data) => {
       // Validate logo file type if provided
       if (data.brand_selection === "new" && data.brand_logo?.[0]) {
         return ["image/png", "image/jpg", "image/jpeg"].includes(
-          data.brand_logo[0]?.type
+          data.brand_logo[0]?.type,
         );
       }
       return true;
@@ -174,5 +194,5 @@ export const JobPostingSchema = z
     {
       message: "Only JPG, PNG, or JPEG images are allowed",
       path: ["brand_logo"],
-    }
+    },
   );

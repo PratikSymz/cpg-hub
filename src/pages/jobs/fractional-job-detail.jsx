@@ -60,9 +60,9 @@ const FractionalJobDetail = () => {
     poster_id,
   } = job || {};
 
-  // Poster info (inline on job) - with fallback for legacy data
-  const poster_name = job?.poster_name || job?.brand?.brand_name || "Unknown";
-  const poster_logo = job?.poster_logo || job?.brand?.logo_url;
+  // Poster info - prefer live profile data, fall back to stored snapshot
+  const poster_name = job?.poster_profile?.full_name || job?.poster_name || job?.brand?.brand_name || "Unknown";
+  const poster_logo = job?.poster_profile?.profile_picture_url || job?.poster_logo || job?.brand?.logo_url;
   const poster_location = job?.poster_location || job?.brand?.brand_hq;
   const poster_type = job?.poster_type || "brand";
 
@@ -135,14 +135,14 @@ const FractionalJobDetail = () => {
       <div className="w-5/6 mx-auto">
         {/* Poster Card */}
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 mb-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
             {/* Logo */}
             {poster_logo ? (
               <div className="h-20 w-20 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img
                   src={poster_logo}
                   alt={poster_name}
-                  className="h-full w-full object-contain p-2"
+                  className="h-full w-full object-cover"
                 />
               </div>
             ) : (
