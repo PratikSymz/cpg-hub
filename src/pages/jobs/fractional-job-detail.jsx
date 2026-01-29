@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleJob } from "@/api/apiFractionalJobs.js";
+import { getBrand } from "@/api/apiBrands.js";
 import { Button } from "@/components/ui/button.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
@@ -41,6 +42,12 @@ const FractionalJobDetail = () => {
     func: fetchPoster,
   } = useFetch(getUser);
 
+  // Load brand profile for website link
+  const {
+    data: brandProfile,
+    func: fetchBrand,
+  } = useFetch(getBrand);
+
   useEffect(() => {
     if (isLoaded) {
       funcJob({ job_id: id });
@@ -65,11 +72,16 @@ const FractionalJobDetail = () => {
   const poster_logo = job?.poster_profile?.profile_picture_url || job?.poster_logo || job?.brand?.logo_url;
   const poster_location = job?.poster_location || job?.brand?.brand_hq;
   const poster_type = job?.poster_type || "brand";
+  const brand_website = brandProfile?.website;
 
   useEffect(() => {
     const posterId = poster_id || job?.brand_id;
     if (posterId) {
       fetchPoster({ user_id: posterId });
+    }
+    // Fetch brand profile if job has a brand_id
+    if (job?.brand_id) {
+      fetchBrand({ brand_id: job.brand_id });
     }
   }, [poster_id, job?.brand_id]);
 
@@ -153,13 +165,37 @@ const FractionalJobDetail = () => {
 
             {/* Info */}
             <div className="flex-1 text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{poster_name}</h2>
-              {poster_location && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{poster_location}</span>
-                </div>
+              {brand_website ? (
+                <a
+                  href={brand_website.startsWith("http") ? brand_website : `https://${brand_website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-2xl font-bold hover:text-cpg-teal transition-colors"
+                >
+                  {poster_name}
+                </a>
+              ) : (
+                <h2 className="text-2xl font-bold">{poster_name}</h2>
               )}
+              <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-muted-foreground">
+                {poster_location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{poster_location}</span>
+                  </div>
+                )}
+                {brand_website && (
+                  <a
+                    href={brand_website.startsWith("http") ? brand_website : `https://${brand_website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-cpg-teal transition-colors"
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span>Website</span>
+                  </a>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
