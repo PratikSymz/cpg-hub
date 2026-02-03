@@ -76,6 +76,7 @@ const PostJob = () => {
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [showAdditionalBrandInfo, setShowAdditionalBrandInfo] = useState(false);
+  const [brandLogoPreview, setBrandLogoPreview] = useState(null);
 
   // Profile and brand state
   const [userBrands, setUserBrands] = useState([]);
@@ -178,6 +179,15 @@ const PostJob = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user?.id]);
+
+  // Cleanup blob URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (brandLogoPreview) {
+        URL.revokeObjectURL(brandLogoPreview);
+      }
+    };
+  }, [brandLogoPreview]);
 
   // Derived state for profile existence (requires BOTH role in metadata AND database record)
   const hasTalentProfile = userRoles.includes(ROLE_TALENT) && !!talentProfile;
@@ -579,9 +589,9 @@ const PostJob = () => {
             {/* Logo - Required */}
             <div className="mb-6">
               <RequiredLabel className={classLabel}>Logo</RequiredLabel>
-              {watch("brand_logo")?.[0] && (
+              {brandLogoPreview && (
                 <img
-                  src={URL.createObjectURL(watch("brand_logo")[0])}
+                  src={brandLogoPreview}
                   alt="Logo Preview"
                   className="my-2 max-h-32 rounded-lg"
                 />
@@ -593,8 +603,17 @@ const PostJob = () => {
                 onChange={(e) => {
                   const files = e.target.files;
                   if (files.length > 0) {
+                    // Revoke old URL to prevent memory leak
+                    if (brandLogoPreview) {
+                      URL.revokeObjectURL(brandLogoPreview);
+                    }
+                    setBrandLogoPreview(URL.createObjectURL(files[0]));
                     setValue("brand_logo", files, { shouldValidate: true });
                   } else {
+                    if (brandLogoPreview) {
+                      URL.revokeObjectURL(brandLogoPreview);
+                    }
+                    setBrandLogoPreview(null);
                     setValue("brand_logo", null, { shouldValidate: true });
                   }
                 }}

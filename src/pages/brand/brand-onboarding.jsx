@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -31,6 +31,16 @@ const BrandOnboarding = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(null);
+
+  // Cleanup blob URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
 
   const handleRoleSelection = async (role) => {
     const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
@@ -171,9 +181,9 @@ const BrandOnboarding = () => {
         {/* Logo URL */}
         <div>
           <RequiredLabel className={classLabel}>Brand Logo</RequiredLabel>
-          {watch("logo")?.[0] && (
+          {logoPreview && (
             <img
-              src={URL.createObjectURL(watch("logo")[0])}
+              src={logoPreview}
               alt="Logo Preview"
               className="my-2 max-h-32 rounded-lg"
             />
@@ -185,8 +195,17 @@ const BrandOnboarding = () => {
             onChange={(e) => {
               const files = e.target.files;
               if (files.length > 0) {
+                // Revoke old URL to prevent memory leak
+                if (logoPreview) {
+                  URL.revokeObjectURL(logoPreview);
+                }
+                setLogoPreview(URL.createObjectURL(files[0]));
                 setValue("logo", files, { shouldValidate: true });
               } else {
+                if (logoPreview) {
+                  URL.revokeObjectURL(logoPreview);
+                }
+                setLogoPreview(null);
                 setValue("logo", null, { shouldValidate: true });
               }
             }}
