@@ -224,6 +224,10 @@ const EditJobPage = () => {
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Revoke old blob URL to prevent memory leak
+      if (logoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
       setNewLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
     }
@@ -233,10 +237,26 @@ const EditJobPage = () => {
   const handlePosterLogoChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Revoke old blob URL to prevent memory leak
+      if (posterLogoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(posterLogoPreview);
+      }
       setNewPosterLogoFile(file);
       setPosterLogoPreview(URL.createObjectURL(file));
     }
   };
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (logoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+      if (posterLogoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(posterLogoPreview);
+      }
+    };
+  }, []);
 
   // Save poster info (for brandless jobs)
   const handleSavePoster = async () => {
