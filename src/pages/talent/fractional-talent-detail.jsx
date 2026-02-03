@@ -6,6 +6,7 @@ import { BarLoader } from "react-spinners";
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button.jsx";
 import { toast } from "sonner";
+import { getEdgeFunctionUrl } from "@/utils/supabase.js";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { FaLinkedin } from "react-icons/fa";
 import {
@@ -91,7 +92,7 @@ const FractionalTalentDetail = () => {
   const handleEmailSend = async (message) => {
     try {
       const res = await fetch(
-        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        getEdgeFunctionUrl("send-connection-email"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

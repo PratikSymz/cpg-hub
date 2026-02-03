@@ -9,6 +9,7 @@ import { getBrand } from "@/api/apiBrands.js";
 import { Button } from "@/components/ui/button.jsx";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { toast } from "sonner";
+import { getEdgeFunctionUrl } from "@/utils/supabase.js";
 import { getUser } from "@/api/apiUsers.js";
 import BackButton from "@/components/back-button.jsx";
 import {
@@ -99,7 +100,7 @@ const FractionalJobDetail = () => {
       }
 
       const res = await fetch(
-        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        getEdgeFunctionUrl("send-connection-email"),
         {
           method: "POST",
           headers: {
