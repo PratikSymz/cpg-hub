@@ -26,6 +26,7 @@ import {
   UserX,
   Layers,
 } from "lucide-react";
+import { getEdgeFunctionUrl } from "@/utils/supabase.js";
 import {
   BarChart,
   Bar,
@@ -288,7 +289,7 @@ const NewsletterDialog = memo(function NewsletterDialog({ open, onOpenChange }) 
 
     try {
       const res = await fetch(
-        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-blast-email",
+        getEdgeFunctionUrl("send-blast-email"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

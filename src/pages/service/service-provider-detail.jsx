@@ -5,6 +5,7 @@ import { useUser } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleService } from "@/api/apiServices.js";
 import { toast } from "sonner";
+import { getEdgeFunctionUrl } from "@/utils/supabase.js";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import BackButton from "@/components/back-button.jsx";
@@ -53,7 +54,7 @@ const ServiceProviderDetail = () => {
   const handleEmailSend = async (message) => {
     try {
       const res = await fetch(
-        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
+        getEdgeFunctionUrl("send-connection-email"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

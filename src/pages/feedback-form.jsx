@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
+import { getEdgeFunctionUrl } from "@/utils/supabase.js";
 import { useNavigate } from "react-router-dom";
 import { Send, MessageSquare } from "lucide-react";
 
@@ -38,7 +39,7 @@ const FeedbackForm = () => {
 
     try {
       const res = await fetch(
-        "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-feedback-email",
+        getEdgeFunctionUrl("send-feedback-email"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
