@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
 import { Link, useParams } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useSession } from "@clerk/clerk-react";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getSingleJob } from "@/api/apiFractionalJobs.js";
 import { getBrand } from "@/api/apiBrands.js";
@@ -22,10 +22,12 @@ import {
   Pencil,
 } from "lucide-react";
 import clsx from "clsx";
+import ShowLoginDialog from "@/components/show-login-dialog.jsx";
 
 const FractionalJobDetail = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
+  const { session } = useSession();
   const [activeTab, setActiveTab] = useState("about");
 
   // Load Job info
@@ -90,17 +92,28 @@ const FractionalJobDetail = () => {
 
   const handleEmailSend = async (message) => {
     try {
+      const token = await session?.getToken({ template: "supabase" });
+      if (!token) {
+        toast.error("Please sign in to send a connection request.");
+        return;
+      }
+
       const res = await fetch(
         "https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/send-connection-email",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify({
             target_email: email,
             sender_email: user?.primaryEmailAddress?.emailAddress,
             target_name: full_name,
             sender_name: user?.fullName,
             message,
+            job_title: job_title,
+            job_url: `${window.location.origin}/job/${id}`,
           }),
         }
       );
@@ -119,9 +132,11 @@ const FractionalJobDetail = () => {
   };
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const currentPosterId = poster_id || job?.brand_id;
   const canContact = currentPosterId && user && currentPosterId !== user.id;
   const isOwner = currentPosterId && user && currentPosterId === user.id;
+  const showSignInPrompt = currentPosterId && !user;
 
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="#00A19A" />;
@@ -208,6 +223,19 @@ const FractionalJobDetail = () => {
                   senderUser={user}
                   onSend={handleEmailSend}
                 />
+              )}
+              {showSignInPrompt && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="border-2 border-gray-300 text-gray-400 rounded-xl backdrop-blur-sm bg-white/50 cursor-pointer hover:border-cpg-teal hover:text-cpg-teal transition-colors"
+                    onClick={() => setLoginDialogOpen(true)}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Sign in to Connect
+                  </Button>
+                  <ShowLoginDialog open={loginDialogOpen} setOpen={setLoginDialogOpen} />
+                </>
               )}
               {isOwner && (
                 <Button
@@ -396,6 +424,28 @@ const FractionalJobDetail = () => {
                   onSend={handleEmailSend}
                   triggerClassName="bg-cpg-teal hover:bg-cpg-teal/90 text-white px-8 py-3 rounded-xl text-base font-medium"
                 />
+              </div>
+            )}
+
+            {/* Sign in CTA for unauthenticated users */}
+            {showSignInPrompt && (
+              <div className="bg-gradient-to-r from-gray-100 to-gray-50 border-2 border-gray-200 rounded-2xl p-8 text-center relative overflow-hidden">
+                <div className="absolute inset-0 backdrop-blur-[2px] bg-white/30 z-0" />
+                <div className="relative z-10">
+                  <h3 className="text-xl font-semibold mb-2">
+                    Interested in this opportunity?
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Sign in to connect with {poster_name} and express your interest.
+                  </p>
+                  <Button
+                    className="bg-cpg-teal hover:bg-cpg-teal/90 text-white px-8 py-3 rounded-xl text-base font-medium"
+                    onClick={() => setLoginDialogOpen(true)}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Sign in to Connect
+                  </Button>
+                </div>
               </div>
             )}
           </div>
