@@ -48,7 +48,6 @@ const BrandOnboarding = () => {
       : [];
 
     if (existingRoles.includes(role)) {
-      console.log(`Role "${role}" already present`);
       return;
     }
 
@@ -57,7 +56,6 @@ const BrandOnboarding = () => {
     try {
       await user.update({ unsafeMetadata: { roles: updatedRoles } });
       toast.success(`Role updated to: ${role}`);
-      console.log(`Role updated to: ${role}`);
     } catch (err) {
       toast.error("Error updating role");
       console.error("Error updating role:", err);
@@ -128,7 +126,7 @@ const BrandOnboarding = () => {
         toast.success("Profile Created!");
       }
     } catch (err) {
-      console.log(err);
+      console.error("Failed to create profile:", err);
       toast.error("Failed to create profile!");
       submittedRef.current = false; // allow resubmission if needed
     }

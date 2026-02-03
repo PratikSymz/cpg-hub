@@ -277,7 +277,7 @@ const PostJob = () => {
         toast.success("Job posted successfully!");
       }
     } catch (err) {
-      console.log(err);
+      console.error("Failed to post job:", err);
       toast.error("Failed to post job!");
       submittedRef.current = false;
     }
