@@ -69,10 +69,15 @@ const JobCard = ({
         <BarLoader className="mb-4" width={"100%"} color="#00A19A" />
       )}
 
-      {/* Header - Poster Info */}
-      <div className="flex items-start gap-4 mb-4">
+      {/* Job Title - Primary Headline */}
+      <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+        {job_title}
+      </h2>
+
+      {/* Posted By - Secondary Info */}
+      <div className="flex items-center gap-2 mb-4">
         {poster_logo ? (
-          <div className="h-14 w-14 rounded-full border border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="h-8 w-8 rounded-full border border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
             <img
               src={poster_logo}
               alt={poster_name}
@@ -80,25 +85,20 @@ const JobCard = ({
             />
           </div>
         ) : (
-          <div className="h-14 w-14 rounded-full border border-gray-100 bg-gray-50 flex items-center justify-center flex-shrink-0">
-            <Building2 className="h-6 w-6 text-gray-400" />
+          <div className="h-8 w-8 rounded-full border border-gray-100 bg-gray-50 flex items-center justify-center flex-shrink-0">
+            <Building2 className="h-4 w-4 text-gray-400" />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{poster_name}</h3>
-          {poster_location && (
-            <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{poster_location}</span>
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground">
+            <span className="text-gray-500">Posted by </span>
+            <span className="font-medium text-gray-700">{poster_name}</span>
+            {poster_location && (
+              <span className="text-gray-400"> · {poster_location}</span>
+            )}
+          </p>
         </div>
       </div>
-
-      {/* Job Title */}
-      <h2 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
-        {job_title}
-      </h2>
 
       {/* Job Meta */}
       <div className="flex flex-wrap gap-2 mb-4">
