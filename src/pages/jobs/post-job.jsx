@@ -701,7 +701,10 @@ const PostJob = () => {
 
           {/* Job Description upload */}
           <div className="mb-6">
-            <Label className={classLabel}>Upload Job Description</Label>
+            <Label className={classLabel}>
+              Upload Job Description
+              <span className="text-muted-foreground font-normal ml-2">(PDF only, optional)</span>
+            </Label>
             <Input
               className={classInput}
               type="file"

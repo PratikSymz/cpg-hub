@@ -703,7 +703,10 @@ const EditJobPage = () => {
 
               {/* Job Description Upload */}
               <div className="mb-6">
-                <Label className={classLabel}>Job Description PDF</Label>
+                <Label className={classLabel}>
+                  Job Description
+                  <span className="text-muted-foreground font-normal ml-2">(PDF only, optional)</span>
+                </Label>
                 {jobData?.job_description && !newJobDescFile && (
                   <div className="mt-2 p-4 bg-gray-50 rounded-xl flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">Currently uploaded document</p>
