@@ -78,6 +78,7 @@ const EditJobPage = () => {
   const [newPosterLogoFile, setNewPosterLogoFile] = useState(null);
   const [posterName, setPosterName] = useState("");
   const [posterLocation, setPosterLocation] = useState("");
+  const [newJobDescFile, setNewJobDescFile] = useState(null);
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -299,6 +300,7 @@ const EditJobPage = () => {
           scope_of_work: data.scope_of_work,
           area_of_specialization: data.area_of_specialization,
           estimated_hrs_per_wk: data.estimated_hrs_per_wk,
+          job_description: newJobDescFile ? [newJobDescFile] : undefined,
         },
         job_id: id,
       });
@@ -699,23 +701,47 @@ const EditJobPage = () => {
                 )}
               </div>
 
-              {/* Job Description Link */}
-              {jobData?.job_description && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-xl flex items-center justify-between">
-                  <div>
-                    <Label className={classLabel}>Job Description PDF</Label>
+              {/* Job Description Upload */}
+              <div className="mb-6">
+                <Label className={classLabel}>Job Description PDF</Label>
+                {jobData?.job_description && !newJobDescFile && (
+                  <div className="mt-2 p-4 bg-gray-50 rounded-xl flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">Currently uploaded document</p>
+                    <a
+                      href={jobData.job_description}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-cpg-teal hover:underline font-medium"
+                    >
+                      View PDF <ExternalLink className="h-4 w-4" />
+                    </a>
                   </div>
-                  <a
-                    href={jobData.job_description}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-cpg-teal hover:underline font-medium"
-                  >
-                    View PDF <ExternalLink className="h-4 w-4" />
-                  </a>
-                </div>
-              )}
+                )}
+                {newJobDescFile && (
+                  <div className="mt-2 p-4 bg-green-50 rounded-xl flex items-center justify-between">
+                    <p className="text-sm text-green-700">New file selected: {newJobDescFile.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => setNewJobDescFile(null)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                <Input
+                  type="file"
+                  accept=".pdf"
+                  className={`${classInput} mt-2`}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setNewJobDescFile(file);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload a new PDF to replace the current job description (optional)
+                </p>
+              </div>
 
               {/* Grid: Scope, Location, Hours */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">

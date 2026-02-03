@@ -67,6 +67,18 @@ All routes use `AppLayout` wrapper with navbar and footer. Key route patterns:
 - `src/constants/` - Filters, roles, admin IDs, class name utilities
 - `src/schemas/` - Zod validation schemas
 
+### Supabase Edge Functions
+Located in `supabase/functions/`. Deploy with:
+```bash
+supabase functions deploy <function-name>
+```
+
+**cleanup-expired-jobs** - Automatically deletes job posts older than 30 days and emails posters
+- Deployed with `--no-verify-jwt` (no auth required for cron access)
+- Cron job configured via pg_cron: runs daily at 9 AM UTC
+- To check cron jobs: `SELECT * FROM cron.job;`
+- To manually invoke: `curl -X POST https://yddcboiyncaqmciytwjx.supabase.co/functions/v1/cleanup-expired-jobs`
+
 ### Environment Variables
 Required in `.env`:
 - `VITE_SUPABASE_URL`
