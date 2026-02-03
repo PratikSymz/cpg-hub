@@ -34,8 +34,12 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
     }
   );
 
-  const handleStatusChange = (status) => {
-    fnHiringStatus(status).then(() => fnHiringStatus());
+  const handleStatusChange = async (status) => {
+    try {
+      await fnHiringStatus(status);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   return (

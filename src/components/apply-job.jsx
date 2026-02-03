@@ -58,18 +58,22 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     func: fnApply,
   } = useFetch(applyToJob);
 
-  const onSubmit = (data) => {
-    fnApply({
-      ...data,
-      job_id: job.id,
-      candidate_id: user.id,
-      name: user.fullName,
-      status: "applied",
-      resume: data.resume[0],
-    }).then(() => {
+  const onSubmit = async (data) => {
+    try {
+      await fnApply({
+        ...data,
+        job_id: job.id,
+        candidate_id: user.id,
+        name: user.fullName,
+        status: "applied",
+        resume: data.resume[0],
+      });
       fetchJob();
       reset();
-    });
+    } catch (err) {
+      console.error("Failed to apply:", err);
+      // Error is already handled by useFetch hook (errorApply)
+    }
   };
 
   return (
