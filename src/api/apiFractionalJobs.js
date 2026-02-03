@@ -165,7 +165,7 @@ export async function postJob(token, formData) {
 
     if (storageError) {
       console.error("Error uploading job description:", storageError);
-      throw new Error("Error uploading job description");
+      throw new Error(`Error uploading job description: ${storageError.message}`);
     }
 
     const { data: publicUrlData } = supabase.storage
@@ -269,7 +269,7 @@ export async function updateJob(token, { jobData, job_id, newLogo }) {
 
     if (storageError) {
       console.error("Error uploading job description:", storageError);
-      throw new Error("Error uploading job description");
+      throw new Error(`Error uploading job description: ${storageError.message}`);
     }
 
     const { data: publicUrlData } = supabase.storage

@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
-import { ChevronDown, ChevronUp, Plus, Send, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Info, Plus, Send, X } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
@@ -290,6 +290,17 @@ const PostJob = () => {
       <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
         Post a Job
       </h1>
+
+      {/* 30-day auto-delete notice */}
+      <div className="w-5/6 mx-auto mb-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-800">
+            Job posts are automatically removed after 30 days. You'll receive an email notification when this happens, and you can re-post the job if needed.
+          </p>
+        </div>
+      </div>
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-5/6 mx-auto gap-8"
