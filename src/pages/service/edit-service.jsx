@@ -29,6 +29,7 @@ import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import DeleteConfirmationDialog from "@/components/delete-confirmation-dialog.jsx";
 import BackButton from "@/components/back-button.jsx";
 import { isAdminEmail } from "@/constants/admins.js";
 
@@ -43,6 +44,7 @@ const EditServicePage = () => {
   const [otherCatError, setOtherCatError] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const {
     register,
@@ -155,12 +157,12 @@ const EditServicePage = () => {
     setNavTarget(null);
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!id) return;
+    setShowDeleteDialog(true);
+  };
 
-    const ok = window.confirm("Are you sure you want to delete this profile?");
-    if (!ok) return;
-
+  const handleDeleteConfirm = async () => {
     try {
       await removeService({ service_id: id });
       toast.success("Profile deleted.");
@@ -168,6 +170,8 @@ const EditServicePage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete profile.");
+    } finally {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -237,6 +241,15 @@ const EditServicePage = () => {
         show={showDialog}
         onDiscard={handleDiscard}
         onStay={handleStay}
+      />
+
+      <DeleteConfirmationDialog
+        show={showDeleteDialog}
+        title="Delete Profile"
+        message="Are you sure you want to delete this profile? This action cannot be undone."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteDialog(false)}
+        isDeleting={removingService}
       />
 
       {/* Profile Card - Shows whose profile is being edited */}
@@ -614,7 +627,7 @@ const EditServicePage = () => {
                 type="button"
                 size="lg"
                 disabled={removingService}
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 className="w-full h-14 text-base rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
               >
                 <Trash2 className="h-5 w-5 mr-2" />

@@ -27,6 +27,7 @@ import { OTHER_SCHEMA } from "@/constants/schemas.js";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
+import DeleteConfirmationDialog from "@/components/delete-confirmation-dialog.jsx";
 import BackButton from "@/components/back-button.jsx";
 import { toTitleCase } from "@/utils/common-functions.js";
 import { isAdminEmail } from "@/constants/admins.js";
@@ -85,6 +86,7 @@ const EditTalentPage = () => {
 
   const [showDialog, setShowDialog] = useState(false);
   const [navTarget, setNavTarget] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Profile info from fetched talent data
   const userInfo = talentData?.user_info;
@@ -111,12 +113,12 @@ const EditTalentPage = () => {
     isSignedIn &&
     (userInfo?.user_id === user?.id || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!id) return;
+    setShowDeleteDialog(true);
+  };
 
-    const ok = window.confirm("Are you sure you want to delete this profile?");
-    if (!ok) return;
-
+  const handleDeleteConfirm = async () => {
     try {
       await removeTalent({ talent_id: id });
       toast.success("Profile deleted.");
@@ -124,6 +126,8 @@ const EditTalentPage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete profile.");
+    } finally {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -216,6 +220,15 @@ const EditTalentPage = () => {
         show={showDialog}
         onDiscard={handleDiscard}
         onStay={handleStay}
+      />
+
+      <DeleteConfirmationDialog
+        show={showDeleteDialog}
+        title="Delete Profile"
+        message="Are you sure you want to delete this profile? This action cannot be undone."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteDialog(false)}
+        isDeleting={removingTalent}
       />
 
       {/* Profile Card - Shows whose profile is being edited */}
@@ -529,7 +542,7 @@ const EditTalentPage = () => {
                 type="button"
                 size="lg"
                 disabled={removingTalent}
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 className="w-full h-14 text-base rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
               >
                 <Trash2 className="h-5 w-5 mr-2" />
