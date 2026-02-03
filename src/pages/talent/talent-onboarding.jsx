@@ -128,7 +128,7 @@ const TalentOnboarding = () => {
         toast.success("Profile Created!");
       }
     } catch (err) {
-      console.log(err);
+      console.error("Failed to create profile:", err);
       toast.error("Failed to create profile!");
       submittedRef.current = false;
     }
