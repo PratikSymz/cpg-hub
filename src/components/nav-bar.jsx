@@ -42,7 +42,6 @@ const NavBar = () => {
     }
   };
 
-  const role = user?.unsafeMetadata?.role;
   const roles = Array.isArray(user?.unsafeMetadata?.roles)
     ? user.unsafeMetadata.roles
     : [];
