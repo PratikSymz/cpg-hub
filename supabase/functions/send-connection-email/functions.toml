@@ -1,3 +1,0 @@
-[functions.send-connection-email]
-runtime = "edge"
-verify_jwt = false
