@@ -12,18 +12,17 @@ const MyJobs = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
+  const roles = Array.isArray(user?.unsafeMetadata?.roles)
+    ? user.unsafeMetadata.roles
+    : [];
+  const isTalent = roles.includes(ROLE_TALENT);
+
   return (
     <div>
       <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
-        {user?.unsafeMetadata?.role === ROLE_TALENT
-          ? "My Applications"
-          : "My Jobs"}
+        {isTalent ? "My Applications" : "My Jobs"}
       </h1>
-      {user?.unsafeMetadata?.role === ROLE_TALENT ? (
-        <CreatedApplications />
-      ) : (
-        <CreatedJobs />
-      )}
+      {isTalent ? <CreatedApplications /> : <CreatedJobs />}
     </div>
   );
 };

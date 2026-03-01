@@ -11,8 +11,13 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/" />;
   }
 
-  if (user !== undefined && !user?.unsafeMetadata?.role && pathname !== "/")
+  // Check if user has completed onboarding (has at least one role)
+  const roles = user?.unsafeMetadata?.roles;
+  const hasRoles = Array.isArray(roles) && roles.length > 0;
+
+  if (user !== undefined && !hasRoles && pathname !== "/") {
     return <Navigate to="/" />;
+  }
 
   return children;
 };
