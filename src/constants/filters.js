@@ -9,6 +9,7 @@ export const areasOfSpecialization = [
   { label: "Trade Spend", value: "trade_spend" },
   { label: "Data and insights", value: "data_ins" },
   { label: "Supply Chain", value: "supply_chain" },
+  { label: "Legal", value: "legal" },
   { label: "Other", value: "other" },
 ];
 
@@ -32,6 +33,7 @@ export const categoryOfService = [
   { label: "Recruiting", value: "recruiting" },
   { label: "Supply Chain", value: "supply_chain" },
   { label: "Demos/Sampling", value: "demos" },
+  { label: "Legal", value: "legal" },
   { label: "Other", value: "other" },
 ];
 
