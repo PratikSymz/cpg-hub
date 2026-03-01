@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   SignIn,
   SignUp,
@@ -16,7 +16,7 @@ import {
   Briefcase,
   Users,
   Building2,
-  BarChart3,
+  ChartBar,
 } from "lucide-react";
 import { Button } from "./ui/button.jsx";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
@@ -26,6 +26,7 @@ import { getMyTalentProfile } from "@/api/apiTalent.js";
 import { getMyServiceProfile } from "@/api/apiServices.js";
 
 const NavBar = () => {
+  const navigate = useNavigate();
   const [showSignIn, setShowSignIn] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [search, setSearch] = useSearchParams();
@@ -141,7 +142,7 @@ const NavBar = () => {
                     variant="ghost"
                     className="text-sm font-medium text-gray-700 hover:text-cpg-teal hover:bg-cpg-teal/5 rounded-xl px-4"
                   >
-                    <BarChart3 className="h-4 w-4 mr-2" />
+                    <ChartBar className="h-4 w-4 mr-2" />
                     Analytics
                   </Button>
                 </Link>
@@ -158,28 +159,27 @@ const NavBar = () => {
               }}
             >
               <UserButton.MenuItems>
-                {talentProfile?.id && (
-                  <UserButton.Link
+                {roles.includes(ROLE_TALENT) && (
+                  <UserButton.Action
                     label="View Talent Profile"
                     labelIcon={<BriefcaseBusiness size={16} />}
-                    href={`/talents/${talentProfile.id}`}
+                    onClick={() => talentProfile?.id && navigate(`/talents/${talentProfile.id}`)}
                   />
                 )}
-                {serviceProfile?.id && (
-                  <UserButton.Link
+                {roles.includes(ROLE_SERVICE) && (
+                  <UserButton.Action
                     label="View Service Profile"
                     labelIcon={<BriefcaseBusiness size={16} />}
-                    href={`/services/${serviceProfile.id}`}
+                    onClick={() => serviceProfile?.id && navigate(`/services/${serviceProfile.id}`)}
                   />
                 )}
-
                 {isAdminEmail(user?.primaryEmailAddress?.emailAddress) && (
-                    <UserButton.Link
-                      label="Analytics"
-                      labelIcon={<BarChart3 size={16} />}
-                      href="/user-analytics"
-                    />
-                  )}
+                  <UserButton.Link
+                    label="Analytics"
+                    labelIcon={<ChartBar size={16} />}
+                    href="/user-analytics"
+                  />
+                )}
               </UserButton.MenuItems>
             </UserButton>
           </SignedIn>
