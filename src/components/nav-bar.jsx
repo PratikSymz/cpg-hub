@@ -21,6 +21,9 @@ import {
 import { Button } from "./ui/button.jsx";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 import { isAdminEmail } from "@/constants/admins.js";
+import useFetch from "@/hooks/use-fetch.jsx";
+import { getMyTalentProfile } from "@/api/apiTalent.js";
+import { getMyServiceProfile } from "@/api/apiServices.js";
 
 const NavBar = () => {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -29,11 +32,22 @@ const NavBar = () => {
   const { user, isLoaded } = useUser();
   const [authMode, setAuthMode] = useState("sign-in");
 
+  const { data: talentProfile, func: fetchTalentProfile } = useFetch(getMyTalentProfile);
+  const { data: serviceProfile, func: fetchServiceProfile } = useFetch(getMyServiceProfile);
+
   useEffect(() => {
     if (search.get("sign-in")) {
       setShowSignIn(true);
     }
   }, [search]);
+
+  // Fetch talent and service profiles when user is loaded
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetchTalentProfile({ user_id: user.id });
+      fetchServiceProfile({ user_id: user.id });
+    }
+  }, [isLoaded, user?.id]);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -144,25 +158,18 @@ const NavBar = () => {
               }}
             >
               <UserButton.MenuItems>
-                {role === ROLE_BRAND && (
-                  <UserButton.Link
-                    label="View Brand Profile"
-                    labelIcon={<BriefcaseBusiness size={16} />}
-                    href="/profile/brand"
-                  />
-                )}
-                {role === ROLE_TALENT && (
+                {talentProfile?.id && (
                   <UserButton.Link
                     label="View Talent Profile"
                     labelIcon={<BriefcaseBusiness size={16} />}
-                    href="/talents/:id"
+                    href={`/talents/${talentProfile.id}`}
                   />
                 )}
-                {role === ROLE_SERVICE && (
+                {serviceProfile?.id && (
                   <UserButton.Link
                     label="View Service Profile"
                     labelIcon={<BriefcaseBusiness size={16} />}
-                    href="/profile/service"
+                    href={`/services/${serviceProfile.id}`}
                   />
                 )}
 
