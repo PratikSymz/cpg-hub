@@ -31,12 +31,15 @@ import NumberInput from "@/components/number-input.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import { isAdminEmail } from "@/constants/admins.js";
+import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
+import { syncUserProfile } from "@/api/apiUsers.js";
 
 const EditServicePage = () => {
   const { id } = useParams();
   const { user, isSignedIn, isLoaded } = useUser();
   const navigate = useNavigate();
 
+  const [profilePicFile, setProfilePicFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [otherCat, setOtherCat] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -84,6 +87,8 @@ const EditServicePage = () => {
     error: removeError,
   } = useFetch(deleteServiceById);
 
+  const { func: updateUserProfile } = useFetch(syncUserProfile);
+
   const selectedCategories = useWatch({ control, name: "category_of_service" });
   const shouldShowBrokerServices = selectedCategories?.includes("Broker");
   const shouldShowMarketsCovered = selectedCategories?.some((val) =>
@@ -128,10 +133,13 @@ const EditServicePage = () => {
   const profileEmail = userInfo?.email || "";
   const profileImage = userInfo?.profile_picture_url || "";
 
+  // Check if current user is the profile owner
+  const isOwner = isSignedIn && userInfo?.user_id === user?.id;
+
   // Check if current user can edit this profile
   const canEdit =
     isSignedIn &&
-    (userInfo?.user_id === user?.id || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
+    (isOwner || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
 
   const handleBackClick = () => {
     if (isDirty) {
@@ -173,6 +181,21 @@ const EditServicePage = () => {
 
   const onSubmit = async (data) => {
     try {
+      // Upload profile picture to Clerk if selected (own profile only)
+      if (profilePicFile && isOwner) {
+        try {
+          await user.setProfileImage({ file: profilePicFile });
+          await updateUserProfile({
+            user_id: user.id,
+            full_name: user.fullName || "",
+            email: user.primaryEmailAddress?.emailAddress || "",
+            profile_picture_url: user.imageUrl || "",
+          });
+        } catch (picErr) {
+          console.error("Error uploading profile picture:", picErr);
+        }
+      }
+
       if (id) {
         await saveService(
           {
@@ -243,22 +266,20 @@ const EditServicePage = () => {
       <section className="w-5/6 max-w-3xl mx-auto mb-8">
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
           <div className="flex items-center gap-4">
-            {logoPreview || profileImage ? (
-              <img
-                src={logoPreview || profileImage}
-                alt="Profile"
-                className="h-16 w-16 rounded-full border-2 border-gray-100 object-cover"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-full bg-cpg-teal/10 flex items-center justify-center">
-                <span className="text-cpg-teal font-semibold text-xl">
-                  {profileName?.charAt(0) || "?"}
-                </span>
-              </div>
-            )}
+            <ProfilePictureUpload
+              currentImageUrl={profileImage}
+              fallbackInitial={profileName?.charAt(0)}
+              onFileSelect={(file) => setProfilePicFile(file)}
+              disabled={!isOwner}
+            />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">{profileName}</h2>
               <p className="text-sm text-muted-foreground">{profileEmail}</p>
+              {isOwner && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click photo to upload or change
+                </p>
+              )}
             </div>
           </div>
         </div>

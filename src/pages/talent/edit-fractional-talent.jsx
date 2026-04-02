@@ -30,6 +30,8 @@ import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import { toTitleCase } from "@/utils/common-functions.js";
 import { isAdminEmail } from "@/constants/admins.js";
+import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
+import { syncUserProfile } from "@/api/apiUsers.js";
 
 const EditTalentPage = () => {
   const { id } = useParams();
@@ -72,6 +74,8 @@ const EditTalentPage = () => {
     error: removeError,
   } = useFetch(deleteTalentById);
 
+  const { func: updateUserProfile } = useFetch(syncUserProfile);
+
   // Load talent profile by ID from URL
   useEffect(() => {
     if (isLoaded && id) {
@@ -79,6 +83,7 @@ const EditTalentPage = () => {
     }
   }, [isLoaded, id]);
 
+  const [profilePicFile, setProfilePicFile] = useState(null);
   const [otherSpec, setOtherSpec] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
@@ -106,10 +111,13 @@ const EditTalentPage = () => {
     }
   }, [talentData, setValue]);
 
+  // Check if current user is the profile owner
+  const isOwner = isSignedIn && userInfo?.user_id === user?.id;
+
   // Check if current user can edit this profile
   const canEdit =
     isSignedIn &&
-    (userInfo?.user_id === user?.id || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
+    (isOwner || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
 
   const handleDelete = async () => {
     if (!id) return;
@@ -133,6 +141,21 @@ const EditTalentPage = () => {
       : data.area_of_specialization;
 
     try {
+      // Upload profile picture to Clerk if selected (own profile only)
+      if (profilePicFile && isOwner) {
+        try {
+          await user.setProfileImage({ file: profilePicFile });
+          await updateUserProfile({
+            user_id: user.id,
+            full_name: user.fullName || "",
+            email: user.primaryEmailAddress?.emailAddress || "",
+            profile_picture_url: user.imageUrl || "",
+          });
+        } catch (picErr) {
+          console.error("Error uploading profile picture:", picErr);
+        }
+      }
+
       if (id) {
         await saveTalent(
           {
@@ -222,22 +245,20 @@ const EditTalentPage = () => {
       <section className="w-5/6 max-w-3xl mx-auto mb-8">
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
           <div className="flex items-center gap-4">
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt="Profile"
-                className="h-16 w-16 rounded-full border-2 border-gray-100 object-cover"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-full bg-cpg-teal/10 flex items-center justify-center">
-                <span className="text-cpg-teal font-semibold text-xl">
-                  {profileName?.charAt(0) || "?"}
-                </span>
-              </div>
-            )}
+            <ProfilePictureUpload
+              currentImageUrl={profileImage}
+              fallbackInitial={profileName?.charAt(0)}
+              onFileSelect={(file) => setProfilePicFile(file)}
+              disabled={!isOwner}
+            />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">{profileName}</h2>
               <p className="text-sm text-muted-foreground">{profileEmail}</p>
+              {isOwner && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click photo to upload or change
+                </p>
+              )}
             </div>
           </div>
         </div>

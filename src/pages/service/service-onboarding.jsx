@@ -28,6 +28,8 @@ import NumberInput from "@/components/number-input.jsx";
 import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import { Briefcase, Send, X } from "lucide-react";
+import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
+import { syncUserProfile } from "@/api/apiUsers.js";
 
 const ServiceOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -40,6 +42,7 @@ const ServiceOnboarding = () => {
   const imageUrl = user?.imageUrl;
   const fullName = user?.fullName;
 
+  const [profilePicFile, setProfilePicFile] = useState(null);
   const [otherCat, setOtherCat] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherCatError, setOtherCatError] = useState("");
@@ -109,6 +112,7 @@ const ServiceOnboarding = () => {
     useWatch({ control, name: "category_of_service" }) ?? [];
 
   const { func: submitBrokerProfile, loading, error } = useFetch(addNewService);
+  const { func: updateUserProfile } = useFetch(syncUserProfile);
 
   const onSubmit = async (data) => {
     if (submittedRef.current) {
@@ -118,6 +122,21 @@ const ServiceOnboarding = () => {
 
     try {
       if (user && user.id) {
+        // Upload profile picture to Clerk if selected
+        if (profilePicFile) {
+          try {
+            await user.setProfileImage({ file: profilePicFile });
+            await updateUserProfile({
+              user_id: user.id,
+              full_name: user.fullName || "",
+              email: user.primaryEmailAddress?.emailAddress || "",
+              profile_picture_url: user.imageUrl || "",
+            });
+          } catch (picErr) {
+            console.error("Error uploading profile picture:", picErr);
+          }
+        }
+
         const result = await submitBrokerProfile({
           is_broker: shouldShowBrokerServices,
           user_id: user.id,
@@ -178,14 +197,17 @@ const ServiceOnboarding = () => {
       <section className="w-5/6 max-w-3xl mx-auto mb-8">
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
           <div className="flex items-center gap-4">
-            <img
-              src={imageUrl}
-              alt="Profile"
-              className="h-16 w-16 rounded-full border-2 border-gray-100 object-cover"
+            <ProfilePictureUpload
+              currentImageUrl={imageUrl}
+              fallbackInitial={fullName?.charAt(0)}
+              onFileSelect={(file) => setProfilePicFile(file)}
             />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">{fullName}</h2>
               <p className="text-sm text-muted-foreground">{email}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Click photo to upload or change
+              </p>
             </div>
           </div>
         </div>
