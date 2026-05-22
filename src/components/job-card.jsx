@@ -82,6 +82,7 @@ const JobCard = ({
               src={poster_logo}
               alt={poster_name}
               className="h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
         ) : (

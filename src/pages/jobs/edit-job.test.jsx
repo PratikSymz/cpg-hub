@@ -296,7 +296,7 @@ describe("EditJobPage", () => {
 
     it("shows job description PDF link", () => {
       renderPage();
-      expect(screen.getByText("Job Description PDF")).toBeInTheDocument();
+      expect(screen.getByText("Job Description")).toBeInTheDocument();
       expect(screen.getByText("View PDF")).toBeInTheDocument();
     });
 

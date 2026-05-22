@@ -4,18 +4,15 @@ import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
 import CreatedApplications from "@/components/created-applications.jsx";
 import CreatedJobs from "@/components/created-jobs.jsx";
+import { useUserRoles } from "@/hooks/use-user-roles.jsx";
 
 const MyJobs = () => {
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
+  const isTalent = useUserRoles().includes(ROLE_TALENT);
 
   if (!isLoaded) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
-
-  const roles = Array.isArray(user?.unsafeMetadata?.roles)
-    ? user.unsafeMetadata.roles
-    : [];
-  const isTalent = roles.includes(ROLE_TALENT);
 
   return (
     <div>

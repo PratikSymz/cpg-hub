@@ -1,25 +1,33 @@
 import supabaseClient from "@/utils/supabase.js";
+import { uploadToBucket } from "@/utils/storage.js";
+import { STORAGE_BUCKETS, STORAGE_FOLDERS } from "@/constants/storage.js";
 
-const table_name = "brand_profiles";
+const TABLE_NAME = "brand_profiles";
 
-// Fetch Brands
+const uploadBrandLogo = (supabase, file, identifier) =>
+  uploadToBucket(supabase, {
+    bucket: STORAGE_BUCKETS.COMPANY_LOGO,
+    folder: STORAGE_FOLDERS.BRANDS,
+    file,
+    prefix: "company",
+    identifier,
+  });
+
 export async function getAllBrands(token) {
   const supabase = supabaseClient(token);
-  const { data, error } = await supabase.from(table_name).select("*");
+  const { data, error } = await supabase.from(TABLE_NAME).select("*");
 
   if (error) {
     console.error("Error fetching Brands:", error);
     return null;
   }
-
   return data;
 }
 
-// Fetch single Brand by ID
 export async function getBrand(token, { brand_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .select("*")
     .eq("id", brand_id)
     .single();
@@ -28,15 +36,13 @@ export async function getBrand(token, { brand_id }) {
     console.error(`Error fetching Brand ${brand_id}:`, error);
     return null;
   }
-
   return data;
 }
 
-// Fetch my profile (single brand - legacy)
 export async function getMyBrandProfile(token, { user_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .select(
       `*,
       user_info: user_profiles (user_id, full_name, email, profile_picture_url)`
@@ -48,15 +54,13 @@ export async function getMyBrandProfile(token, { user_id }) {
     console.error(`Error fetching my profile ${user_id}:`, error);
     return null;
   }
-
   return data;
 }
 
-// Fetch all brands for a user (supports multiple brands)
 export async function getMyBrands(token, { user_id }) {
   const supabase = supabaseClient(token);
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .select("*")
     .eq("user_id", user_id)
     .order("created_at", { ascending: false });
@@ -65,53 +69,26 @@ export async function getMyBrands(token, { user_id }) {
     console.error(`Error fetching brands for user ${user_id}:`, error);
     return [];
   }
-
   return data || [];
 }
 
-// Add Brand
 export async function addNewBrand(token, brandData) {
   const supabase = supabaseClient(token);
 
-  // Current brand logo url
-  let company_logo_url = null;
   const file = brandData.logo?.[0];
-
-  const folder = "brands";
-  const bucket = "company-logo";
-  if (file) {
-    // A new file was uploaded → upload it
-    const fileName = formatCompanyLogoUrl(brandData.user_id, file);
-
-    // Upload the file
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${folder}/${fileName}`, file, {
-        cacheControl: "3600",
-        upsert: false, // prevent overwriting
-      });
-
-    if (storageError) {
-      console.error("Error uploading new Brand logo:", storageError);
-      throw new Error("Error uploading new Brand logo");
-    }
-
-    // Get the public URL
-    const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${folder}/${fileName}`);
-    company_logo_url = publicUrlData?.publicUrl;
-  }
+  const logo_url = file
+    ? await uploadBrandLogo(supabase, file, brandData.user_id)
+    : null;
 
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .insert([
       {
         brand_name: brandData.brand_name,
         website: brandData.website,
         linkedin_url: brandData.linkedin_url,
         brand_hq: brandData.brand_hq,
-        logo_url: company_logo_url,
+        logo_url,
         user_id: brandData.user_id,
         brand_desc: brandData.brand_desc,
       },
@@ -122,51 +99,26 @@ export async function addNewBrand(token, brandData) {
     console.error(error);
     throw new Error("Error submitting Brand");
   }
-
   return data;
 }
 
-// Update Brand Info by user_id (legacy)
 export async function updateBrand(token, brandData, { user_id }) {
   const supabase = supabaseClient(token);
 
-  // Current brand logo url
-  let company_logo_url = brandData.logo_url;
+  let logo_url = brandData.logo_url;
   const newFile = brandData.logo?.[0];
-
-  const folder = "brands";
-  const bucket = "company-logo";
   if (newFile) {
-    // A new file was uploaded → upload it
-    const fileName = formatCompanyLogoUrl(user_id, newFile);
-
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${folder}/${fileName}`, newFile, {
-        cacheControl: "3600",
-        upsert: false, // prevent overwriting
-      });
-
-    if (storageError) {
-      console.error("Error uploading new Brand logo:", storageError);
-      throw new Error("Error uploading new Brand logo");
-    }
-
-    // Get the public URL
-    const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${folder}/${fileName}`);
-    company_logo_url = publicUrlData?.publicUrl;
+    logo_url = await uploadBrandLogo(supabase, newFile, user_id);
   }
 
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .update({
       brand_name: brandData.brand_name,
       website: brandData.website,
       linkedin_url: brandData.linkedin_url,
       brand_hq: brandData.brand_hq,
-      logo_url: company_logo_url,
+      logo_url,
       brand_desc: brandData.brand_desc,
     })
     .eq("user_id", user_id)
@@ -174,102 +126,62 @@ export async function updateBrand(token, brandData, { user_id }) {
 
   if (error) {
     console.error("Error Updating Brand information:", error);
-    throw new Error("Error Updating Brand information:", error);
+    throw new Error("Error Updating Brand information");
   }
-
   return data;
 }
 
-// Update Brand Info by brand_id (for admin/edit-job)
 export async function updateBrandById(token, { brand_id, brandData, newLogo }) {
   const supabase = supabaseClient(token);
 
-  // Handle logo upload if provided
-  let company_logo_url = brandData.logo_url;
-  if (newLogo && newLogo instanceof File) {
-    const folder = "brands";
-    const bucket = "company-logo";
-    const fileName = formatCompanyLogoUrl(brand_id, newLogo);
-
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${folder}/${fileName}`, newLogo, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (storageError) {
-      console.error("Error uploading Brand logo:", storageError);
-      throw new Error("Error uploading Brand logo");
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${folder}/${fileName}`);
-    company_logo_url = publicUrlData?.publicUrl;
+  let logo_url = brandData.logo_url;
+  if (newLogo instanceof File) {
+    logo_url = await uploadBrandLogo(supabase, newLogo, brand_id);
   }
 
-  // Update brand_profiles
-  const { data: brandResult, error: brandError } = await supabase
-    .from(table_name)
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
     .update({
       brand_name: brandData.brand_name,
       website: brandData.website,
       linkedin_url: brandData.linkedin_url,
       brand_hq: brandData.brand_hq,
-      logo_url: company_logo_url,
+      logo_url,
       brand_desc: brandData.brand_desc,
     })
     .eq("id", brand_id)
     .select()
     .single();
 
-  if (brandError) {
-    console.error("Error updating Brand:", brandError);
+  if (error) {
+    console.error("Error updating Brand:", error);
     throw new Error("Error updating Brand");
   }
 
-  // Sync poster info on all jobs linked to this brand
+  // Mirror updated brand info onto all jobs linked to this brand so listings
+  // stay in sync with the latest brand details (denormalized for read perf).
   const { error: jobsError } = await supabase
     .from("job_listings")
     .update({
       poster_name: brandData.brand_name,
-      poster_logo: company_logo_url,
+      poster_logo: logo_url,
       poster_location: brandData.brand_hq,
     })
     .eq("brand_id", brand_id);
 
-  if (jobsError) {
-    console.error("Error syncing jobs:", jobsError);
-    // Don't throw - brand was updated successfully
-  }
-
-  return brandResult;
-}
-
-// Delete Brand
-export async function deleteBrand(token, { user_id }) {
-  const supabase = supabaseClient(token);
-
-  const { data, error } = await supabase
-    .from(table_name)
-    .delete()
-    .eq("user_id", user_id)
-    .select();
-
-  if (error) {
-    console.error("Error deleting Brand:", error);
-    return data;
-  }
+  if (jobsError) console.error("Error syncing jobs:", jobsError);
 
   return data;
 }
 
-const formatCompanyLogoUrl = (user_id, file) => {
-  const random = Math.floor(Math.random() * 90000);
-  // Get a safe file extension
-  const extension = file.name.split(".").pop().toLowerCase();
-  // Generate a clean file name
-  const fileName = `company-${random}-${user_id}.${extension}`;
-  return fileName;
-};
+export async function deleteBrand(token, { user_id }) {
+  const supabase = supabaseClient(token);
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .eq("user_id", user_id)
+    .select();
+
+  if (error) console.error("Error deleting Brand:", error);
+  return data;
+}

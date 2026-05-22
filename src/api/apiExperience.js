@@ -1,66 +1,47 @@
 import supabaseClient from "@/utils/supabase.js";
+import { uploadToBucket } from "@/utils/storage.js";
+import { STORAGE_BUCKETS, STORAGE_FOLDERS } from "@/constants/storage.js";
 
-const table_name = "talent_experiences";
+const TABLE_NAME = "talent_experiences";
 
-// Fetch all Experiences
+const uploadBrandLogo = (supabase, file, identifier) =>
+  uploadToBucket(supabase, {
+    bucket: STORAGE_BUCKETS.BRANDS_EXPERIENCE,
+    folder: STORAGE_FOLDERS.TALENT,
+    file,
+    prefix: "brand",
+    identifier,
+  });
+
 export async function getAllExperiences(token, { user_id }) {
   const supabase = supabaseClient(token);
-
-  // Talent Function field
-  let query = supabase.from(table_name).select("*").eq("user_id", user_id);
-
-  const { data, error } = await query;
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("user_id", user_id);
 
   if (error) {
-    console.error("Supabase error:", error.message);
-    console.error("Details:", error.details);
+    console.error("Supabase error:", error.message, error.details);
   }
-
   return data;
 }
 
-// Add a new Experience
 export async function addNewExperience(token, experienceData, { user_id }) {
   const supabase = supabaseClient(token);
 
-  // Brand logo url (experience)
-  let brand_logo_url = null;
   const file = experienceData.brand_logo?.[0];
-
-  const folder = "talent";
-  const bucket = "brands-experience";
-  if (file) {
-    // A new file was uploaded → upload it
-    const fileName = formatBrandLogoUrl(user_id, file);
-
-    // Upload the file
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${folder}/${fileName}`, file, {
-        cacheControl: "3600",
-        upsert: false, // prevent overwriting
-      });
-
-    if (storageError) {
-      console.error("Error uploading new Brand logo:", storageError);
-      throw new Error("Error uploading new Brand logo");
-    }
-
-    // Get the public URL
-    const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${folder}/${fileName}`);
-    brand_logo_url = publicUrlData?.publicUrl;
-  }
+  const brand_logo_url = file
+    ? await uploadBrandLogo(supabase, file, user_id)
+    : null;
 
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .insert([
       {
         brand_name: experienceData.brand_name,
         brand_website: experienceData.brand_website,
         brand_logo: brand_logo_url,
-        user_id: user_id,
+        user_id,
       },
     ])
     .select();
@@ -69,11 +50,9 @@ export async function addNewExperience(token, experienceData, { user_id }) {
     console.error(error);
     throw new Error("Error submitting Brand Experience");
   }
-
   return data;
 }
 
-// Update Experience Info
 export async function updateExperience(
   token,
   experienceData,
@@ -81,40 +60,15 @@ export async function updateExperience(
 ) {
   const supabase = supabaseClient(token);
 
-  // Brand logo url (experience)
   let brand_logo_url = experienceData.brand_logo;
   const newFile = experienceData.brand_logo?.[0];
-
-  const folder = "talent";
-  const bucket = "brands-experience";
-  if (newFile) {
-    // A new file was uploaded → upload it
-    const fileName = formatBrandLogoUrl(user_id, newFile);
-
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .upload(`${folder}/${fileName}`, newFile, {
-        cacheControl: "3600",
-        upsert: false, // prevent overwriting
-      });
-
-    if (storageError) {
-      console.error("Error uploading new Brand logo:", storageError);
-      throw new Error("Error uploading new Brand logo");
-    }
-
-    // Get the public URL
-    const { data: publicUrlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(`${folder}/${fileName}`);
-    brand_logo_url = publicUrlData?.publicUrl;
-  }
+  if (newFile) brand_logo_url = await uploadBrandLogo(supabase, newFile, user_id);
 
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .update({
       brand_name: experienceData.brand_name,
-      brand_website: experienceData.website,
+      brand_website: experienceData.brand_website,
       brand_logo: brand_logo_url,
     })
     .eq("id", experience_id)
@@ -124,33 +78,17 @@ export async function updateExperience(
     console.error("Error Updating Experience information:", error);
     return null;
   }
-
   return data;
 }
 
-// Delete Experience
 export async function deleteExperience(token, { experience_id }) {
   const supabase = supabaseClient(token);
-
   const { data, error } = await supabase
-    .from(table_name)
+    .from(TABLE_NAME)
     .delete()
     .eq("id", experience_id)
     .select();
 
-  if (error) {
-    console.error("Error deleting experience:", error);
-    return data;
-  }
-
+  if (error) console.error("Error deleting experience:", error);
   return data;
 }
-
-const formatBrandLogoUrl = (user_id, file) => {
-  const random = Math.floor(Math.random() * 90000);
-  // Get a safe file extension
-  const extension = file.name.split(".").pop().toLowerCase();
-  // Generate a clean file name
-  const fileName = `brand-${random}-${user_id}.${extension}`;
-  return fileName;
-};

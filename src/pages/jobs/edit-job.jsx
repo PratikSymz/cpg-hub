@@ -32,7 +32,6 @@ import {
 } from "@/constants/classnames.js";
 import { toast } from "sonner";
 import NumberInput from "@/components/number-input.jsx";
-import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import {
   X,
@@ -70,8 +69,6 @@ const EditJobPage = () => {
   const navigate = useNavigate();
   const submittedRef = useRef(false);
 
-  const [showDialog, setShowDialog] = useState(false);
-  const [navTarget, setNavTarget] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [newLogoFile, setNewLogoFile] = useState(null);
   const [posterLogoPreview, setPosterLogoPreview] = useState("");
@@ -146,7 +143,6 @@ const EditJobPage = () => {
 
   const brandErrors = brandForm.formState.errors;
   const jobErrors = jobForm.formState.errors;
-  const isDirty = brandForm.formState.isDirty || jobForm.formState.isDirty;
 
   // Fetch job on mount
   useEffect(() => {
@@ -196,29 +192,6 @@ const EditJobPage = () => {
       }
     }
   }, [jobData]);
-
-  // Navigation guards
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowDialog(true);
-      setNavTarget(-1);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const handleDiscard = () => {
-    setShowDialog(false);
-    if (navTarget !== null) {
-      navigate(navTarget);
-      setNavTarget(null);
-    }
-  };
-
-  const handleStay = () => {
-    setShowDialog(false);
-    setNavTarget(null);
-  };
 
   // Logo handling (for brand)
   const handleLogoChange = (e) => {
@@ -390,12 +363,6 @@ const EditJobPage = () => {
           Update poster information and job details
         </p>
       </div>
-
-      <DiscardChangesGuard
-        show={showDialog}
-        onDiscard={handleDiscard}
-        onStay={handleStay}
-      />
 
       <div className="w-5/6 mx-auto space-y-8">
         {/* Job Status Banner */}
