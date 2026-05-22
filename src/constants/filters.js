@@ -10,6 +10,7 @@ export const areasOfSpecialization = [
   { label: "Data and insights", value: "data_ins" },
   { label: "Supply Chain", value: "supply_chain" },
   { label: "Legal", value: "legal" },
+  { label: "Advisory Board", value: "advisory_board" },
   { label: "Other", value: "other" },
 ];
 
