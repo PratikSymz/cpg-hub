@@ -71,8 +71,8 @@ serve(async (req) => {
       to: target_email,
       reply_to: sender_email,
       subject: job_title
-        ? `${sender_name} is interested in your "${job_title}" position`
-        : `${sender_name} wants to connect with you on CPG Hub`,
+        ? `CPGHUB: new contact message from ${sender_name} for ${target_name} re: "${job_title}"`
+        : `CPGHUB: new contact message from ${sender_name} for ${target_name}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -87,9 +87,9 @@ serve(async (req) => {
                 <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                   <!-- Header -->
                   <tr>
-                    <td style="background: linear-gradient(135deg, #0d9488 0%, #7c6c4f 100%); padding: 32px; text-align: center;">
-                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">CPG Hub</h1>
-                      <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">New Connection Request</p>
+                    <td style="background: linear-gradient(135deg, #0d9488 0%, #7c6c4f 100%); padding: 24px 32px; text-align: center;">
+                      <img src="https://mycpghub.com/og-image_transparent.png" alt="CPG Hub" width="120" style="display: inline-block; max-width: 120px; height: auto; margin-bottom: 8px;" />
+                      <p style="margin: 0; color: rgba(255,255,255,0.95); font-size: 14px;">New Connection Request</p>
                     </td>
                   </tr>
 
