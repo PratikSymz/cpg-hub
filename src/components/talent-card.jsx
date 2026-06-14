@@ -27,6 +27,7 @@ const TalentCard = ({ talent }) => {
             src={image_url}
             alt={full_name}
             className="h-14 w-14 rounded-full object-cover border-2 border-gray-100 flex-shrink-0"
+            loading="lazy"
           />
         ) : (
           <div className="h-14 w-14 rounded-full bg-cpg-teal/10 flex items-center justify-center flex-shrink-0">

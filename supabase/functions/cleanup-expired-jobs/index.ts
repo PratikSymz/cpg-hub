@@ -150,34 +150,39 @@ serve(async (req) => {
     console.log(`[cleanup-expired-jobs] Found ${expiredJobs.length} expired jobs`);
 
     const results = {
-      processed: 0,
+      processed: expiredJobs.length,
       emailsSent: 0,
       deleted: 0,
       errors: [] as string[],
     };
 
-    for (const job of expiredJobs) {
-      results.processed++;
+    // Dedupe user lookups: one poster can own multiple expired jobs.
+    const uniquePosterIds = Array.from(new Set(expiredJobs.map((j) => j.poster_id)));
+    const userEntries = await Promise.all(
+      uniquePosterIds.map(async (id) => [id, await fetchUser(id)] as const),
+    );
+    const usersById = new Map(userEntries);
 
-      try {
-        // Fetch the poster's info
-        const user = await fetchUser(job.poster_id);
-
-        if (user?.email) {
-          // Send notification email
-          await sendExpirationEmail(user, job.job_title);
-          results.emailsSent++;
-          console.log(`[cleanup-expired-jobs] Sent email for job "${job.job_title}" to ${user.email}`);
+    const jobOutcomes = await Promise.allSettled(
+      expiredJobs.map(async (job) => {
+        const user = usersById.get(job.poster_id);
+        const emailed = !!user?.email;
+        if (emailed) {
+          await sendExpirationEmail(user!, job.job_title);
         }
-
-        // Delete the job
         await deleteJob(job.id);
+        return { jobId: job.id, jobTitle: job.job_title, emailed };
+      }),
+    );
+
+    for (const outcome of jobOutcomes) {
+      if (outcome.status === "fulfilled") {
         results.deleted++;
-        console.log(`[cleanup-expired-jobs] Deleted job ${job.id}: "${job.job_title}"`);
-      } catch (err) {
-        const errorMsg = `Error processing job ${job.id}: ${err.message}`;
-        console.error(`[cleanup-expired-jobs] ${errorMsg}`);
-        results.errors.push(errorMsg);
+        if (outcome.value.emailed) results.emailsSent++;
+      } else {
+        const msg = `Error processing job: ${outcome.reason?.message || outcome.reason}`;
+        console.error(`[cleanup-expired-jobs] ${msg}`);
+        results.errors.push(msg);
       }
     }
 

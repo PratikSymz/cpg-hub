@@ -23,10 +23,10 @@ import { toTitleCase } from "@/utils/common-functions.js";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import { toast } from "sonner";
-import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
+import { addRole } from "@/hooks/use-user-roles.jsx";
 
 const TalentOnboarding = () => {
   const { user, isLoaded } = useUser();
@@ -44,14 +44,11 @@ const TalentOnboarding = () => {
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
 
-  const [showDialog, setShowDialog] = useState(false);
-  const [navTarget, setNavTarget] = useState(null);
-
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -64,50 +61,8 @@ const TalentOnboarding = () => {
     resolver: zodResolver(TalentSchema),
   });
 
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowDialog(true);
-      setNavTarget(-1);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const handleDiscard = () => {
-    setShowDialog(false);
-    if (navTarget !== null) {
-      navigate(navTarget);
-      setNavTarget(null);
-    }
-  };
-
-  const handleStay = () => {
-    setShowDialog(false);
-    setNavTarget(null);
-  };
-
   const { func: submitTalentProfile, loading, error } = useFetch(addNewTalent);
   const { func: updateUserProfile } = useFetch(syncUserProfile);
-
-  const handleRoleSelection = async (role) => {
-    const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
-      ? user.unsafeMetadata.roles
-      : [];
-
-    if (existingRoles.includes(role)) {
-      return;
-    }
-
-    const updatedRoles = [...existingRoles, role];
-
-    try {
-      await user.update({ unsafeMetadata: { roles: updatedRoles } });
-      toast.success(`Role updated to: ${role}`);
-    } catch (err) {
-      toast.error("Error updating role");
-      console.error("Error updating role:", err);
-    }
-  };
 
   const onSubmit = async (data) => {
     if (submittedRef.current) {
@@ -141,13 +96,13 @@ const TalentOnboarding = () => {
           throw new Error(error.message || "Failed to create profile");
         }
 
-        await handleRoleSelection(ROLE_TALENT);
+        await addRole(user, ROLE_TALENT);
         const redirectPath = returnTo || "/talents";
         navigate(redirectPath, { replace: true });
         toast.success("Profile Created!");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       toast.error("Failed to create profile!");
       submittedRef.current = false;
     }
@@ -174,12 +129,6 @@ const TalentOnboarding = () => {
           Showcase your CPG expertise and connect with brands looking for fractional talent.
         </p>
       </section>
-
-      <DiscardChangesGuard
-        show={showDialog}
-        onDiscard={handleDiscard}
-        onStay={handleStay}
-      />
 
       {/* Profile Card */}
       <section className="w-5/6 max-w-3xl mx-auto mb-8">

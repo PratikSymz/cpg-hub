@@ -24,6 +24,7 @@ import { isAdminEmail } from "@/constants/admins.js";
 import useFetch from "@/hooks/use-fetch.jsx";
 import { getMyTalentProfile } from "@/api/apiTalent.js";
 import { getMyServiceProfile } from "@/api/apiServices.js";
+import { useUserRoles } from "@/hooks/use-user-roles.jsx";
 
 const NavBar = () => {
   const navigate = useNavigate();
@@ -42,11 +43,12 @@ const NavBar = () => {
     }
   }, [search]);
 
-  // Fetch talent and service profiles when user is loaded
   useEffect(() => {
     if (isLoaded && user) {
-      fetchTalentProfile({ user_id: user.id });
-      fetchServiceProfile({ user_id: user.id });
+      Promise.all([
+        fetchTalentProfile({ user_id: user.id }),
+        fetchServiceProfile({ user_id: user.id }),
+      ]);
     }
   }, [isLoaded, user?.id]);
 
@@ -57,9 +59,7 @@ const NavBar = () => {
     }
   };
 
-  const roles = Array.isArray(user?.unsafeMetadata?.roles)
-    ? user.unsafeMetadata.roles
-    : [];
+  const roles = useUserRoles();
 
   return (
     <header className="w-full px-4 sm:px-6 py-6">

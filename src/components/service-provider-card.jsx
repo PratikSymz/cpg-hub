@@ -26,6 +26,7 @@ const ServiceProviderCard = ({ service }) => {
               src={logo_url}
               alt={`${company_name} logo`}
               className="max-h-full max-w-full object-contain p-1"
+              loading="lazy"
             />
           </div>
         ) : (

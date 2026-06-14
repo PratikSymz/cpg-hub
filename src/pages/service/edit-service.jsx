@@ -28,15 +28,14 @@ import { toast } from "sonner";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
-import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
-import { isAdminEmail } from "@/constants/admins.js";
+import { useCanEdit } from "@/hooks/use-can-edit.jsx";
 import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
 
 const EditServicePage = () => {
   const { id } = useParams();
-  const { user, isSignedIn, isLoaded } = useUser();
+  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
   const [profilePicFile, setProfilePicFile] = useState(null);
@@ -44,15 +43,13 @@ const EditServicePage = () => {
   const [otherCat, setOtherCat] = useState("");
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherCatError, setOtherCatError] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
-  const [navTarget, setNavTarget] = useState(null);
 
   const {
     register,
     handleSubmit,
     control,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -133,35 +130,7 @@ const EditServicePage = () => {
   const profileEmail = userInfo?.email || "";
   const profileImage = userInfo?.profile_picture_url || "";
 
-  // Check if current user is the profile owner
-  const isOwner = isSignedIn && userInfo?.user_id === user?.id;
-
-  // Check if current user can edit this profile
-  const canEdit =
-    isSignedIn &&
-    (isOwner || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
-
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowDialog(true);
-      setNavTarget(-1);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const handleDiscard = () => {
-    setShowDialog(false);
-    if (navTarget !== null) {
-      navigate(navTarget);
-      setNavTarget(null);
-    }
-  };
-
-  const handleStay = () => {
-    setShowDialog(false);
-    setNavTarget(null);
-  };
+  const { isOwner, canEdit } = useCanEdit(userInfo?.user_id);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -255,12 +224,6 @@ const EditServicePage = () => {
           Update your service provider information below.
         </p>
       </section>
-
-      <DiscardChangesGuard
-        show={showDialog}
-        onDiscard={handleDiscard}
-        onStay={handleStay}
-      />
 
       {/* Profile Card - Shows whose profile is being edited */}
       <section className="w-5/6 max-w-3xl mx-auto mb-8">

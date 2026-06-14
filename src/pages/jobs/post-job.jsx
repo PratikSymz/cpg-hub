@@ -1,13 +1,6 @@
-/**
- * @fileoverview Job posting page component
- * Allows users to post fractional job listings with flexible poster options.
- * Users can post as themselves (personal), their talent/service profile, or a company.
- */
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Third-party libraries
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
@@ -16,13 +9,11 @@ import { Controller, useForm } from "react-hook-form";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
 
-// API functions
 import { addNewBrand, getMyBrands } from "@/api/apiBrands.js";
 import { postJob } from "@/api/apiFractionalJobs.js";
 import { getMyServiceProfile } from "@/api/apiServices.js";
 import { getMyTalentProfile } from "@/api/apiTalent.js";
 
-// UI Components
 import FormError from "@/components/form-error.jsx";
 import NumberInput from "@/components/number-input.jsx";
 import RequiredLabel from "@/components/required-label.jsx";
@@ -38,10 +29,9 @@ import {
 } from "@/components/ui/select.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 
-// Hooks
 import useFetch from "@/hooks/use-fetch.jsx";
+import { useUserRoles, addRole } from "@/hooks/use-user-roles.jsx";
 
-// Constants and schemas
 import {
   classInput,
   classLabel,
@@ -53,21 +43,8 @@ import {
 } from "@/constants/filters.js";
 import { ROLE_BRAND, ROLE_SERVICE, ROLE_TALENT } from "@/constants/roles.js";
 import { JobPostingSchema } from "@/schemas/job-posting-schema.js";
+import { toTitleCase } from "@/utils/common-functions.js";
 
-/**
- * PostJob Component
- *
- * Provides a form for users to create fractional job listings.
- *
- * Poster Options:
- * - "Me" (personal): Posts using user's Clerk profile info
- * - "My Talent Profile": Posts using talent profile (if exists)
- * - "My Service Profile": Posts using service profile (if exists)
- * - "My Company": Posts using existing brand (if any)
- * - "Add a Company": Creates new brand and posts with it
- *
- * @returns {JSX.Element} The job posting form
- */
 const PostJob = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
@@ -77,21 +54,13 @@ const PostJob = () => {
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [showAdditionalBrandInfo, setShowAdditionalBrandInfo] = useState(false);
 
-  // Profile and brand state
   const [userBrands, setUserBrands] = useState([]);
   const [talentProfile, setTalentProfile] = useState(null);
   const [serviceProfile, setServiceProfile] = useState(null);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
 
-  // Get user's roles from metadata
-  const userRoles = user?.unsafeMetadata?.roles || [];
+  const userRoles = useUserRoles();
 
-  // Default poster type is always "personal" (simplest option)
-  const getDefaultPosterType = () => {
-    return "personal";
-  };
-
-  // Fetch profiles on mount
   const { func: fetchBrands } = useFetch(getMyBrands);
   const { func: fetchTalentProfile } = useFetch(getMyTalentProfile);
   const { func: fetchServiceProfile } = useFetch(getMyServiceProfile);
@@ -105,19 +74,15 @@ const PostJob = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      // Poster type
       poster_type: "personal",
-      // Brand selection
       brand_selection: "none",
       brand_profile_id: "",
-      // New brand fields
       brand_name: "",
       brand_logo: null,
       brand_website: "",
       brand_location: "",
       brand_linkedin_url: "",
       brand_desc: "",
-      // Job fields
       preferred_experience: "",
       level_of_experience: [],
       job_title: "",
@@ -132,85 +97,59 @@ const PostJob = () => {
   const posterType = watch("poster_type");
   const brandSelection = watch("brand_selection");
 
-  // Load profiles on mount
   useEffect(() => {
-    if (isLoaded && user?.id) {
-      const loadProfiles = async () => {
-        // Fetch all data in parallel
-        const [brandsResult, talentResult, serviceResult] = await Promise.all([
-          fetchBrands({ user_id: user.id }),
-          fetchTalentProfile({ user_id: user.id }),
-          fetchServiceProfile({ user_id: user.id }),
-        ]);
+    if (!(isLoaded && user?.id)) return;
 
-        // Extract data from useFetch wrapper objects
-        const brandsData = brandsResult?.data || [];
-        const talentData = talentResult?.data || null;
-        const serviceData = serviceResult?.data || null;
+    const loadProfiles = async () => {
+      const [brandsResult, talentResult, serviceResult] = await Promise.all([
+        fetchBrands({ user_id: user.id }),
+        fetchTalentProfile({ user_id: user.id }),
+        fetchServiceProfile({ user_id: user.id }),
+      ]);
 
-        setUserBrands(brandsData);
-        setTalentProfile(talentData);
-        setServiceProfile(serviceData);
-        setProfilesLoaded(true);
+      const brandsData = brandsResult?.data || [];
+      setUserBrands(brandsData);
+      setTalentProfile(talentResult?.data || null);
+      setServiceProfile(serviceResult?.data || null);
+      setProfilesLoaded(true);
 
-        // Sync brand role if user has brands but role is missing
-        if (brandsData.length > 0) {
-          const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
-            ? user.unsafeMetadata.roles
-            : [];
-          if (!existingRoles.includes(ROLE_BRAND)) {
-            await user.update({
-              unsafeMetadata: { roles: [...existingRoles, ROLE_BRAND] },
-            });
-          }
-        }
+      if (brandsData.length > 0) {
+        await addRole(user, ROLE_BRAND);
+      }
 
-        // Set default poster type based on available profiles
-        const defaultType = getDefaultPosterType();
-        setValue("poster_type", defaultType);
+      setValue("poster_type", "personal");
+      setValue("brand_selection", "none");
+      setValue("brand_profile_id", "");
+    };
 
-        // Default to "none" for brand selection (posting as personal)
-        setValue("brand_selection", "none");
-        setValue("brand_profile_id", "");
-      };
-
-      loadProfiles();
-    }
+    loadProfiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user?.id]);
 
-  // Derived state for profile existence (requires BOTH role in metadata AND database record)
   const hasTalentProfile = userRoles.includes(ROLE_TALENT) && !!talentProfile;
   const hasServiceProfile =
     userRoles.includes(ROLE_SERVICE) && !!serviceProfile;
 
-  // API for creating job
   const {
     loading: loadingCreateJob,
     error: errorCreateJob,
     func: funcCreateJob,
   } = useFetch(postJob);
 
-  // API for creating brand
   const { loading: loadingCreateBrand, func: funcCreateBrand } =
     useFetch(addNewBrand);
 
   const onSubmit = async (data) => {
-    if (submittedRef.current) {
-      console.warn("Duplicate submission prevented");
-      return;
-    }
+    if (submittedRef.current) return;
     submittedRef.current = true;
 
     try {
       if (user && user.id) {
         let brandId = null;
 
-        // Set brandId based on brand selection
         if (data.brand_selection === "existing" && data.brand_profile_id) {
           brandId = data.brand_profile_id;
         } else if (data.brand_selection === "new") {
-          // If creating new brand, create it first
           const brandResult = await funcCreateBrand({
             user_id: user.id,
             brand_name: data.brand_name,
@@ -227,24 +166,14 @@ const PostJob = () => {
 
           brandId = brandResult.data[0].id;
 
-          // Update local brands list
           setUserBrands((prev) => [
             brandResult.data[0],
             ...(Array.isArray(prev) ? prev : []),
           ]);
 
-          // Update user role to include "brand" if not already present
-          const existingRoles = Array.isArray(user?.unsafeMetadata?.roles)
-            ? user.unsafeMetadata.roles
-            : [];
-          if (!existingRoles.includes(ROLE_BRAND)) {
-            await user.update({
-              unsafeMetadata: { roles: [...existingRoles, ROLE_BRAND] },
-            });
-          }
+          await addRole(user, ROLE_BRAND);
         }
 
-        // Create the job
         const result = await funcCreateJob({
           job_title: data.job_title,
           preferred_experience: data.preferred_experience,
@@ -267,19 +196,11 @@ const PostJob = () => {
         toast.success("Job posted successfully!");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       toast.error("Failed to post job!");
       submittedRef.current = false;
     }
   };
-
-  const toTitleCase = (str) =>
-    str
-      .toLowerCase()
-      .split(" ")
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
 
   if (!isLoaded || !profilesLoaded) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;

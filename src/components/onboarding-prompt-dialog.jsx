@@ -10,15 +10,11 @@ import {
 import { Button } from "@/components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
 import { ROLE_BRAND, ROLE_SERVICE } from "@/constants/roles.js";
-import { useUser } from "@clerk/clerk-react";
+import { useUserRoles } from "@/hooks/use-user-roles.jsx";
 
 export default function OnboardingPromptDialog({ open, setOpen, role }) {
-  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
-
-  const userRoles = Array.isArray(user?.unsafeMetadata?.roles)
-    ? user.unsafeMetadata.roles
-    : [];
+  const userRoles = useUserRoles();
   const alreadyHasRole = userRoles.includes(role);
 
   const title = alreadyHasRole

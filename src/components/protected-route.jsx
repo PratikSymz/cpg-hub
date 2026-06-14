@@ -2,20 +2,18 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { useUserRoles } from "@/hooks/use-user-roles.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { isSignedIn, isLoaded, user } = useUser();
   const { pathname } = useLocation();
+  const roles = useUserRoles();
 
   if (isLoaded && !isSignedIn && isSignedIn !== undefined) {
     return <Navigate to="/" />;
   }
 
-  // Check if user has completed onboarding (has at least one role)
-  const roles = user?.unsafeMetadata?.roles;
-  const hasRoles = Array.isArray(roles) && roles.length > 0;
-
-  if (user !== undefined && !hasRoles && pathname !== "/") {
+  if (user !== undefined && roles.length === 0 && pathname !== "/") {
     return <Navigate to="/" />;
   }
 

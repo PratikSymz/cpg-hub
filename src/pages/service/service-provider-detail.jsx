@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import ConnectEmailDialog from "@/components/connect-email-dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import BackButton from "@/components/back-button.jsx";
-import { isAdminEmail } from "@/constants/admins.js";
+import { useCanEdit } from "@/hooks/use-can-edit.jsx";
 import { Briefcase, Building2, Globe, Users, MapPin } from "lucide-react";
 
 const ServiceProviderDetail = () => {
@@ -46,9 +46,7 @@ const ServiceProviderDetail = () => {
   const image_url = user_info?.profile_picture_url || "";
   const full_name = user_info?.full_name || "";
 
-  // Check if current user can edit (owner or admin)
-  const canEdit =
-    user_info?.user_id === user?.id || isAdminEmail(user?.primaryEmailAddress?.emailAddress);
+  const { canEdit } = useCanEdit(user_info?.user_id);
 
   const handleEmailSend = async (message) => {
     try {

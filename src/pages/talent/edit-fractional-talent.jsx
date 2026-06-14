@@ -26,16 +26,15 @@ import { TalentSchema } from "@/schemas/talent-schema.js";
 import { OTHER_SCHEMA } from "@/constants/schemas.js";
 import RequiredLabel from "@/components/required-label.jsx";
 import FormError from "@/components/form-error.jsx";
-import DiscardChangesGuard from "@/components/discard-changes-guard.js";
 import BackButton from "@/components/back-button.jsx";
 import { toTitleCase } from "@/utils/common-functions.js";
-import { isAdminEmail } from "@/constants/admins.js";
 import ProfilePictureUpload from "@/components/profile-picture-upload.jsx";
 import { syncUserProfile } from "@/api/apiUsers.js";
+import { useCanEdit } from "@/hooks/use-can-edit.jsx";
 
 const EditTalentPage = () => {
   const { id } = useParams();
-  const { user, isSignedIn, isLoaded } = useUser();
+  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
 
   const {
@@ -43,7 +42,7 @@ const EditTalentPage = () => {
     handleSubmit,
     control,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -88,10 +87,6 @@ const EditTalentPage = () => {
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherSpecError, setOtherSpecError] = useState("");
 
-  const [showDialog, setShowDialog] = useState(false);
-  const [navTarget, setNavTarget] = useState(null);
-
-  // Profile info from fetched talent data
   const userInfo = talentData?.user_info;
   const profileName = userInfo?.full_name || "Unknown";
   const profileEmail = userInfo?.email || "";
@@ -111,13 +106,7 @@ const EditTalentPage = () => {
     }
   }, [talentData, setValue]);
 
-  // Check if current user is the profile owner
-  const isOwner = isSignedIn && userInfo?.user_id === user?.id;
-
-  // Check if current user can edit this profile
-  const canEdit =
-    isSignedIn &&
-    (isOwner || isAdminEmail(user?.primaryEmailAddress?.emailAddress));
+  const { isOwner, canEdit } = useCanEdit(userInfo?.user_id);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -175,28 +164,6 @@ const EditTalentPage = () => {
     }
   };
 
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowDialog(true);
-      setNavTarget(-1);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const handleDiscard = () => {
-    setShowDialog(false);
-    if (navTarget !== null) {
-      navigate(navTarget);
-      setNavTarget(null);
-    }
-  };
-
-  const handleStay = () => {
-    setShowDialog(false);
-    setNavTarget(null);
-  };
-
   if (loading || !isLoaded) {
     return <BarLoader width={"100%"} color="#00A19A" />;
   }
@@ -234,12 +201,6 @@ const EditTalentPage = () => {
           Update the profile information below.
         </p>
       </section>
-
-      <DiscardChangesGuard
-        show={showDialog}
-        onDiscard={handleDiscard}
-        onStay={handleStay}
-      />
 
       {/* Profile Card - Shows whose profile is being edited */}
       <section className="w-5/6 max-w-3xl mx-auto mb-8">
